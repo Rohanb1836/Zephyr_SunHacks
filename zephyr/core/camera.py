@@ -15,8 +15,12 @@ import threading
 import time
 from typing import Optional
 
-import cv2
-import numpy as np
+import os
+
+os.environ.setdefault("OPENCV_LOG_LEVEL", "ERROR")   # keep OpenCV's own retry warnings out of the console
+
+import cv2  # noqa: E402
+import numpy as np  # noqa: E402
 
 from zephyr import contracts
 from zephyr.config import cfg
@@ -47,6 +51,7 @@ class FrameHub:
         self.ended = threading.Event()     # set when a clip reaches its end
         self.fps = 0.0                     # measured capture rate
         self.size = (0, 0)                 # (width, height) of real frames
+        self._warned = False
 
     # ---------- public ----------
     def start(self) -> None:
@@ -86,9 +91,14 @@ class FrameHub:
             cap.release()
             cap = cv2.VideoCapture(int(c.index))      # fall back to the default backend
         if not cap.isOpened():
-            print(f"[camera] cannot open camera index {c.index}; will keep retrying")
+            if not self._warned:
+                print(f"[camera] cannot open camera index {c.index}; retrying quietly every second")
+                self._warned = True
             self._cap = None
             return False
+        if self._warned:
+            print("[camera] camera opened")
+            self._warned = False
         if sys.platform.startswith("win"):
             cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(c.width))
@@ -117,7 +127,7 @@ class FrameHub:
         n, t_last = 0, time.monotonic()
         while self._running:
             if self._cap is None:
-                time.sleep(0.5)
+                time.sleep(1.0)
                 self._open_live()
                 continue
             ok, frame = self._cap.read()

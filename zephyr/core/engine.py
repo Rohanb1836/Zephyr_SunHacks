@@ -1,8 +1,7 @@
 """zephyr/core/engine.py    The gesture state machine. Owner: Aadharsh.
 
-KICKOFF VERSION: runs the vision loop and publishes empty HandsFrames, SystemState and latency,
-so everyone can run the full app now. Real hand tracking and gestures land in later commits
-with the same entry points:
+This version: real hand tracking, stable IDs and debounced poses in every HandsFrame.
+Gestures land in the next commits with the same entry points:
     Engine(hub, gate, matcher).start()
     run_clip(path, gate=None, matcher=None)
 """
@@ -13,7 +12,9 @@ import time
 
 from zephyr.bus import bus
 from zephyr.config import maybe_reload
-from zephyr.contracts import HandsFrame, SystemMode, SystemState, T
+from zephyr.contracts import HandObs, HandsFrame, Role, SystemMode, SystemState, T
+from zephyr.core import features as F
+from zephyr.core.tracker import HandTracker
 from zephyr.stubs import NullGate, NullMatcher
 
 
@@ -30,6 +31,13 @@ class Engine:
         self._thread: threading.Thread | None = None
         self._running = False
         self._last_fid = -1
+        self.tracker = HandTracker()
+        self.detector = None
+        try:
+            from zephyr.core.hands import HandDetector
+            self.detector = HandDetector()
+        except Exception as exc:
+            print(f"[engine] hand detector not available, publishing empty frames: {exc!r}")
 
     def start(self) -> "Engine":
         self._running = True
@@ -43,8 +51,23 @@ class Engine:
 
     def process(self, frame, ts_ms: int, frame_id: int) -> None:
         """One frame through the pipeline. Also used by run_clip."""
+        raws = self.detector.detect(frame, ts_ms) if self.detector else []
         t_infer = _now_ms()
-        bus.publish(T.HANDS, HandsFrame(frame_id, ts_ms, ()))
+        tracks = self.tracker.update(raws, ts_ms)
+        hands = []
+        for t in tracks:
+            pose = t.poses.update(t.lm, t.world, t.scale, t.score)
+            obs = HandObs(hand_id=t.hand_id, side=t.side, landmarks=t.lm, world=t.world,
+                          scale=float(t.scale), pose=pose, pinch=F.pinch_ratio(t.lm, t.scale),
+                          score=float(t.score))
+            try:
+                role = self.gate.role_of(obs)
+            except Exception as exc:
+                print(f"[engine] gate.role_of error: {exc!r}")
+                role = Role.STRANGER
+            hands.append(HandObs(obs.hand_id, obs.side, obs.landmarks, obs.world, obs.scale,
+                                 obs.pose, obs.pinch, obs.score, role))
+        bus.publish(T.HANDS, HandsFrame(frame_id, ts_ms, tuple(hands)))
         t_pub = _now_ms()
         bus.publish(T.LATENCY, {"frame_id": frame_id, "capture_ms": ts_ms,
                                 "inference_ms": t_infer, "publish_ms": t_pub})
