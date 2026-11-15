@@ -258,6 +258,19 @@ class SwipeAndTrackerTests(unittest.TestCase):
         swipes = [k for k in r.keys() if k.startswith("swipe")]
         self.assertEqual(swipes, ["swipe5.right"])
 
+    def test_a_gentle_two_finger_swipe_counts_but_not_an_open_hand_one(self):
+        """Measured two-finger swipes travelled 0.8-1.4 hand widths, under the open-hand 1.5."""
+        r = rig()
+        r.run(n(8, lambda i: [hand("two", ox=0.40)]))
+        r.run(n(5, lambda i: [hand("two", ox=0.40 + 0.0195 * (i + 1))]))   # 1.3 widths in 165 ms
+        r.run(n(8, lambda i: [hand("two", ox=0.4975)]))
+        self.assertEqual([k for k in r.keys() if k.startswith("swipe")], ["swipe2.right"])
+        r = rig()
+        r.run(n(8, lambda i: [hand("open", ox=0.40)]))
+        r.run(n(5, lambda i: [hand("open", ox=0.40 + 0.0195 * (i + 1))]))
+        r.run(n(8, lambda i: [hand("open", ox=0.4975)]))
+        self.assertFalse([k for k in r.keys() if k.startswith("swipe")])
+
     def test_a_hand_that_leaves_for_long_is_not_a_swipe(self):
         r = rig()
         r.run(n(10, lambda i: [hand("open", ox=0.40)]))

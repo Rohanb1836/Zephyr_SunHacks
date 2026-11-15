@@ -65,7 +65,11 @@ class SwipeDetector:
         max_ms = int(s.max_ms)
 
         # 1. the furthest sideways sample inside the window
-        need = float(s.min_travel_scales)
+        # Two-finger swipes have their own, lower thresholds (swipe.two_*): people make them as a
+        # gentler movement than an open-hand swipe, and the two-finger pose rarely happens by accident.
+        need5 = float(s.min_travel_scales)
+        need2 = float(s.get("two_min_travel_scales", need5))
+        need = min(need5, need2)
         k = aspect / scale
         best_i, best_dx = -1, 0.0
         for i in range(len(h) - 2, -1, -1):
@@ -103,9 +107,13 @@ class SwipeDetector:
             dt = (h[j][0] - h[j - 1][0]) / 1000.0
             if dt > 0:
                 peak = max(peak, sign * (h[j][1] - h[j - 1][1]) * aspect / scale / dt)
-        if peak < float(s.min_peak_speed):
+        peak5 = float(s.min_peak_speed)
+        peak2 = float(s.get("two_min_peak_speed", peak5))
+        if peak < min(peak5, peak2):
             return None
-        if ctx.speed < float(s.get("settle_speed", 2.0)):
+        settle5 = float(s.get("settle_speed", 2.0))
+        settle2 = float(s.get("two_settle_speed", settle5))
+        if ctx.speed < min(settle5, settle2):
             return None                    # the hand has already stopped: an old movement never fires late
 
         # 3. vote on the hand shape over the movement
@@ -115,6 +123,10 @@ class SwipeDetector:
         if max(n5, n2) / span < float(s.get("open_ratio", 0.5)):
             return None
         fingers = 5 if n5 >= n2 else 2
+        if fingers == 5 and (abs(best_dx) < need5 or peak < peak5 or ctx.speed < settle5):
+            return None                    # the lower thresholds are for two-finger swipes only
+        if fingers == 2 and (abs(best_dx) < need2 or peak < peak2 or ctx.speed < settle2):
+            return None
         if bridged and h[-1][3] != fingers:
             return None                    # after a blur gap the hand must come back in the same shape
                                            # (one that came back as a fist was a hand closing, not a swipe)

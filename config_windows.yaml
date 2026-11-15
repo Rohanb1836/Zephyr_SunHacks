@@ -13,7 +13,8 @@ pointer:  {deadband: 0.002}        # the pointer holds still inside this radius
 pinch:    {open_before_ms: 150, pen_open_before_ms: 60, click_max_ms: 1000, pen_start_travel_scales: 0.25,
            max_start_speed: 3.0, fist_grace_ms: 250}
 swipe:    {max_ms: 800, min_peak_speed: 4.0, refractory_ms: 800, opposite_block_ms: 1300,
-           bridge_min_ms: 120, bridge_max_ms: 450}
+           bridge_min_ms: 120, bridge_max_ms: 450,
+           two_min_travel_scales: 1.2, two_min_peak_speed: 3.0}   # two-finger swipes are gentler (measured 0.8-1.4 wide)
 level:    {knob_dead_deg: 15, knob_max_step_deg: 60}
 holds:    {palm_min_width: 0.5, after_pinch_ms: 400, fist_tap_slow_max_ms: 2500}
 presence: {pitch_deg: 28, reach_ratio: 2.5, reid_ms: 1500, face_lost_hold_ms: 1200, baseline_samples: 10}
