@@ -6,7 +6,7 @@
 <title>Zephyr: hands-free control for your Mac</title>
 <meta name="description" content="Zephyr turns your webcam into a hands-free controller for your Mac and your Roku TV. Try the live hand tracking demo in your browser, then download the app.">
 <meta name="theme-color" content="#bfe5e6">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='21' fill='%231c1430'/%3E%3Cpath d='M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27' fill='none' stroke='%23c6a3ff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='77' cy='27' r='9' fill='%23f8f4ff'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='21' fill='%23121b1e'/%3E%3Cpath d='M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27' fill='none' stroke='%23bfe5e6' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='77' cy='27' r='9' fill='%23f4fbfb'/%3E%3C/svg%3E">
 <style>
 @font-face { font-family: "Big Shoulders"; src: url("fonts/BigShoulders-Bold.woff") format("woff"); font-weight: 700; font-display: swap; }
 @font-face { font-family: "Instrument Sans"; src: url("fonts/InstrumentSans-Regular.woff") format("woff"); font-weight: 400; font-display: swap; }
@@ -73,7 +73,7 @@ img, svg, canvas { max-width: 100%; }
 .hero-mark { width: clamp(150px, 22vw, 300px); align-self: start; margin-top: 40px; }
 .hero-mark svg { display: block; width: 100%; overflow: visible; filter: drop-shadow(0 30px 40px rgba(15, 23, 24, 0.22)); }
 .mark-stroke { fill: none; stroke: url(#markInk); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; animation: write 1.6s cubic-bezier(0.65, 0.05, 0.3, 1) 0.25s both; }
-.mark-tip { fill: #f8f4ff; filter: url(#tipGlow); transform-box: fill-box; transform-origin: center; animation: tip 0.5s ease-out 1.7s both, breathe 4s ease-in-out 2.4s infinite; }
+.mark-tip { fill: #f4fbfb; filter: url(#tipGlow); transform-box: fill-box; transform-origin: center; animation: tip 0.5s ease-out 1.7s both, breathe 4s ease-in-out 2.4s infinite; }
 @keyframes write { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes tip { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
 @keyframes breathe { 50% { opacity: 0.78; } }
@@ -340,9 +340,9 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
   <header class="wrap top">
     <a class="brand" href="#top" aria-label="Zephyr, top of page">
       <svg viewBox="0 0 100 100" aria-hidden="true">
-        <rect x="4" y="4" width="92" height="92" rx="21" fill="#1c1430"/>
-        <path d="M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27" fill="none" stroke="#c6a3ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="77" cy="27" r="9" fill="#f8f4ff"/>
+        <rect x="4" y="4" width="92" height="92" rx="21" fill="#121b1e"/>
+        <path d="M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27" fill="none" stroke="#bfe5e6" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="77" cy="27" r="9" fill="#f4fbfb"/>
       </svg>
       <span>Zephyr</span>
     </a>
@@ -365,16 +365,20 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
       <svg viewBox="0 0 100 100">
         <defs>
           <linearGradient id="markInk" gradientUnits="userSpaceOnUse" x1="17" y1="77" x2="77" y2="27">
-            <stop offset="0" stop-color="#7050f5" stop-opacity="0.6"/>
-            <stop offset="0.55" stop-color="#a27ef8"/>
-            <stop offset="1" stop-color="#e2d0ff"/>
+            <stop offset="0" stop-color="#3f8f93" stop-opacity="0.6"/>
+            <stop offset="0.55" stop-color="#7fc3c6"/>
+            <stop offset="1" stop-color="#bfe5e6"/>
+          </linearGradient>
+          <linearGradient id="markBody" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#1a2428"/>
+            <stop offset="1" stop-color="#090c0f"/>
           </linearGradient>
           <filter id="tipGlow" x="-200%" y="-200%" width="500%" height="500%">
             <feGaussianBlur stdDeviation="3.2" result="blur"/>
             <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
-        <rect x="2" y="2" width="96" height="96" rx="22" fill="#1c1430"/>
+        <rect x="2" y="2" width="96" height="96" rx="22" fill="url(#markBody)"/>
         <path class="mark-stroke" pathLength="1" d="M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27"/>
         <circle class="mark-tip" cx="77" cy="27" r="7"/>
       </svg>

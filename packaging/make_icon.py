@@ -1,7 +1,8 @@
 """packaging/make_icon.py  Draws the Zephyr app icon (packaging/Zephyr.icns). Owner: Swayam.
 
 The mark is a Z written in the air, flipped upside down: one stroke that starts
-faint at the bottom left and brightens toward the fingertip at the top right.
+faint at the bottom left and brightens to the website's pale aqua toward the
+fingertip at the top right.
 The menu bar draws the same stroke in zephyr/ui/app.py, and the website uses it too.
 
     python packaging/make_icon.py              writes packaging/Zephyr.icns
@@ -20,9 +21,12 @@ CORNERS = ((0.17, 0.77), (0.75, 0.77), (0.19, 0.27), (0.77, 0.27))
 CORNER_RADIUS = 0.11
 WIDTH = (0.026, 0.046)          # half-width at the start and at the fingertip
 DOT = 0.072                     # fingertip radius
-INK = ((112, 80, 245), (226, 208, 255))     # deep violet at the start, lavender at the tip
-TIP = (246, 240, 255)
-BODY = ((46, 32, 74), (14, 10, 24))         # top and bottom of the background
+# colours: a dark body, the stroke in the website's pale aqua, a white fingertip
+PALETTES = {
+    "night": {"body": ((26, 36, 40), (9, 12, 15)), "ink": ((63, 143, 147), (191, 229, 230)),
+              "tip": (244, 251, 251), "halo": (191, 229, 230, 120), "glow": 0.45},
+}
+PALETTE = "night"
 
 
 def stroke_points(n: int = 600) -> list[tuple[float, float]]:
@@ -56,7 +60,7 @@ def mix(c0, c1, t):
     return tuple(int(c0[i] + (c1[i] - c0[i]) * t) for i in range(3))
 
 
-def draw_stroke(size: int) -> Image.Image:
+def draw_stroke(size: int, pal: dict) -> Image.Image:
     """The mark alone on a transparent square. Later points draw over earlier ones, so the
     brighter end of the stroke stays on top where it overlaps."""
     layer = Image.new("RGBA", (size, size), (0, 0, 0, 0))
@@ -65,14 +69,15 @@ def draw_stroke(size: int) -> Image.Image:
         t = i / (len(pts) - 1)
         r = (WIDTH[0] + (WIDTH[1] - WIDTH[0]) * t) * size
         alpha = int(255 * (0.42 + 0.58 * t ** 0.8))
-        d.ellipse((x * size - r, y * size - r, x * size + r, y * size + r), fill=mix(*INK, t ** 0.9) + (alpha,))
+        d.ellipse((x * size - r, y * size - r, x * size + r, y * size + r), fill=mix(*pal["ink"], t ** 0.9) + (alpha,))
     x, y = pts[-1]
     r = DOT * size
-    d.ellipse((x * size - r, y * size - r, x * size + r, y * size + r), fill=TIP + (255,))
+    d.ellipse((x * size - r, y * size - r, x * size + r, y * size + r), fill=pal["tip"] + (255,))
     return layer
 
 
-def render(out: int = 1024) -> Image.Image:
+def render(out: int = 1024, palette: str = PALETTE) -> Image.Image:
+    pal = PALETTES[palette]
     S = 2048                                    # draw at 2x, then downscale for smooth edges
     k = S / 1024
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
@@ -81,11 +86,11 @@ def render(out: int = 1024) -> Image.Image:
     x0, y0, x1, y1 = (int(v * k) for v in (100, 100, 924, 924))
     radius = int(185 * k)
     shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).rounded_rectangle((x0, y0 + int(14 * k), x1, y1 + int(14 * k)), radius, fill=(0, 0, 0, 110))
+    ImageDraw.Draw(shadow).rounded_rectangle((x0, y0 + int(14 * k), x1, y1 + int(14 * k)), radius, fill=(0, 0, 0, 90))
     img.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(int(22 * k))))
     column = Image.new("RGBA", (1, S))
     for y in range(S):
-        column.putpixel((0, y), mix(*BODY, y / (S - 1)) + (255,))
+        column.putpixel((0, y), mix(*pal["body"], y / (S - 1)) + (255,))
     body_mask = Image.new("L", (S, S), 0)
     ImageDraw.Draw(body_mask).rounded_rectangle((x0, y0, x1, y1), radius, fill=255)
     img.paste(column.resize((S, S)), (0, 0), body_mask)
@@ -93,15 +98,15 @@ def render(out: int = 1024) -> Image.Image:
     # the mark, with a soft glow and extra light around the fingertip
     box = int(620 * k)
     mark = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    mark.paste(draw_stroke(box), ((S - box) // 2, (S - box) // 2))
+    mark.paste(draw_stroke(box, pal), ((S - box) // 2, (S - box) // 2))
     glow = mark.copy()
-    glow.putalpha(glow.getchannel("A").point(lambda a: int(a * 0.45)))
+    glow.putalpha(glow.getchannel("A").point(lambda a: int(a * pal["glow"])))
     glow = glow.filter(ImageFilter.GaussianBlur(int(26 * k)))
     tx, ty = stroke_points()[-1]
     cx, cy = (S - box) // 2 + tx * box, (S - box) // 2 + ty * box
     halo = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     hr = 150 * k
-    ImageDraw.Draw(halo).ellipse((cx - hr, cy - hr, cx + hr, cy + hr), fill=(190, 150, 255, 120))
+    ImageDraw.Draw(halo).ellipse((cx - hr, cy - hr, cx + hr, cy + hr), fill=pal["halo"])
     glow.alpha_composite(halo.filter(ImageFilter.GaussianBlur(int(60 * k))))
     clipped = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     clipped.paste(glow, (0, 0), body_mask)      # keep the light inside the body
