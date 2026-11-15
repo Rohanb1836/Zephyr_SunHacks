@@ -3,7 +3,8 @@
 # Core reloads this file automatically about once a second when it changes on disk.
 
 # ---------- [Aadharsh] core ----------
-camera:   {index: 0, width: 640, height: 480, fps: 30, mirror: true, reopen_after_fails: 30}
+camera:   {index: 0, width: 640, height: 480, fps: 30, mirror: true, reopen_after_fails: 30,
+           backend: auto}   # auto | msmf | dshow | avfoundation. Windows auto = MSMF (30 fps), then DirectShow
 hands:    {max_hands: 3, det_conf: 0.6, track_conf: 0.6, presence_conf: 0.5, swap_sides: false,
            model: models/hand_landmarker.task, scale_ema: 0.3, infer_width: 640}
 poses:    {extend_deg: 155, curl_deg: 125, debounce_frames: 3, window: 5,
@@ -25,7 +26,8 @@ holds:    {palm_ms: 800, palm_max_speed: 0.8, still_window_ms: 300, grace_ms: 15
 
 # ---------- [Ryan] presence and access ----------
 presence: {fps: 10, mode: lenient, yaw_deg: 25, pitch_deg: 20, away_ms: 400, back_ms: 200,
-           attach_ratio: 0.5, owner_lost_ms: 2000, max_people: 3}
+           attach_ratio: 0.5, owner_lost_ms: 2000, max_people: 3,
+           reach_ratio: 2.5, reid_ms: 1500}   # reach: wrist to nose, in shoulder widths
 access:   {gesture: handshake, wrist_ratio: 0.35, hold_ms: 800, guest_timeout_s: 90,
            guest_lost_ms: 2000}
 

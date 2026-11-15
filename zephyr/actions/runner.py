@@ -42,7 +42,9 @@ class ActionRunner:
             if value == 'desktop_prev': return self.backend.desktop('prev')
             if value == 'search' and self.search is not None: return self.search()
             if value == 'mute': return self.backend.hotkey('volumemute')
-            if value == 'lock': return self.backend.hotkey('ctrl', 'command', 'q')
+            if value == 'lock':
+                if hasattr(self.backend, 'lock'): return self.backend.lock()
+                return self.backend.hotkey('ctrl', 'command', 'q')  # macOS lock screen
             raise ValueError(f'Unsupported system action: {value}')
         if kind == 'macro':
             for step in value:

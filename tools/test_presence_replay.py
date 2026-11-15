@@ -28,6 +28,46 @@ class PresenceReplayTests(unittest.TestCase):
         clock[0] += int(cfg.presence.owner_lost_ms)
         self.assertEqual(gate.can_act(), (False, "owner_left"))
 
+    def _hand(self, hand_id, wrist):
+        import numpy as np
+        lm = np.zeros((21, 3), np.float32)
+        lm[0, 0], lm[0, 1] = wrist
+        return SimpleNamespace(hand_id=hand_id, wrist=wrist, landmarks=lm)
+
+    def test_lenient_rejects_a_hand_reaching_in_from_outside_the_frame(self):
+        clock = [1000]
+        gate = Gate(clock=lambda: clock[0])
+        owner = Person(1, (0.5, 0.35), (), 0.25)      # owner centred, wrists not visible
+        gate.update((owner,), True, clock[0])
+        self.assertTrue(gate.on_arm(()))
+        with patch.dict(cfg.presence.__dict__, {"mode": "lenient"}):
+            self.assertEqual(gate.role_of(self._hand(1, (0.55, 0.7))), Role.OWNER)    # own hand, near
+            self.assertEqual(gate.role_of(self._hand(2, (1.25, 0.6))), Role.STRANGER)  # someone at the edge
+
+    def test_reach_uses_the_widest_recent_shoulders(self):
+        clock = [1000]
+        gate = Gate(clock=lambda: clock[0])
+        gate.update((Person(1, (0.5, 0.35), (), 0.25),), True, clock[0])
+        self.assertTrue(gate.on_arm(()))
+        clock[0] += 300
+        turned = Person(1, (0.5, 0.35), (), 0.08)      # owner turned sideways: shoulders look narrow
+        gate.update((turned,), True, clock[0])
+        with patch.dict(cfg.presence.__dict__, {"mode": "lenient"}):
+            self.assertEqual(gate.role_of(self._hand(1, (0.8, 0.7))), Role.OWNER)
+
+    def test_people_keep_their_id_through_a_short_dropout(self):
+        from zephyr.presence.people import PeopleTracker
+        point = lambda x, y: SimpleNamespace(x=x, y=y, visibility=1.0)
+        body = [point(0.3, 0.3) for _ in range(17)]
+        body[11], body[12] = point(0.2, 0.5), point(0.4, 0.5)
+        seen = SimpleNamespace(pose_landmarks=[body])
+        gone = SimpleNamespace(pose_landmarks=[])
+        faces = SimpleNamespace(face_landmarks=[], facial_transformation_matrixes=[])
+        tracker = PeopleTracker()
+        first = tracker.update(seen, faces, 1000)[0].person_id
+        tracker.update(gone, faces, 1500)
+        self.assertEqual(tracker.update(seen, faces, 2000)[0].person_id, first)  # 1 s gap
+
     def test_processor_publishes_owner_and_attention(self):
         import numpy as np
         point = lambda x, y: SimpleNamespace(x=x, y=y, visibility=1.0)

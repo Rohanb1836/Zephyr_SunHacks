@@ -59,6 +59,14 @@ def main() -> int:
     ap.add_argument("--clip", default=None, help="recorded clip to use instead of the camera")
     args = ap.parse_args()
 
+    # Windows consoles default to cp1252: one non-ASCII character in a log line ("…", "×")
+    # would raise UnicodeEncodeError inside whichever thread printed it.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
     load_dotenv()   # ANTHROPIC_API_KEY, AWS keys, SUPERMEMORY_API_KEY from .env (git-ignored)
 
     from zephyr.core.camera import FrameHub

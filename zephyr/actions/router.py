@@ -1,6 +1,7 @@
 """Route gesture, pointer, and level events without blocking the vision thread."""
 import logging
 import queue
+import sys
 import threading
 import time
 
@@ -8,13 +9,25 @@ from zephyr.bus import bus
 from zephyr.config import cfg
 from zephyr.contracts import ActionFired, ContextState, LevelValue, Role, SystemMode, T
 from zephyr.actions.frontapp import find_profile, front_app, load_profiles
-from zephyr.actions.mac import MacBackend
 from zephyr.actions.runner import ActionRunner
 from zephyr.actions.writing.flow import WritingFlow
 from zephyr.actions.writing.memory import WritingMemory
 from zephyr.tv.remote import tv_remote
 
 LOG = logging.getLogger(__name__)
+# Zephyr's own windows (settings, overlay) never count as the app in front
+OWN_APPS = ('python', 'python3', 'pythonw', 'zephyr')
+
+
+def make_backend():
+    """The OS backend for this computer: MacBackend on macOS, WindowsBackend on Windows."""
+    if sys.platform == 'darwin':
+        from zephyr.actions.mac import MacBackend
+        return MacBackend()
+    if sys.platform.startswith('win'):
+        from zephyr.actions.windows import WindowsBackend
+        return WindowsBackend()
+    raise RuntimeError(f'No action backend for {sys.platform}')
 
 
 class ActionRouter:
@@ -75,7 +88,8 @@ class ActionRouter:
         elif self.profile.get('id') == 'spotify':
             self.backend.hotkey('mod', 'k')
         else:
-            self.backend.hotkey('mod', 'space')
+            # Spotlight on macOS (mod+space); WindowsBackend sets launcher_keys to Win+S
+            self.backend.hotkey(*getattr(self.backend, 'launcher_keys', ('mod', 'space')))
         self.search_active = True
         self.writing.ready(self.app_label, 'search')
 
@@ -159,7 +173,7 @@ class ActionRouter:
             return
         try:
             app_id, label = front_app()
-            if not self.search_active and app_id and label.lower() not in ('python', 'python3', 'zephyr'):
+            if not self.search_active and app_id and label.lower() not in OWN_APPS:
                 self.app_id, self.app_label = app_id, label
                 self.profile = find_profile(app_id, self.profiles)
             ink = self.search_active or bool(self.profile.get('ink'))
@@ -276,5 +290,5 @@ _router = None
 def start_actions():
     global _router
     if _router is None:
-        _router = ActionRouter(bus, MacBackend()).start()
+        _router = ActionRouter(bus, make_backend()).start()
     return _router

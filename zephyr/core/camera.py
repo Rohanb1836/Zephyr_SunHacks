@@ -30,13 +30,26 @@ def _now_ms() -> int:
     return int(time.monotonic() * 1000)
 
 
-def _backend() -> int:
-    # Capture backend selection only (no OS actions). DirectShow opens fast on Windows; AVFoundation on macOS.
-    if sys.platform.startswith("win"):
-        return cv2.CAP_DSHOW
+if sys.platform.startswith("win"):
+    # MSMF's hardware transforms make opening the camera take several seconds on some laptops
+    os.environ.setdefault("OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS", "0")
+
+
+def _backends() -> list[int]:
+    """Capture backends to try, in order (no OS actions). camera.backend in config.yaml can force one.
+    Windows: Media Foundation first. DirectShow halves many laptop webcams to 15 fps in normal
+    room light (measured: MSMF 30 fps, DSHOW 15 fps on the same camera), and swipes need 30."""
+    names = {"msmf": cv2.CAP_MSMF, "dshow": cv2.CAP_DSHOW, "any": cv2.CAP_ANY}
     if sys.platform == "darwin":
-        return cv2.CAP_AVFOUNDATION
-    return cv2.CAP_ANY
+        names["avfoundation"] = cv2.CAP_AVFOUNDATION
+    forced = str(cfg.camera.get("backend", "auto")).lower()
+    if forced in names:
+        return [names[forced]]
+    if sys.platform.startswith("win"):
+        return [cv2.CAP_MSMF, cv2.CAP_DSHOW]
+    if sys.platform == "darwin":
+        return [cv2.CAP_AVFOUNDATION]
+    return [cv2.CAP_ANY]
 
 
 class FrameHub:
@@ -86,9 +99,13 @@ class FrameHub:
     # ---------- internals ----------
     def _open_live(self) -> bool:
         c = cfg.camera
-        cap = cv2.VideoCapture(int(c.index), _backend())
-        if not cap.isOpened():
+        cap = None
+        for api in _backends():
+            cap = cv2.VideoCapture(int(c.index), api)
+            if cap.isOpened():
+                break
             cap.release()
+        if cap is None or not cap.isOpened():
             cap = cv2.VideoCapture(int(c.index))      # fall back to the default backend
         if not cap.isOpened():
             if not self._warned:

@@ -20,6 +20,28 @@ Grant Camera, Accessibility, and Automation permissions to the terminal app used
 
 Useful options: `python run.py --no-ui`, `--no-presence`, `--log-actions`, or `--clip clips/example.mp4`. The app falls back to stubs when components are not yet available; a running app does not by itself prove the owner lock is active.
 
+## Setup on Windows
+
+Windows 10 or 11, Python 3.11 or 3.12, from the repository root in PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.venv\Scriptsctivate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python tools/get_models.py
+python run.py
+```
+
+No permission prompts are needed on Windows. Allow camera access for desktop apps in Settings > Privacy & security > Camera. Differences from the Mac:
+
+- Five-finger swipes switch **virtual desktops** (Win+Ctrl+Left/Right). Create them in Task View (Win+Tab) and put one app on each.
+- Palm hold outside Chrome and Spotify opens **Windows Search** (Win+S) instead of Spotlight.
+- Volume uses the Windows audio endpoint; brightness works on laptop panels and on monitors with DDC/CI.
+- Media gestures send the global media keys, so they control Spotify, browsers and other players.
+- The camera uses Media Foundation (30 fps). Set `camera.backend: dshow` in `config.yaml` if a webcam only works with DirectShow.
+- If `pip` reports `CERTIFICATE_VERIFY_FAILED` (a network or antivirus proxy), upgrade pip first; recent pip versions use the Windows certificate store.
+
 ## Intended gestures
 
 | Gesture | Action |
@@ -37,13 +59,15 @@ Useful options: `python run.py --no-ui`, `--no-presence`, `--log-actions`, or `-
 
 ## Test clips
 
-Record a mirrored clip on the Mac, then press a key in the preview to stop:
+Record a mirrored clip, then press a key in the preview to stop (or pass `--seconds 20`):
 
 ```bash
 python tools/record_clip.py swipe5_left_x10_ryan.mp4
 python tools/replay.py --width 1920 --height 1080
 python tools/replay.py --presence clips/two_person_stranger_ryan.mp4
 ```
+
+For a guided session, `python tools/live_check.py --name ryan` walks through every built-in gesture with on-screen instructions, counts what the engine detects live, saves each round as a clip for replay, and writes `clips/live_ryan.md`.
 
 Use the demo display's actual pixel dimensions. Clips go in `clips/` and are excluded from Git. The replay report is written to `tools/report.md`. The engine starts disarmed, so gesture clips must include the arm gesture before the repetitions; otherwise the gestures will not be evaluated. With `--presence`, replay runs the face and body models and the real gate in recorded time. The report lists guest grants, guest gestures, stranger observations, and suspensions; compare them with the clip's known actions, since an incorrect hand attribution cannot be detected from the reported role alone. Capture-to-event latency is unavailable during replay because video time and the computer's clock differ.
 
