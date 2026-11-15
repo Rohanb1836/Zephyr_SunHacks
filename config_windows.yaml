@@ -6,20 +6,23 @@
 # These values go with the Windows-tuned engine (zephyr/core_win, zephyr/presence_win). They were
 # measured on a Windows laptop webcam with tools/live_check.py and tools/tune.py.
 # Values that repeat an old config.yaml value are pinned here on purpose: config.yaml was loosened
-# for the Mac after this tuning, and Windows keeps the values it was measured with.
+# for the Mac after this tuning, and Windows keeps the values that were measured on clips (hand
+# confidence, swipe size, palm speed, fist tap travel, knob dead zone). Limits that only decide how
+# long an unclear moment is forgiven (looking away, hold grace, pointer hide, knob release) follow
+# config.yaml.
 
 camera:   {backend: auto}          # auto = Media Foundation (30 fps), then DirectShow (15 fps on many webcams)
 hands:    {swap_sides: false, det_conf: 0.6, track_conf: 0.6}      # tested on Windows: a right palm reads "right" without swapping
 tracker:  {dropout_ms: 450}        # keeps a hand's id through a swipe blurred out of the tracker
-pointer:  {deadband: 0.002, hide_after_ms: 300}        # the pointer holds still inside this radius
+pointer:  {deadband: 0.002}        # the pointer holds still inside this radius
 pinch:    {open_before_ms: 150, pen_open_before_ms: 60, click_max_ms: 1000, pen_start_travel_scales: 0.25,
            max_start_speed: 3.0, fist_grace_ms: 250,
            double_ms: 320}   # pinch twice within this = right click (measured: double 281 ms apart, single clicks 333 ms)
 swipe:    {min_travel_scales: 1.5, max_slope: 0.7, max_ms: 800, min_peak_speed: 4.0, refractory_ms: 800, opposite_block_ms: 1300,
            bridge_min_ms: 120, bridge_max_ms: 450,
            two_min_travel_scales: 1.2, two_min_peak_speed: 3.0}   # two-finger swipes are gentler (measured 0.8-1.4 wide)
-level:    {knob_dead_deg: 15, knob_max_step_deg: 60, release_ms: 250}
+level:    {knob_dead_deg: 15, knob_max_step_deg: 60}
 holds:    {palm_min_width: 0.5, after_pinch_ms: 400, fist_tap_slow_max_ms: 2500,
-           palm_max_speed: 0.8, grace_ms: 150, fist_tap_max_ms: 350, fist_tap_max_travel: 0.3, custom_agree: 0.8}
-presence: {pitch_deg: 28, reach_ratio: 2.5, reid_ms: 1500, face_lost_hold_ms: 1200, baseline_samples: 10,
-           yaw_deg: 25, away_ms: 400, owner_lost_ms: 2000}
+           palm_max_speed: 0.8, fist_tap_max_travel: 0.3, custom_agree: 0.8}
+presence: {reach_ratio: 2.5, reid_ms: 2000, face_lost_hold_ms: 1200, baseline_samples: 10,
+           pitch_deg: 35}   # looking away: the forgiving limits of config.yaml (yaw 40, held 1.2 s)

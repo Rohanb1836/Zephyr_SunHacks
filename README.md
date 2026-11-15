@@ -87,7 +87,7 @@ On Windows, `run.py` uses a copy of the engine tuned on Windows laptop webcams (
 - **Search:** the palm must face the camera flat; an edge-on hand never opens Search.
 - **Writing:** a pinch made while pointing stays a click until the hand moves; pinch and move writes.
 - **Volume / brightness:** the knob needs a 15 degree twist, and the left/right hand is judged by which side of your body it is on.
-- **Presence:** a hand passing in front of your face does not pause Zephyr; a hand must be within arm's reach of you to count as yours.
+- **Presence:** a hand passing in front of your face does not pause Zephyr; a hand must be within arm's reach of you to count as yours. Looking away pauses only after a clear head turn (about 40 degrees to the side, 35 up or down) held for about 1.2 seconds.
 
 ### Mac: forgiving limits
 
