@@ -9,11 +9,22 @@
 Every module fails soft: if it is missing or crashes on start, a stub takes its place.
 """
 import argparse
+import os
 import threading
 
 from dotenv import load_dotenv
 
 from zephyr.stubs import NullGate, NullMatcher, log_actions
+
+
+def _drop_opencv_qt_env() -> None:
+    """opencv-python ships its own Qt and, on import, points QT_QPA_PLATFORM_PLUGIN_PATH (and the
+    font dir) at it. PySide6 then loads the wrong platform plugin ("could not find the Qt platform
+    plugin cocoa"). Remove those settings before Qt starts, but only when they point inside cv2."""
+    for key in ("QT_QPA_PLATFORM_PLUGIN_PATH", "QT_QPA_FONTDIR", "QT_PLUGIN_PATH"):
+        val = os.environ.get(key, "")
+        if "cv2" in val.replace("\\", "/").split("/"):
+            os.environ.pop(key, None)
 
 
 def main() -> int:
@@ -58,6 +69,7 @@ def main() -> int:
     Engine(hub, gate, matcher).start()
 
     if not args.no_ui:
+        _drop_opencv_qt_env()
         try:
             from zephyr.ui.app import run_ui
         except Exception as exc:
