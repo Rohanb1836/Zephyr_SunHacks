@@ -10,6 +10,7 @@ Every module fails soft: if it is missing or crashes on start, a stub takes its 
 """
 import argparse
 import os
+import sys
 import threading
 
 from dotenv import load_dotenv
@@ -25,6 +26,29 @@ def _drop_opencv_qt_env() -> None:
         val = os.environ.get(key, "")
         if "cv2" in val.replace("\\", "/").split("/"):
             os.environ.pop(key, None)
+
+
+def _unhide_qt_plugins() -> None:
+    """macOS: Qt skips plugin files that carry the hidden flag (UF_HIDDEN), then fails with
+    'could not find the Qt platform plugin "cocoa" in ""'. Clear the flag on PySide6's plugins."""
+    if sys.platform != "darwin":
+        return
+    try:
+        import stat
+        from pathlib import Path
+
+        import PySide6
+        root = Path(PySide6.__file__).resolve().parent / "Qt" / "plugins"
+        fixed = 0
+        for path in [root, *root.rglob("*")]:
+            st = os.lstat(path)
+            if st.st_flags & stat.UF_HIDDEN:
+                os.chflags(path, st.st_flags & ~stat.UF_HIDDEN, follow_symlinks=False)
+                fixed += 1
+        if fixed:
+            print(f"[run] cleared the macOS hidden flag on {fixed} Qt plugin file(s)")
+    except Exception as exc:
+        print(f"[run] could not check Qt plugin flags: {exc!r}")
 
 
 def main() -> int:
@@ -70,6 +94,7 @@ def main() -> int:
 
     if not args.no_ui:
         _drop_opencv_qt_env()
+        _unhide_qt_plugins()
         try:
             from zephyr.ui.app import run_ui
         except Exception as exc:
