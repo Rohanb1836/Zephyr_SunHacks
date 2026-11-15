@@ -18,11 +18,13 @@ from PySide6.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QHBoxLayout, Q
                                QScrollArea, QStackedWidget, QVBoxLayout, QWidget)
 
 from zephyr.bus import bus
-from zephyr.contracts import ActionRequest, T
-from zephyr.custom import store
+from zephyr.contracts import ActionRequest, SystemMode, T
+from zephyr.custom import store, sync
 from zephyr.custom.matcher import Matcher
 from zephyr.ui.recorder import RecordPage
-from zephyr.ui.style import SMALL_BUTTON_H, STYLE, big_button, label
+from zephyr.ui.style import SMALL_BUTTON_H, STYLE, big_button, label, set_kind
+
+SYNC_KINDS = {"synced": "good", "offline": "warn", "syncing": "hint", "off": "hint"}
 
 # fallback until Rohan's actions.runner.describe_action_types() exists
 DEFAULT_ACTION_TYPES = [
@@ -127,6 +129,17 @@ class BindingRow(QFrame):
     def _test(self) -> None:
         spec = dict(self.binding.get("action", {}))
         bus.publish(T.ACTION_REQUEST, ActionRequest(spec=spec, source="settings_test"))
+        # the action router only runs actions while armed, so say why nothing happened
+        state = bus.latest(T.SYSTEM)
+        if state is None or state.mode is not SystemMode.ARMED:
+            self.btn_test.setText("Arm first")
+            QTimer.singleShot(2000, self._reset_test)
+
+    def _reset_test(self) -> None:
+        try:
+            self.btn_test.setText("Test")
+        except RuntimeError:
+            pass  # row was already removed
 
     def _delete(self) -> None:
         # two presses, so a stray pinch cannot delete a gesture
@@ -164,8 +177,20 @@ class ListPage(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(holder)
 
+        # cloud sync: a small status label and a big button (sync itself runs on its own thread)
+        self.sync_label = label("Sync off", "hint")
+        self.sync_label.setWordWrap(False)
+        self.sync_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.btn_sync = big_button("Sync now", height=SMALL_BUTTON_H)
+        self.btn_sync.setMaximumWidth(260)
+        self.btn_sync.clicked.connect(sync.sync_now)
+        self._sync_shown: Optional[tuple[str, str]] = None
+
         top = QHBoxLayout()
+        top.setSpacing(18)
         top.addWidget(title, 1)
+        top.addWidget(self.sync_label)
+        top.addWidget(self.btn_sync)
         self.btn_new.setMaximumWidth(420)
         top.addWidget(self.btn_new)
 
@@ -193,10 +218,20 @@ class ListPage(QWidget):
             self.rows_box.insertWidget(i, BindingRow(b, self._delete))
 
     def _delete(self, gid: str) -> None:
+        # store.delete_binding also starts a cloud push in the background
         if gid and store.delete_binding(gid):
             bus.publish(T.CUSTOM_RELOAD, None)
             self._on_changed()
         self.refresh()
+
+    def show_sync(self, state: str, text: str) -> None:
+        """"Synced 9:58 PM", "Offline: no AWS credentials", "Syncing…" or "Sync off"."""
+        if self._sync_shown == (state, text):
+            return
+        self._sync_shown = (state, text)
+        self.sync_label.setText(text)
+        set_kind(self.sync_label, SYNC_KINDS.get(state, "hint"))
+        self.btn_sync.setEnabled(state not in ("off", "syncing"))
 
 
 # ---------------------------------------------------------------- wizard pages
@@ -353,6 +388,26 @@ class SettingsWindow(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.addWidget(self.stack)
 
+        # a cloud pull lands as T.CUSTOM_RELOAD on the sync thread: only set a flag there,
+        # and pick it up (with the sync status) on this timer, on the Qt thread
+        self._reload_pending = False
+        bus.subscribe(T.CUSTOM_RELOAD, self._on_custom_reload)
+        self._poll = QTimer(self)
+        self._poll.timeout.connect(self._poll_tick)
+        self._poll.start(500)
+        self._poll_tick()
+
+    def _on_custom_reload(self, _msg) -> None:
+        self._reload_pending = True
+
+    def _poll_tick(self) -> None:
+        self.list_page.show_sync(*sync.status())
+        if self._reload_pending:
+            self._reload_pending = False
+            self.matcher.reload()
+            if self.stack.currentWidget() is self.list_page:
+                self.list_page.refresh()
+
     def showEvent(self, event) -> None:
         self.list_page.refresh()
         super().showEvent(event)
@@ -381,6 +436,7 @@ class SettingsWindow(QWidget):
         spec = self.action_page.spec()
         if spec is None or self._template is None:
             return
+        # add_binding also starts a cloud push in the background
         store.add_binding(self._name, self._template, self._threshold, spec,
                           scope=self.action_page.scope())
         bus.publish(T.CUSTOM_RELOAD, None)

@@ -68,6 +68,8 @@ class OwnerGate:
 
 
 def main() -> int:
+    from zephyr.custom import sync
+    sync.disable()  # local only: never touch the cloud from a test
     tmp = Path(tempfile.mkdtemp(prefix="zephyr_engine_check_"))
     store.DATA_DIR = tmp
     store.BINDINGS_PATH = tmp / "bindings.json"

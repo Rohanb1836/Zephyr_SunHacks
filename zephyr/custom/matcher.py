@@ -47,6 +47,13 @@ class Matcher:
         self._set = _Set([], [], np.empty((0, 63), np.float32), np.empty(0, np.float32),
                          np.empty(0, bool), np.empty(0, bool))
         self.reload()
+        # the first Matcher of a run (run.py makes it at startup) starts the one-time cloud
+        # pull on the sync thread; a newer cloud copy arrives as T.CUSTOM_RELOAD
+        try:
+            from zephyr.custom import sync
+            sync.pull_at_startup()
+        except Exception as exc:
+            print(f"[custom] cloud sync not started: {exc!r}")
 
     # ---- MatcherProtocol ----
 

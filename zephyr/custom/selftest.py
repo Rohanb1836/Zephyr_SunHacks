@@ -47,6 +47,8 @@ def fake_hand(world: np.ndarray, side: Side = Side.RIGHT, pose: Pose = Pose.UNKN
 
 
 def main() -> None:
+    from zephyr.custom import sync
+    sync.disable()  # local only: never touch the cloud from a test
     rng = np.random.default_rng(7)
     tmp = Path(tempfile.mkdtemp(prefix="zephyr_custom_test_"))
     store.DATA_DIR = tmp

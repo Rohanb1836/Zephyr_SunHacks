@@ -55,3 +55,12 @@ def label(text: str, kind: str = "") -> QLabel:
         lab.setObjectName(kind)
     lab.setWordWrap(True)
     return lab
+
+
+def set_kind(widget, kind: str) -> None:
+    """Switch a label's style (hint, good, warn, bad) and repaint it."""
+    if widget.objectName() == kind:
+        return
+    widget.setObjectName(kind)
+    widget.style().unpolish(widget)
+    widget.style().polish(widget)
