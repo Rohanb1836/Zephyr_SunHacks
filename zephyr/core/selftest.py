@@ -14,7 +14,7 @@ from zephyr.core.hands import RawHand
 from zephyr.core.engine import Engine
 
 def hand(kind="open", ox=0.5, oy=0.6, s=0.1, side=Side.RIGHT):
-    ext={"open":(1,1,1,1),"fist":(0,0,0,0),"point":(1,0,0,0),"two":(1,1,0,0),"rock":(1,0,0,1),"pinch":(1,1,1,1),"ppinch":(1,0,0,0)}[kind]
+    ext={"open":(1,1,1,1),"fist":(0,0,0,0),"point":(1,0,0,0),"two":(1,1,0,0),"rock":(1,0,0,1),"pinch":(1,1,1,1),"ppinch":(1,0,0,0),"lazy":(1,1,1,0)}[kind]
     thumb = kind in ("open","rock")
     lm=np.zeros((21,3),np.float32); lm[0]=[ox,oy,0]
     xs={5:-0.35,9:-0.1,13:0.15,17:0.38}
@@ -74,6 +74,44 @@ run(seq(6, lambda i:[hand("open",0.6-0.06*(i+1))]))
 run(seq(6, lambda i:[hand("open",0.24+0.06*(i+1))]))   # quick return
 report("swipe5 left fires once, return blocked", gestures()==["swipe5.left"])
 run(seq(30, lambda i:[])); clear()
+# 2b swipe with the pinky curled and the thumb tucked (pose is not OPEN) still counts as five fingers
+run(seq(4, lambda i:[hand("lazy",0.3)]))
+run(seq(6, lambda i:[hand("lazy",0.3+0.06*(i+1))]))
+report("swipe5 with curled pinky and tucked thumb", gestures()==["swipe5.right"])
+run(seq(40, lambda i:[])); clear()
+# 2c hand enters the picture already moving (no rest first)
+run(seq(7, lambda i:[hand("open",0.85-0.07*i)]))
+report("swipe5 from a hand that enters moving", gestures()==["swipe5.left"])
+run(seq(40, lambda i:[])); clear()
+# 2d blurred frames in the middle of the swipe: still one swipe, and no stray pinch tap
+blur=lambda i:[hand("ppinch" if i in (2,3) else "open",0.25+0.05*(i+1))]
+run(seq(4, lambda i:[hand("open",0.25)])); run(seq(9, blur))
+report("swipe5 through blurred frames, no pinch tap", gestures()==["swipe5.right"])
+run(seq(40, lambda i:[])); clear()
+# 2d2 the hand is lost mid-swipe (motion blur) and found again further along
+run(seq(4, lambda i:[hand("open",0.25)])); run(seq(2, lambda i:[hand("open",0.25+0.05*(i+1))]))
+run(seq(4, lambda i:[])); run(seq(3, lambda i:[hand("open",0.65+0.03*i)]))
+report("swipe5 survives losing the hand for a few frames", gestures()==["swipe5.right"])
+run(seq(40, lambda i:[])); clear()
+# 2e things that must NOT fire: slow drift, moving up, one bad frame
+run(seq(40, lambda i:[hand("open",0.3+0.008*i)]))
+report("slow sideways drift is not a swipe", "swipe5.right" not in gestures() and "swipe5.left" not in gestures())
+run(seq(40, lambda i:[])); clear()
+run(seq(4, lambda i:[hand("open",0.5,0.8)])); run(seq(6, lambda i:[hand("open",0.5,0.8-0.06*(i+1))]))
+report("moving the hand up is not a swipe", not [g for g in gestures() if g.startswith("swipe")])
+run(seq(40, lambda i:[])); clear()
+run(seq(6, lambda i:[hand("open",0.4)])); run([[hand("open",0.62)]]); run(seq(6, lambda i:[hand("open",0.4)]))
+report("one bad landmark frame is not a swipe", not [g for g in gestures() if g.startswith("swipe")])
+run(seq(40, lambda i:[])); clear()
+# 2f a relaxed pinky (about 140 degrees) still reads as an open hand
+def soft_pinky(raw):
+    lm = raw.landmarks.copy(); k = lm[17].copy(); s_ = 0.035
+    lm[18] = [k[0], k[1]-s_, 0]; lm[19] = [k[0]+0.35*s_, k[1]-1.75*s_, 0]; lm[20] = [k[0]+0.64*s_, k[1]-1.77*s_, 0]
+    return RawHand(lm, lm.copy(), raw.side, raw.score)
+run(seq(8, lambda i:[soft_pinky(hand("open",0.5))]))
+hf = bus.latest(T.HANDS)
+report("relaxed pinky still reads as an open hand", hf.hands and hf.hands[0].pose.value == "open")
+run(seq(40, lambda i:[])); clear()
 # 3 swipe2 right
 run(seq(8, lambda i:[hand("two",0.3)]))
 run(seq(6, lambda i:[hand("two",0.3+0.06*(i+1))]))

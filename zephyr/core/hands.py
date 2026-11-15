@@ -52,6 +52,12 @@ class HandDetector:
         if ts_ms <= self._last_ts:
             ts_ms = self._last_ts + 1
         self._last_ts = ts_ms
+        # big camera frames (many Macs give 1280x720 whatever we ask for) make tracking slow, and a
+        # slow frame rate is what loses fast swipes. Landmarks are normalized, so shrinking is free.
+        max_w = int(cfg.hands.get("infer_width", 640))
+        h, w = bgr.shape[:2]
+        if max_w and w > max_w:
+            bgr = cv2.resize(bgr, (max_w, int(h * max_w / w)), interpolation=cv2.INTER_AREA)
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         img = self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=rgb)
         res = self._lm.detect_for_video(img, ts_ms)

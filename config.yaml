@@ -5,16 +5,17 @@
 # ---------- [Aadharsh] core ----------
 camera:   {index: 0, width: 640, height: 480, fps: 30, mirror: true, reopen_after_fails: 30}
 hands:    {max_hands: 3, det_conf: 0.6, track_conf: 0.6, presence_conf: 0.5, swap_sides: false,
-           model: models/hand_landmarker.task, scale_ema: 0.3}
+           model: models/hand_landmarker.task, scale_ema: 0.3, infer_width: 640}
 poses:    {extend_deg: 155, curl_deg: 125, debounce_frames: 3, window: 5,
-           thumb_deg: 150, thumb_tip_scales: 0.6, unknown_min_score: 0.6, palm_sign: 1}
-tracker:  {max_jump_scales: 2.5, dropout_ms: 150}
+           thumb_deg: 150, thumb_tip_scales: 0.6, unknown_min_score: 0.6, palm_sign: 1,
+           pinky_extend_deg: 135, pinky_curl_deg: 105}
+tracker:  {max_jump_scales: 4.0, dropout_ms: 250}
 pointer:  {box: [0.25, 0.20, 0.75, 0.65], min_cutoff: 1.0, beta: 0.02, hide_after_ms: 300,
            show_frames: 3, park: [0.995, 0.995]}
 pinch:    {down: 0.25, up: 0.40, prefreeze: 0.50, tap_max_ms: 300, post_freeze_ms: 80}
 pen:      {min_cutoff: 1.5, beta: 0.02, ink_default: false}   # ink_default: pen works before Rohan publishes ContextState
-swipe:    {natural: true, min_travel_scales: 2.0, max_ms: 450, min_peak_speed: 6.0,
-           max_slope: 0.5, rest_speed: 1.0, refractory_ms: 600, opposite_block_ms: 700}
+swipe:    {natural: true, min_travel_scales: 1.5, max_ms: 600, min_peak_speed: 5.0, max_slope: 0.7,
+           open_ratio: 0.5, settle_speed: 2.0, busy_speed: 3.0, refractory_ms: 500, opposite_block_ms: 900}
 level:    {mode: knob, knob_gain: 1.0, knob_dead_deg: 8, knob_min_step: 0.5, knob_invert: false,
            knob_min_cutoff: 1.0, knob_beta: 0.05, engage_ms: 400, tick_ms: 100, release_ms: 150,
            dead_zone_scales: 0.4, min_rate: 10, max_rate: 60, gain: 40}   # mode: vertical = old up/down

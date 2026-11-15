@@ -7,7 +7,8 @@
     anything else with score above poses.unknown_min_score: UNKNOWN (custom gestures live here)
 
 Finger hysteresis: extended above poses.extend_deg, curled below poses.curl_deg, in between keep the
-previous state. Debounce: the published pose changes only when the new raw pose wins
+previous state. The pinky has its own looser pair (pinky_extend_deg, pinky_curl_deg) because a relaxed
+pinky is rarely straight. Debounce: the published pose changes only when the new raw pose wins
 debounce_frames of the last `window` frames. Until a hand has debounce_frames frames, publish NONE.
 """
 from __future__ import annotations
@@ -35,8 +36,10 @@ class PoseState:
     def update(self, lm: np.ndarray, world: np.ndarray, scale: float, score: float) -> Pose:
         p = cfg.poses
         ext, curl = float(p.extend_deg), float(p.curl_deg)
+        p_ext, p_curl = float(p.get("pinky_extend_deg", ext)), float(p.get("pinky_curl_deg", curl))
         for i, ang in enumerate(F.finger_angles(world)):
             prev = self.fingers[i]
+            ext, curl = (p_ext, p_curl) if i == 3 else (float(p.extend_deg), float(p.curl_deg))
             if ang > ext:
                 self.fingers[i] = True
             elif ang < curl:

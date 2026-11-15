@@ -131,7 +131,8 @@ def hand_colour(hand, mode: SystemMode, t: int) -> QColor:
 def _extended(hand) -> tuple[bool, list[bool]]:
     p = cfg.poses
     mid = (float(p.extend_deg) + float(p.curl_deg)) / 2
-    fingers = [a > mid for a in F.finger_angles(hand.world)]
+    pinky_mid = (float(p.get("pinky_extend_deg", p.extend_deg)) + float(p.get("pinky_curl_deg", p.curl_deg))) / 2
+    fingers = [a > (pinky_mid if i == 3 else mid) for i, a in enumerate(F.finger_angles(hand.world))]
     thumb = F.thumb_extended(hand.landmarks, hand.world, hand.scale, float(p.thumb_deg), float(p.thumb_tip_scales))
     return thumb, fingers
 

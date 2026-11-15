@@ -29,7 +29,7 @@ from zephyr.core import features as F
 from zephyr.core import holds, levels, pointer, strokes
 from zephyr.core.handctx import (FIST_PENDING, HOLD_CUSTOM, HOLD_PALM, IDLE, LEVEL, PEN, PINCHING,
                                  POINTER, HandCtx)
-from zephyr.core.swipes import SwipeDetector
+from zephyr.core.swipes import SwipeDetector, finger_class
 from zephyr.core.tracker import HandTracker
 from zephyr.stubs import NullGate, NullMatcher
 
@@ -174,6 +174,7 @@ class Engine:
             ctx.ts = ts
             tr = self.tracker.tracks.get(h.hand_id)
             ctx.raw_pose = tr.poses.raw if tr is not None else h.pose
+            ctx.swipe_cls = finger_class(tr.poses.fingers) if tr is not None else 0
             ctx.cx, ctx.cy = F.palm_centre(h.landmarks)
             ctx.scale = h.scale
             ctx.facing = F.palm_facing(h.landmarks, h.side, sign)
@@ -329,12 +330,14 @@ class Engine:
 
         # IDLE: try to start something, in priority order
         pose = ctx.hand.pose
-        if pose is Pose.FIST:
+        # a hand flying sideways is swiping: blurred frames must not start a fist or a pinch
+        fast = ctx.speed > float(cfg.swipe.get("busy_speed", 3.0))
+        if pose is Pose.FIST and not fast:
             ctx.pt_frames = 0
             levels.start(self, ctx)
             levels.step(self, ctx)
             return
-        if pointer.pinch_is_down(ctx):
+        if not fast and pointer.pinch_is_down(ctx):
             pointer.start_pinch(self, ctx, from_pointer=False)
             return
         if pointer.idle_point(self, ctx):
