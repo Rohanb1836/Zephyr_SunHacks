@@ -50,12 +50,12 @@ No permission prompts are needed on Windows. Allow camera access for desktop app
 | --- | --- |
 | Both palms up, held 1 second | Turn Zephyr on, or pause it |
 | Open-hand swipe left / right | Next / previous desktop |
-| Fist, then open (held up to about 2 seconds, without twisting) | Play / pause |
+| Quick fist, then open | Play / pause |
 | Right fist held, then twisted | Volume (twist right raises, left lowers) |
 | Left fist held, then twisted | Brightness (same directions) |
 | One finger up | Pointer appears and follows your hand |
-| Pinch while pointing, release within 1 second | Click |
-| One open palm, flat to the camera, held still about 1 second | Search |
+| Pinch while pointing | Click |
+| Open palm held still, about 1 second | Search |
 
 ### Two-finger swipe left / right, by app
 
@@ -71,13 +71,23 @@ Stranger hands are ignored. Looking away pauses everything (a hand passing in fr
 
 ### Getting reliable gestures
 
-These come from recorded test sessions on a laptop webcam:
+These come from recorded test sessions on a laptop webcam, and apply on any computer:
 
 - **Light on your face, not behind you.** A bright window behind you makes the camera use a slow shutter; fast swipes then blur and the hand tracker loses them.
-- **Sit 60 to 80 cm back** and gesture at chest to face height, where the camera can see your hands. Closer than that, a swipe crosses the whole picture in a blur.
-- **Swipes:** a firm sideways movement with the hand facing the camera, then a slower return. A slow wind-up followed by a fast return reads as a swipe the other way.
-- **Palm hold:** show the palm flat to the camera. An edge-on hand never opens Search (this is what stopped accidental searches).
-- **Click:** point, keep the hand still, pinch and let go. Pinches made while the hand is moving fast are ignored.
+- **Sit 60 to 80 cm back** and gesture at chest to face height, where the camera can see your hands.
+- **Swipes:** a firm sideways movement of the arm with the hand facing the camera and fingers up, then a slower return.
+- **Both palms:** raise them together; one palm held up alone for about a second opens Search first.
+
+### Windows: tuned engine
+
+On Windows, `run.py` uses a copy of the engine tuned on Windows laptop webcams (`zephyr/core_win`, `zephyr/presence_win`, settings in `config_windows.yaml`). The Mac runs `zephyr/core` and `zephyr/presence` unchanged and never reads `config_windows.yaml`. On Windows:
+
+- **Click:** a pinch while pointing counts if released within about 1 second, and not while the hand is moving fast.
+- **Play / pause:** a fist held up to about 2 seconds without twisting, then opened.
+- **Search:** the palm must face the camera flat; an edge-on hand never opens Search.
+- **Writing:** a pinch made while pointing stays a click until the hand moves; pinch and move writes.
+- **Volume / brightness:** the knob needs a 15 degree twist, and the left/right hand is judged by which side of your body it is on.
+- **Presence:** a hand passing in front of your face does not pause Zephyr; a hand must be within arm's reach of you to count as yours.
 
 ## Test clips
 

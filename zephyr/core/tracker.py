@@ -67,9 +67,6 @@ class HandTracker:
                 d = dist2d(r.landmarks[0], t.lm[0]) / max(t.scale, 1e-4)
                 if d > max_jump:
                     continue
-                if not t.visible and r.side is not t.side:
-                    continue    # a lost hand is only picked up again by a hand of the same side
-                                # (the other hand appearing where it vanished must not inherit it)
                 cost = d + (0.0 if r.side is t.side else 0.75)
                 cands.append((cost, di, tid))
         cands.sort()

@@ -43,12 +43,6 @@ def palm_centre(lm: np.ndarray) -> tuple[float, float]:
     return float(pts[:, 0].mean()), float(pts[:, 1].mean())
 
 
-def palm_width(lm: np.ndarray, scale: float) -> float:
-    """Index knuckle to pinky knuckle across the image, in hand scales. About 0.7 when the palm faces
-    the camera square on; well under 0.4 when the hand is edge-on or tilted away."""
-    return dist2d(lm[5], lm[17]) / max(scale, 1e-4)
-
-
 def thumb_extended(lm: np.ndarray, world: np.ndarray, scale: float, thumb_deg: float, tip_scales: float) -> bool:
     return joint_angle(world, 2, 3, 4) > thumb_deg and dist2d(lm[4], lm[5]) / max(scale, 1e-4) > tip_scales
 

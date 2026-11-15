@@ -11,7 +11,7 @@ import cv2
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from zephyr.config import cfg
-from zephyr.core.camera import _backends
+from zephyr.core_win.camera import _backends
 
 
 def open_camera() -> cv2.VideoCapture | None:

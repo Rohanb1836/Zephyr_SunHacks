@@ -18,8 +18,8 @@ sys.path.insert(0, str(ROOT))
 from zephyr.bus import bus  # noqa: E402
 from zephyr.config import cfg  # noqa: E402
 from zephyr.contracts import ContextState, Role, Side, SystemMode, T, WriteState  # noqa: E402
-from zephyr.core.engine import Engine  # noqa: E402
-from zephyr.core.hands import RawHand  # noqa: E402
+from zephyr.core_win.engine import Engine  # noqa: E402
+from zephyr.core_win.hands import RawHand  # noqa: E402
 
 FINGERS = {"open": (1, 1, 1, 1), "fist": (0, 0, 0, 0), "point": (1, 0, 0, 0), "ppinch": (1, 0, 0, 0),
            "two": (1, 1, 0, 0), "tpinch": (1, 1, 0, 0)}

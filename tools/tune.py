@@ -48,7 +48,7 @@ GRID = {
 def detections(clip: Path):
     """[(ts_ms, [RawHand])] for every frame, cached next to the clip."""
     import cv2
-    from zephyr.core.hands import HandDetector
+    from zephyr.core_win.hands import HandDetector
     CACHE.mkdir(exist_ok=True)
     cached = CACHE / (clip.stem + ".pkl")
     if cached.exists() and cached.stat().st_mtime >= clip.stat().st_mtime:
@@ -89,8 +89,8 @@ bus.subscribe(T.GESTURE, lambda e: _events.append(e.key))
 
 
 def replay(frames) -> Counter:
-    from zephyr.core.engine import Engine
-    from zephyr.core import swipes
+    from zephyr.core_win.engine import Engine
+    from zephyr.core_win import swipes
     _events.clear()
     eng = Engine(hub=None, gate=_Owner(), detector=None)
     eng.swipes = swipes.SwipeDetector()

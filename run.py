@@ -69,8 +69,14 @@ def main() -> int:
 
     load_dotenv()   # ANTHROPIC_API_KEY, AWS keys, SUPERMEMORY_API_KEY from .env (git-ignored)
 
-    from zephyr.core.camera import FrameHub
-    from zephyr.core.engine import Engine
+    if sys.platform.startswith("win"):
+        # Windows runs the engine tuned on Windows webcams (zephyr/core_win, zephyr/presence_win,
+        # config_windows.yaml). The Mac runs zephyr/core and zephyr/presence, unchanged.
+        from zephyr.core_win.camera import FrameHub
+        from zephyr.core_win.engine import Engine
+    else:
+        from zephyr.core.camera import FrameHub
+        from zephyr.core.engine import Engine
 
     hub = FrameHub(clip=args.clip)
     hub.start()    # opens the camera here, on the main thread, before Qt starts
@@ -78,7 +84,10 @@ def main() -> int:
     gate, matcher = NullGate(), NullMatcher()
     if not args.no_presence:
         try:
-            from zephyr.presence.thread import start_presence
+            if sys.platform.startswith("win"):
+                from zephyr.presence_win.thread import start_presence
+            else:
+                from zephyr.presence.thread import start_presence
             gate = start_presence(hub)
         except Exception as exc:
             print("[run] presence not available, using NullGate:", repr(exc))

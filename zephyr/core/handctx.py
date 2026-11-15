@@ -29,7 +29,6 @@ class HandCtx:
         self.cy = 0.0
         self.scale = 0.1
         self.facing = False     # palm faces the camera
-        self.body_side = None   # the user's real left or right hand (engine.body_side)
         self.speed = 0.0        # palm speed, scales per second (about 100 ms window)
         self.raw_pose = None    # this frame's undebounced pose (the published pose lags a few frames)
         self.fingers = None     # this frame's (index, middle, ring, pinky) extended flags
@@ -38,10 +37,6 @@ class HandCtx:
         self.swipe_cls = 0      # this frame: 5 = open-hand swipe shape, 2 = two-finger, 0 = neither
         self.swipe_settle = False   # after a swipe: wait for the hand to slow down
         self.swipe_cut = -1         # swipe detector ignores history up to this timestamp
-        self.open_since: Optional[int] = None   # thumb and index clearly apart since (pinch > pinch.up)
-        self.open_span = 0          # length of the latest clearly-apart run, ms
-        self.pinch_end_at = -10**9  # when the last pinch let go
-        self.pinch_cx0 = self.pinch_cy0 = 0.0   # palm centre when the pinch closed
         self.reset()
 
     def reset(self) -> None:
@@ -62,7 +57,6 @@ class HandCtx:
         self.knob_a0 = 0.0
         self.knob_sent = 0.0
         self.knob_twist = 0.0
-        self.lvl_moved = False      # the knob changed the level at least once
         # pointer
         self.pt_frames = 0
         self.pt_last_point: Optional[int] = None

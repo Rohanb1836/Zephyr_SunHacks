@@ -12,6 +12,7 @@ variable at import time, so a reload takes effect without a restart.
 from __future__ import annotations
 
 import os
+import sys
 import threading
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,9 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = Path(os.environ.get("ZEPHYR_CONFIG", ROOT / "config.yaml"))
+# Windows only: config_windows.yaml is laid over config.yaml (key by key). The Mac never reads it.
+IS_WINDOWS = sys.platform.startswith("win")
+WINDOWS_PATH = Path(os.environ.get("ZEPHYR_WINDOWS_CONFIG", ROOT / "config_windows.yaml"))
 
 
 class Section:
@@ -52,7 +56,24 @@ _mtime = 0.0
 
 def _read() -> dict[str, Any]:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        data = yaml.safe_load(f) or {}
+    if IS_WINDOWS and WINDOWS_PATH.exists():
+        with open(WINDOWS_PATH, "r", encoding="utf-8") as f:
+            extra = yaml.safe_load(f) or {}
+        for section, values in extra.items():
+            if isinstance(values, dict) and isinstance(data.get(section), dict):
+                data[section] = {**data[section], **values}
+            else:
+                data[section] = values
+    return data
+
+
+def _stamp() -> float:
+    """When the config last changed on disk (on Windows, either file)."""
+    m = CONFIG_PATH.stat().st_mtime
+    if IS_WINDOWS and WINDOWS_PATH.exists():
+        m = max(m, WINDOWS_PATH.stat().st_mtime)
+    return m
 
 
 cfg = Section({})
@@ -65,7 +86,7 @@ def reload() -> bool:
     with _lock:
         try:
             data = _read()
-            _mtime = CONFIG_PATH.stat().st_mtime
+            _mtime = _stamp()
         except Exception as exc:
             print(f"[config] reload failed, keeping old values: {exc!r}")
             return False
@@ -76,7 +97,7 @@ def reload() -> bool:
 def maybe_reload() -> bool:
     """Reload only if the file changed on disk. Returns True when it reloaded."""
     try:
-        m = CONFIG_PATH.stat().st_mtime
+        m = _stamp()
     except OSError:
         return False
     if m != _mtime:

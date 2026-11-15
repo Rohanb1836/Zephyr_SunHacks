@@ -88,8 +88,8 @@ class ArmedGate:
 
 
 def run(name: str, only: list[str], screen_w: int, screen_h: int) -> int:
-    from zephyr.core.camera import FrameHub
-    from zephyr.core.engine import Engine
+    from zephyr.core_win.camera import FrameHub
+    from zephyr.core_win.engine import Engine
 
     events: list[tuple[int, str]] = []
     pointer: list[tuple[int, float, float]] = []

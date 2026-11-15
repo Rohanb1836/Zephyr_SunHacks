@@ -23,30 +23,12 @@ class Gate:
         self.attentive = False
         self.cache = {}
         self.enrolment = 0
-        self.widths = {}   # person_id -> (largest recent shoulder width, time seen)
-
-    def _reach(self, person):
-        """Furthest a wrist of this person can be from their nose in the image. Uses the widest
-        shoulders seen in the last few seconds: turning sideways shrinks the 2D shoulder width,
-        and that must not make the owner's own hand look out of reach."""
-        width = max(person.shoulder_width, self.widths.get(person.person_id, (0.0, 0))[0])
-        return float(cfg.presence.get("reach_ratio", 2.5)) * width
-
-    def _within_reach(self, hand, person):
-        return dist2d(hand.wrist, person.nose) <= self._reach(person)
 
     def update(self, people, attentive, now):
         with self.lock:
             if len(self.people) < 2 <= len(people):
                 self.cache.clear()
             self.people = tuple(people)
-            for p in people:
-                old, seen = self.widths.get(p.person_id, (0.0, now))
-                # the remembered maximum fades by 10 percent a second, so a wrong large value heals
-                old *= 0.9 ** max(0.0, (now - seen) / 1000)
-                self.widths[p.person_id] = (max(p.shoulder_width, old), now)
-            for pid in [pid for pid, (_, seen) in self.widths.items() if now - seen > 10000]:
-                del self.widths[pid]
             ids = {p.person_id for p in people}
             if self.owner_id in ids:
                 self.owner_seen = now
@@ -68,19 +50,13 @@ class Gate:
                 return Role.STRANGER
             controller = self.guest_id if self.guest_id is not None else self.owner_id
             if cfg.presence.mode == "lenient" and len(self.people) == 1 and self.people[0].person_id == controller:
-                # one body in view: accept its hands without needing visible body wrists, but only
-                # within arm's reach. A second person reaching in from outside the frame has no
-                # detected body, and their hand is too far from the owner's nose to be the owner's.
-                if not self._within_reach(hand, self.people[0]):
-                    return Role.STRANGER
                 role = Role.GUEST if self.guest_id is not None else Role.OWNER
                 self.cache[hand.hand_id] = (role, self.clock())
                 return role
             candidates = [(dist2d(hand.wrist, wrist), p) for p in self.people for wrist in p.wrists]
             if candidates:
                 distance, person = min(candidates, key=lambda item: item[0])
-                if distance < float(cfg.presence.attach_ratio) * person.shoulder_width and \
-                        self._within_reach(hand, person):
+                if distance < float(cfg.presence.attach_ratio) * person.shoulder_width:
                     role = (Role.OWNER if person.person_id == self.owner_id else
                             Role.GUEST if person.person_id == self.guest_id else Role.STRANGER)
                     self.cache[hand.hand_id] = (role, self.clock())
@@ -98,12 +74,7 @@ class Gate:
                 self.on_disarm()
                 return False, "owner_left"
             controller = self.guest_id if self.guest_id is not None else self.owner_id
-            # A body missing for a frame or two is a detector dropout, not someone leaving:
-            # only count it once it has been gone for away_ms.
-            seen = self.guest_seen if self.guest_id is not None else self.owner_seen
-            present = any(p.person_id == controller for p in self.people) or \
-                self.clock() - seen < int(cfg.presence.away_ms)
-            if not present or not self.attentive:
+            if not any(p.person_id == controller for p in self.people) or not self.attentive:
                 return False, "looking_away"
             return True, "ok"
 

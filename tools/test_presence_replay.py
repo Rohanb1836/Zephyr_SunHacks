@@ -10,9 +10,9 @@ sys.path.insert(0, str(ROOT))
 
 from zephyr.config import cfg
 from zephyr.contracts import Role, SystemMode
-from zephyr.presence.gate import Gate
-from zephyr.presence.people import Person
-from zephyr.presence.thread import PresenceProcessor
+from zephyr.presence_win.gate import Gate
+from zephyr.presence_win.people import Person
+from zephyr.presence_win.thread import PresenceProcessor
 
 
 class PresenceReplayTests(unittest.TestCase):
@@ -56,7 +56,7 @@ class PresenceReplayTests(unittest.TestCase):
             self.assertEqual(gate.role_of(self._hand(1, (0.8, 0.7))), Role.OWNER)
 
     def test_people_keep_their_id_through_a_short_dropout(self):
-        from zephyr.presence.people import PeopleTracker
+        from zephyr.presence_win.people import PeopleTracker
         point = lambda x, y: SimpleNamespace(x=x, y=y, visibility=1.0)
         body = [point(0.3, 0.3) for _ in range(17)]
         body[11], body[12] = point(0.2, 0.5), point(0.4, 0.5)
@@ -70,7 +70,7 @@ class PresenceReplayTests(unittest.TestCase):
 
     def test_a_hand_over_the_face_is_not_looking_away(self):
         import numpy as np
-        from zephyr.presence.attention import Attention
+        from zephyr.presence_win.attention import Attention
         att = Attention()
         facing = Person(1, (0.5, 0.35), (), 0.25, np.eye(4), None)
         hidden = Person(1, (0.5, 0.35), (), 0.25, None, None)   # body seen, face covered

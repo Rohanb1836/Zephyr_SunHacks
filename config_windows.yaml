@@ -1,0 +1,19 @@
+# config_windows.yaml    Windows only. Owner: Ryan.
+# Loaded on top of config.yaml only when Zephyr runs on Windows (zephyr/config.py). The Mac never
+# reads this file, so nothing here changes the Mac. Each key replaces the same key in config.yaml;
+# keys not listed keep their config.yaml value.
+#
+# These values go with the Windows-tuned engine (zephyr/core_win, zephyr/presence_win). They were
+# measured on a Windows laptop webcam with tools/live_check.py and tools/tune.py.
+
+camera:   {backend: auto}          # auto = Media Foundation (30 fps), then DirectShow (15 fps on many webcams)
+hands:    {swap_sides: false}      # tested on Windows: a right palm reads "right" without swapping
+tracker:  {dropout_ms: 450}        # keeps a hand's id through a swipe blurred out of the tracker
+pointer:  {deadband: 0.002}        # the pointer holds still inside this radius
+pinch:    {open_before_ms: 150, pen_open_before_ms: 60, click_max_ms: 1000, pen_start_travel_scales: 0.25,
+           max_start_speed: 3.0, fist_grace_ms: 250}
+swipe:    {max_ms: 800, min_peak_speed: 4.0, refractory_ms: 800, opposite_block_ms: 1300,
+           bridge_min_ms: 120, bridge_max_ms: 450}
+level:    {knob_dead_deg: 15, knob_max_step_deg: 60}
+holds:    {palm_min_width: 0.5, after_pinch_ms: 400, fist_tap_slow_max_ms: 2500}
+presence: {pitch_deg: 28, reach_ratio: 2.5, reid_ms: 1500, face_lost_hold_ms: 1200, baseline_samples: 10}
