@@ -175,11 +175,15 @@ class Engine:
             tr = self.tracker.tracks.get(h.hand_id)
             ctx.raw_pose = tr.poses.raw if tr is not None else h.pose
             ctx.swipe_cls = finger_class(tr.poses.fingers) if tr is not None else 0
+            ctx.fingers = tuple(tr.poses.fingers) if tr is not None else None
             ctx.cx, ctx.cy = F.palm_centre(h.landmarks)
             ctx.scale = h.scale
             ctx.facing = F.palm_facing(h.landmarks, h.side, sign)
             ctx.push_hist(HIST_KEEP_MS)
+            if ctx.state not in (IDLE, HOLD_PALM, HOLD_CUSTOM):
+                ctx.swipe_cut = ts      # movement made while pointing, writing or turning a knob is never a swipe
             ctx.speed = ctx.compute_speed(100)
+            ctx.still_speed = ctx.compute_speed(int(cfg.holds.get("still_window_ms", 300)))
             if h.pose is not Pose.OPEN:
                 ctx.palm_fired = False
             if h.pose is not Pose.UNKNOWN:
@@ -320,7 +324,7 @@ class Engine:
             sw = self.swipes.check(ctx)
             if sw:
                 holds.palm_cancel(self, ctx)
-                self.gesture(GestureKind.SWIPE, ctx, direction=sw[0], fingers=sw[1])
+                self._swiped(ctx, sw)
                 return
             if holds.palm_step(self, ctx, n_open, both_active):
                 return
@@ -344,13 +348,19 @@ class Engine:
             return
         sw = self.swipes.check(ctx)
         if sw:
-            self.gesture(GestureKind.SWIPE, ctx, direction=sw[0], fingers=sw[1])
+            self._swiped(ctx, sw)
             return
         if holds.palm_can_start(ctx, n_open, both_active):
             holds.palm_start(self, ctx)
             holds.palm_step(self, ctx, n_open, both_active)
             return
         holds.custom_try_start(self, ctx)
+
+    def _swiped(self, ctx: HandCtx, sw: tuple[str, int]) -> None:
+        self.gesture(GestureKind.SWIPE, ctx, direction=sw[0], fingers=sw[1])
+        # a hand that just swiped and is left hanging in the air must not open Search
+        ctx.palm_fired = True
+        ctx.palm_block_until = ctx.ts + int(cfg.holds.get("after_swipe_ms", 1200))
 
     # ---------------- cancelling ----------------
     def _cancel_ctx(self, ctx: HandCtx) -> None:

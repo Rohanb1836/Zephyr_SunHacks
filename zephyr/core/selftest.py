@@ -161,7 +161,7 @@ report("vertical mode: fist up raises volume", lv and lv[-1].active is False and
 cfg.level.__dict__["mode"]="knob"
 run(seq(30, lambda i:[])); clear()
 # 6 palm hold
-run(seq(25, lambda i:[hand("open",0.5)]))
+run(seq(40, lambda i:[hand("open",0.5)]))
 report("palm hold fires once", gestures()==["palm_hold"])
 run(seq(30, lambda i:[])); clear()
 # 7 pointer + pinch tap
@@ -176,13 +176,64 @@ report("pointer hides when hand gone", ptr[-1].visible is False)
 clear()
 # 8 pen
 cfg.pen.__dict__["ink_default"]=True
-run(seq(4, lambda i:[hand("open",0.5)]))
+run(seq(4, lambda i:[hand("open",0.4)]))
 run(seq(25, lambda i:[hand("pinch",0.4+0.005*i)]))
-run(seq(4, lambda i:[hand("open",0.6)]))
+run(seq(4, lambda i:[hand("open",0.52)]))
 st=[m.phase for top,m in ev if top==T.STROKE]
 report("pen stroke begin/points/end, no tap", st and st[0]=="begin" and st[-1]=="end" and st.count("point")>=20 and "pinch_tap" not in gestures())
+# a fast writing stroke with the other fingers spread must not turn into a swipe (a swipe cancels writing)
+run(seq(8, lambda i:[hand("pinch",0.52-0.03*i)])); run(seq(12, lambda i:[hand("pinch",0.28+0.04*i)])); run(seq(6, lambda i:[hand("open",0.76)]))
+report("fast pen stroke is not a swipe", not [g for g in gestures() if g.startswith("swipe")])
 cfg.pen.__dict__["ink_default"]=False
 run(seq(30, lambda i:[])); clear()
+# 8b accuracy cases found by probing with imperfect hands
+rng = np.random.default_rng(1)
+def bend(raw, finger, deg):
+    lm = raw.landmarks.copy(); k = (5, 9, 13, 17)[finger]; s_ = 0.035; th = np.radians(deg)
+    lm[k+1] = [lm[k][0], lm[k][1]-s_, 0]
+    d = np.array([np.sin(th), np.cos(th)]) * s_
+    lm[k+2] = [lm[k+1][0]+d[0]*0.5, lm[k+1][1]+d[1]*0.5, 0]; lm[k+3] = [lm[k+1][0]+d[0], lm[k+1][1]+d[1], 0]
+    return RawHand(lm, lm.copy(), raw.side, raw.score)
+def thumb_in(raw):
+    lm = raw.landmarks.copy(); lm[3] = (lm[2]+lm[5])/2; lm[4] = lm[5]+np.array([0.01, 0.02, 0], np.float32)
+    return RawHand(lm, lm.copy(), raw.side, raw.score)
+def jitter(raw, px):
+    lm = raw.landmarks.copy(); lm[:, :2] += rng.normal(0, px/480, (21, 2)).astype(np.float32)
+    return RawHand(lm, raw.world, raw.side, raw.score)
+def pose_now(): return [h.pose.value for h in bus.latest(T.HANDS).hands]
+def rest(): run(seq(40, lambda i:[])); clear()
+rest()
+run(seq(8, lambda i:[hand("open")])); run(seq(10, lambda i:[bend(hand("point"), 3, 115)])); a = pose_now()
+run(seq(8, lambda i:[hand("open")])); run(seq(10, lambda i:[bend(hand("fist"), 3, 115)]))
+report("loosely curled pinky still reads as point and fist", a == ["point"] and pose_now() == ["fist"]); rest()
+run(seq(4, lambda i:[hand("open",0.3)])); run(seq(6, lambda i:[hand("open",0.3+0.06*(i+1))])); run(seq(45, lambda i:[hand("open",0.66)]))
+report("one swipe, hand left hanging: no second swipe, no search", gestures()==["swipe5.right"]); rest()
+run(seq(70, lambda i:[jitter(hand("open", s=0.06), 1.5)]))
+report("palm hold works on a far, jittery hand", gestures()==["palm_hold"]); rest()
+run(seq(50, lambda i:[thumb_in(hand("open"))]))
+report("palm hold works with the thumb resting", gestures()==["palm_hold"]); rest()
+run(seq(21, lambda i:[hand("open",0.3)]))
+report("a 0.7 s pause before swiping does not open search", not gestures()); rest()
+run(seq(14, lambda i:[hand("fist")])); run(seq(10, lambda i:[rot(hand("fist"), 2.5*(i+1))]))
+pop = lambda deg: RawHand(rot(bend(hand("fist"), 3, 170), deg).landmarks, bend(hand("fist"), 3, 170).world, Side.RIGHT, .95)
+run(seq(6, lambda i:[pop(25)])); run(seq(10, lambda i:[rot(hand("fist"), 25+2.5*(i+1))])); run(seq(8, lambda i:[rot(hand("fist"), 50)]))
+lv = [m for top,m in ev if top==T.LEVEL]
+report("knob keeps its grip when the pinky pops out", lv and all(m.active for m in lv) and 35 < sum(m.delta for m in lv) < 45)
+run(seq(10, lambda i:[hand("open")])); rest()
+run(seq(10, lambda i:[hand("point")])); run(seq(5, lambda i:[hand("fist")])); run(seq(6, lambda i:[hand("point")]))
+report("pointer survives the index dipping (reads as fist) for a moment", not gestures() and all(p.visible for p in ptr) and not [1 for top,m in ev if top==T.LEVEL]); rest()
+run(seq(10, lambda i:[hand("point")])); run(seq(30, lambda i:[hand("fist")])); run(seq(20, lambda i:[rot(hand("fist"), 2*(i+1))]))
+report("a real fist after pointing still becomes the knob", [m for top,m in ev if top==T.LEVEL] and ptr[-1].visible is False)
+run(seq(10, lambda i:[hand("open")])); rest()
+# both palms: dropouts, resting thumbs, and no search afterwards
+m0 = eng.mode.value
+run(seq(60, lambda i:[thumb_in(hand("open",0.3,side=Side.LEFT))] + ([] if i%12 in (5,6) else [thumb_in(hand("open",0.7))])))
+report("both palms works with resting thumbs and a flickering hand", eng.mode.value != m0)
+run(seq(30, lambda i:[hand("open",0.7)]))
+report("a palm lingering after both palms does not open search", "palm_hold" not in gestures()); rest()
+if eng.mode.value == "disarmed":
+    run(seq(40, lambda i:[hand("open",0.3,side=Side.LEFT), hand("open",0.7)])); rest()
+report("armed again for the remaining tests", eng.mode.value == "armed")
 # 9 stranger
 g.role=Role.STRANGER
 run(seq(25, lambda i:[hand("open",0.5)])); run(seq(14, lambda i:[hand("fist",0.5)]))

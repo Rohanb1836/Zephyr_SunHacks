@@ -8,7 +8,7 @@ hands:    {max_hands: 3, det_conf: 0.6, track_conf: 0.6, presence_conf: 0.5, swa
            model: models/hand_landmarker.task, scale_ema: 0.3, infer_width: 640}
 poses:    {extend_deg: 155, curl_deg: 125, debounce_frames: 3, window: 5,
            thumb_deg: 150, thumb_tip_scales: 0.6, unknown_min_score: 0.6, palm_sign: 1,
-           pinky_extend_deg: 135, pinky_curl_deg: 105}
+           pinky_extend_deg: 135, pinky_curl_deg: 125, open_needs_thumb: false}
 tracker:  {max_jump_scales: 4.0, dropout_ms: 250}
 pointer:  {box: [0.25, 0.20, 0.75, 0.65], min_cutoff: 1.0, beta: 0.02, hide_after_ms: 300,
            show_frames: 3, park: [0.995, 0.995]}
@@ -17,9 +17,10 @@ pen:      {min_cutoff: 1.5, beta: 0.02, ink_default: false}   # ink_default: pen
 swipe:    {natural: true, min_travel_scales: 1.5, max_ms: 600, min_peak_speed: 5.0, max_slope: 0.7,
            open_ratio: 0.5, settle_speed: 2.0, busy_speed: 3.0, refractory_ms: 500, opposite_block_ms: 900}
 level:    {mode: knob, knob_gain: 1.0, knob_dead_deg: 8, knob_min_step: 1.0, knob_invert: false,
-           knob_min_cutoff: 1.0, knob_beta: 0.05, engage_ms: 400, tick_ms: 100, release_ms: 150,
+           knob_min_cutoff: 1.0, knob_beta: 0.05, engage_ms: 400, tick_ms: 100, release_ms: 250,
            dead_zone_scales: 0.4, min_rate: 10, max_rate: 60, gain: 40}   # mode: vertical = old up/down
-holds:    {palm_ms: 500, palm_max_speed: 0.5, both_palms_ms: 1000, fist_tap_min_ms: 80,
+holds:    {palm_ms: 800, palm_max_speed: 0.8, still_window_ms: 300, grace_ms: 150, after_swipe_ms: 1200,
+            both_palms_ms: 1000, fist_tap_min_ms: 80,
            fist_tap_max_ms: 350, fist_tap_max_travel: 0.3, custom_ms: 500, custom_agree: 0.8}
 
 # ---------- [Ryan] presence and access ----------

@@ -14,7 +14,8 @@ from collections import Counter
 from typing import Optional
 
 from zephyr.config import cfg
-from zephyr.contracts import GestureKind, HoldProgress, Pose, T
+from zephyr.contracts import GestureKind, HoldProgress, Pose, Side, T
+from zephyr.core import features as F
 from zephyr.core.handctx import HOLD_CUSTOM, HOLD_PALM, IDLE, HandCtx
 
 
@@ -30,11 +31,24 @@ class BothPalms:
     def __init__(self) -> None:
         self.start: Optional[int] = None
         self.need_release = False
-        self.active = False         # two open facing hands are visible right now
+        self.active = False         # two open facing hands are up (allowing for short dropouts)
+        self.last_ok = -10**9
 
     def step(self, eng, ctxs: list[HandCtx], ts: int) -> bool:
         """ctxs: candidate hands (same role). Returns True on the frame it fires."""
-        open_facing = [c for c in ctxs if c.hand.pose is Pose.OPEN and c.facing]
+        # Palm facing is also judged by position (the hand on the left of the picture is the left
+        # hand), because with two hands up MediaPipe sometimes gives both the same left/right label.
+        opens = sorted((c for c in ctxs if c.hand.pose is Pose.OPEN), key=lambda c: -c.scale)[:2]
+        opens.sort(key=lambda c: c.cx)
+        sign = float(cfg.poses.get("palm_sign", 1))
+        open_facing = [c for c, side in zip(opens, (Side.LEFT, Side.RIGHT))
+                       if len(opens) == 2 and (c.facing or F.palm_facing(c.hand.landmarks, side, sign))]
+        for c in opens if len(opens) == 2 else ():
+            c.palm_fired = True     # part of a two-palm pose: no single palm hold until the pose changes
+        if len(open_facing) >= 2:
+            self.last_ok = ts
+        elif ts - self.last_ok <= int(cfg.holds.get("grace_ms", 150)) and (self.start is not None or self.need_release):
+            return False            # one hand flickered for a frame or two: keep the hold going
         self.active = len(open_facing) >= 2
         if not self.active:
             if self.start is not None:
@@ -63,25 +77,40 @@ class BothPalms:
 
 # ---------------- palm hold ----------------
 def palm_can_start(ctx: HandCtx, n_open_allowed: int, both_active: bool) -> bool:
-    if ctx.palm_fired:
+    if ctx.palm_fired or ctx.ts < ctx.palm_block_until:
         return False
     return (ctx.hand.pose is Pose.OPEN and ctx.facing and n_open_allowed == 1 and not both_active
-            and ctx.speed < float(cfg.holds.palm_max_speed))
+            and ctx.hand.pinch > float(cfg.pinch.up)      # a pinching hand is clicking or writing, not a palm
+            and ctx.still_speed < float(cfg.holds.palm_max_speed))
 
 
 def palm_start(eng, ctx: HandCtx) -> None:
     ctx.state = HOLD_PALM
     ctx.palm_start = ctx.ts
+    ctx.palm_bad_since = None
     eng.pub(T.HOLD, HoldProgress("palm_hold", 0.0, ctx.hand_id))
 
 
 def palm_step(eng, ctx: HandCtx, n_open_allowed: int, both_active: bool) -> bool:
     """Returns True when the frame was consumed; False when the hold broke (fall through to idle)."""
-    ok = (ctx.hand.pose is Pose.OPEN and ctx.facing and n_open_allowed == 1 and not both_active
-          and ctx.speed < float(cfg.holds.palm_max_speed))
-    if not ok:
-        palm_cancel(eng, ctx)
+    pose = ctx.hand.pose
+    if ctx.hand.pinch < float(cfg.pinch.down):
+        palm_cancel(eng, ctx)           # the thumb and index closed: this is a pinch, hand it over now
         return False
+    ok = (pose is Pose.OPEN and ctx.facing and n_open_allowed == 1 and not both_active
+          and ctx.still_speed < float(cfg.holds.palm_max_speed))
+    if not ok:
+        # a clear new pose or a second palm ends the hold at once; a shaky frame gets a short grace
+        if pose in (Pose.FIST, Pose.POINT, Pose.TWO) or both_active:
+            palm_cancel(eng, ctx)
+            return False
+        if ctx.palm_bad_since is None:
+            ctx.palm_bad_since = ctx.ts
+        if ctx.ts - ctx.palm_bad_since > int(cfg.holds.get("grace_ms", 150)):
+            palm_cancel(eng, ctx)
+            return False
+        return True
+    ctx.palm_bad_since = None
     p = (ctx.ts - ctx.palm_start) / max(int(cfg.holds.palm_ms), 1)
     eng.pub(T.HOLD, HoldProgress("palm_hold", min(1.0, p), ctx.hand_id))
     if p >= 1.0:

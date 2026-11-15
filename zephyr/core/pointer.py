@@ -20,7 +20,10 @@ from zephyr.core import strokes
 from zephyr.core.filters import OneEuro2D
 from zephyr.core.handctx import IDLE, PINCHING, POINTER, HandCtx, box_map
 
-SWITCH_POSES = (Pose.OPEN, Pose.TWO, Pose.FIST)
+# A clear switch hides the pointer at once. FIST is not in this list on purpose: the index finger
+# dipping toward the thumb for a click often reads as a fist for a few frames, so a fist only takes
+# over after pointer.hide_after_ms, like any other unclear frame.
+SWITCH_POSES = (Pose.OPEN, Pose.TWO)
 
 
 def _raw_pos(ctx: HandCtx) -> tuple[float, float]:

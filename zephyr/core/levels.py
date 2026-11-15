@@ -82,12 +82,20 @@ def _pending(eng, ctx: HandCtx) -> bool:
     return True
 
 
+def core_fist(ctx: HandCtx) -> bool:
+    """Index, middle and ring are curled this frame. The pinky and thumb are ignored: they pop out
+    while a real fist twists, and that must not drop the knob."""
+    return ctx.fingers is not None and not any(ctx.fingers[:3])
+
+
 def _level(eng, ctx: HandCtx) -> bool:
     lv = cfg.level
-    if ctx.hand.pose is not Pose.FIST:
+    pose = ctx.hand.pose
+    if not (pose is Pose.FIST or (core_fist(ctx) and pose is not Pose.OPEN)):
         if ctx.lvl_open_since is None:
             ctx.lvl_open_since = ctx.ts
-        if ctx.ts - ctx.lvl_open_since >= int(lv.get("release_ms", 150)):
+        # a clear open hand lets go at once; an unclear frame gets release_ms before the knob drops
+        if pose is Pose.OPEN or ctx.ts - ctx.lvl_open_since >= int(lv.get("release_ms", 250)):
             cancel(eng, ctx)
             return False
         return True
@@ -137,7 +145,7 @@ def knob_twist(ctx: HandCtx) -> float:
 
 def _knob(eng, ctx: HandCtx) -> None:
     lv = cfg.level
-    if ctx.raw_pose is not None and ctx.raw_pose is not Pose.FIST:
+    if not core_fist(ctx):
         return          # the fist is opening: hold the level, do not read the moving hand
     twist = knob_twist(ctx)
     ctx.knob_twist = twist

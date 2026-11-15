@@ -31,6 +31,8 @@ class HandCtx:
         self.facing = False     # palm faces the camera
         self.speed = 0.0        # palm speed, scales per second (about 100 ms window)
         self.raw_pose = None    # this frame's undebounced pose (the published pose lags a few frames)
+        self.fingers = None     # this frame's (index, middle, ring, pinky) extended flags
+        self.still_speed = 0.0  # palm speed over a longer window: steadier for "is it held still"
         self.hist: deque[tuple[int, float, float, int, float]] = deque()   # (ts, cx, cy, swipe class, scale)
         self.swipe_cls = 0      # this frame: 5 = open-hand swipe shape, 2 = two-finger, 0 = neither
         self.swipe_settle = False   # after a swipe: wait for the hand to slow down
@@ -72,12 +74,14 @@ class HandCtx:
         self.stroke_id: Optional[int] = None
         # palm hold
         self.palm_start: Optional[int] = None
+        self.palm_bad_since: Optional[int] = None
         # custom hold
         self.cu_start: Optional[int] = None
         self.cu_votes: list[Optional[str]] = []
 
     # flags that must survive reset() (require a pose change before firing again)
     palm_fired = False
+    palm_block_until = 0      # no palm hold before this time (set after a swipe)
     custom_fired = False
 
     def push_hist(self, keep_ms: int) -> None:

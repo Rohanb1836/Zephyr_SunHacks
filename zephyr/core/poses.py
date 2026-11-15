@@ -1,6 +1,7 @@
 """zephyr/core/poses.py    Pose classifier with hysteresis and debounce. Owner: Aadharsh.
 
-    OPEN:  all four fingers extended and thumb extended
+    OPEN:  all four fingers extended (the thumb only counts when poses.open_needs_thumb is true,
+           because a resting thumb is normal on a raised palm)
     FIST:  all four fingers curled
     POINT: index extended; middle, ring, pinky curled (thumb ignored, so a pinch keeps the pose)
     TWO:   index and middle extended; ring and pinky curled
@@ -47,7 +48,8 @@ class PoseState:
             elif prev is None:
                 self.fingers[i] = ang > (ext + curl) / 2
         self.thumb = F.thumb_extended(lm, world, scale, float(p.thumb_deg), float(p.thumb_tip_scales))
-        self.raw = classify(self.fingers, self.thumb, score, float(p.unknown_min_score))
+        thumb_ok = self.thumb or not bool(p.get("open_needs_thumb", False))
+        self.raw = classify(self.fingers, thumb_ok, score, float(p.unknown_min_score))
 
         win = int(p.window)
         if self.history.maxlen != win:

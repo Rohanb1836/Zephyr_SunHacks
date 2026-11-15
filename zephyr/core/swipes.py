@@ -51,6 +51,7 @@ class SwipeDetector:
         if ctx.swipe_settle:
             if ctx.speed < float(s.get("settle_speed", 2.0)):
                 ctx.swipe_settle = False
+                ctx.swipe_cut = ctx.ts     # the rest of that movement is used up too
             return None
         h = ctx.hist
         if len(h) < 3:
@@ -95,6 +96,8 @@ class SwipeDetector:
                 peak = max(peak, sign * (h[j][1] - h[j - 1][1]) * aspect / scale / dt)
         if peak < float(s.min_peak_speed):
             return None
+        if ctx.speed < float(s.get("settle_speed", 2.0)):
+            return None                    # the hand has already stopped: an old movement never fires late
 
         # 3. vote on the hand shape over the movement
         span = len(h) - best_i
