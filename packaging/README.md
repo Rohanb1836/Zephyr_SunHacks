@@ -44,7 +44,21 @@ To start it with the Mac: System Settings > General > Login Items > + > Zephyr.
 | Control Spotify / System Events | OK, the first time a gesture uses them | media control, switching desktops |
 
 If the pointer still does not move after allowing Accessibility, quit Zephyr from its menu bar icon and open it again.
-Clicked Deny by mistake? The menu bar icon then has **Allow Accessibility…**.
+Clicked Deny by mistake? The menu bar icon then has **Allow Accessibility…** or **Allow Automation…**.
+Zephyr asks for Automation (System Events) right at launch, so the prompt does not hide behind the first swipe.
+
+## Works from Terminal, not in the app?
+
+From Terminal, Zephyr runs as Terminal and uses Terminal's permissions and the repo's files. The app is a new app
+to macOS, with its own permissions and its own folder:
+
+| Not working in the app | Fix |
+|---|---|
+| Pointer, clicks, keys | Privacy & Security > Accessibility: Zephyr on. Already on? Remove it with −, add it again, reopen Zephyr |
+| Switching desktops, Spotify | Privacy & Security > Automation > Zephyr: System Events and Spotify on (menu bar icon > Allow Automation…) |
+| Air writing | The menu shows **Air writing needs a key**: put your `.env` in the Zephyr folder, reopen Zephyr |
+| Your custom gestures | Gestures in the repo's `data/` when the app was built are added at launch. Newer ones: record them in the app's Settings |
+| Everything asks again after a rebuild | Sign with the Zephyr Dev certificate (Rebuilding, below) |
 
 ## Where Zephyr keeps your files
 
@@ -62,11 +76,10 @@ Gesture cloud sync uses your `~/.aws` profile, same as from the repo.
 
 Each build is a new app to macOS, so it asks for Camera and Accessibility again: in Privacy & Security > Accessibility, remove the old Zephyr with − and allow the new one. Build the demo copy early and leave it alone.
 
-To keep the permissions across rebuilds, sign with your own certificate. Keychain Access > Certificate Assistant > Create a Certificate…, name `Zephyr Dev`, identity type Self Signed Root, certificate type Code Signing. Then build with
-
-    ZEPHYR_SIGN_ID="Zephyr Dev" bash packaging/build_mac.sh
-
-and click Always Allow when codesign asks for the key.
+To keep the permissions across rebuilds, sign with your own certificate, once per build Mac: Keychain Access >
+Certificate Assistant > Create a Certificate…, name `Zephyr Dev`, identity type Self Signed Root, certificate type
+Code Signing. `build_mac.sh` uses it automatically from then on (or set `ZEPHYR_SIGN_ID` to another name). Click
+Always Allow when codesign asks for the key. The first build signed this way asks for the permissions one last time.
 
 ## Sharing
 

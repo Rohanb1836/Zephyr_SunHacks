@@ -43,7 +43,20 @@ echo "==> signing"
 # build copies that flag from the venv, so clear it here; the app cannot fix itself once signed
 chflags -R nohidden "$OUT/Zephyr.app"
 xattr -cr "$OUT/Zephyr.app"
-codesign --force --deep --sign "${ZEPHYR_SIGN_ID:--}" "$OUT/Zephyr.app"
+# macOS ties Camera, Accessibility and Automation to the signature. Ad hoc ("-") is new on every
+# build, so every rebuild asks again. A "Zephyr Dev" certificate in the keychain (packaging/README.md,
+# Rebuilding) stays the same, so the permissions do too; it is used automatically when present.
+SIGN_ID="${ZEPHYR_SIGN_ID:-}"
+if [[ -z "$SIGN_ID" ]] && security find-identity -p codesigning 2>/dev/null | grep -q '"Zephyr Dev"'; then
+    SIGN_ID="Zephyr Dev"
+fi
+if [[ -z "$SIGN_ID" ]]; then
+    echo "note: signing ad hoc, so macOS will ask for Camera, Accessibility and Automation again."
+    echo "      To keep them across rebuilds, make the Zephyr Dev certificate (packaging/README.md)."
+else
+    echo "signing as $SIGN_ID"
+fi
+codesign --force --deep --sign "${SIGN_ID:--}" "$OUT/Zephyr.app"
 if codesign --verify --deep --strict "$OUT/Zephyr.app"; then
     echo "signature ok"
 else

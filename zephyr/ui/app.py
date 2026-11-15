@@ -6,7 +6,9 @@ Qt exit code.
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -19,6 +21,7 @@ from zephyr.ui.overlay import Overlay, make_overlay_native
 from zephyr.ui.state import UiState
 
 ACCESSIBILITY_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+AUTOMATION_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
 
 
 def ask_for_accessibility() -> bool:
@@ -54,6 +57,40 @@ def ask_for_accessibility() -> bool:
     except Exception as exc:
         print(f"[ui] could not check Accessibility: {exc!r}")
         return True  # unknown, so no menu item
+
+
+def ask_for_automation(done) -> None:
+    """Ask macOS now for the right to send keys through System Events (switching desktops),
+    instead of the first time a swipe needs it, when the prompt is easy to miss. Calls
+    done(False) if Zephyr was refused. From Terminal it asks for Terminal, which usually has it.
+    Runs on its own thread: osascript waits while the prompt is up."""
+    if sys.platform != "darwin":
+        return
+
+    def check() -> None:
+        try:
+            out = subprocess.run(
+                ["osascript", "-e", 'tell application "System Events" to get name of first process'],
+                capture_output=True, text=True, timeout=180)
+        except Exception as exc:
+            print(f"[ui] could not check Automation: {exc!r}")
+            return
+        if out.returncode != 0 and "-1743" in out.stderr:     # errAEEventNotPermitted
+            print("[ui] Automation is off: allow Zephyr to control System Events in "
+                  "System Settings > Privacy & Security > Automation")
+            done(False)
+
+    threading.Thread(target=check, name="zephyr-automation-check", daemon=True).start()
+
+
+def writing_key_missing() -> bool:
+    """Air writing with the anthropic provider needs ANTHROPIC_API_KEY. The app reads it from
+    the .env in its own folder, not from the repo or from variables set in Terminal."""
+    try:
+        provider = str(value("llm", "provider") or "anthropic")
+    except Exception:
+        provider = "anthropic"
+    return provider == "anthropic" and not os.environ.get("ANTHROPIC_API_KEY")
 
 
 def zephyr_folder() -> Path:
@@ -162,6 +199,19 @@ class ZephyrUi:
             act_access = QAction("Allow Accessibility…", menu)
             act_access.triggered.connect(self.open_accessibility)
             menu.addAction(act_access)
+        # shown once the check below hears that macOS refused (it answers on another thread)
+        self.act_automation = QAction("Allow Automation…", menu)
+        self.act_automation.triggered.connect(lambda: QDesktopServices.openUrl(QUrl(AUTOMATION_PANE)))
+        self.act_automation.setVisible(False)
+        menu.addAction(self.act_automation)
+        self._automation_refused = False
+        ask_for_automation(lambda ok: setattr(self, "_automation_refused", not ok))
+        if writing_key_missing():
+            act_key = QAction("Air writing needs a key: open folder…", menu)
+            act_key.setToolTip("Put your .env with ANTHROPIC_API_KEY in this folder, then reopen Zephyr")
+            act_key.triggered.connect(self.open_folder)
+            menu.addAction(act_key)
+            print("[ui] no ANTHROPIC_API_KEY: put your .env in the Zephyr folder for air writing")
         self._add_tv_menu(menu)
         menu.addSeparator()
         menu.addAction(act_quit)
@@ -219,6 +269,8 @@ class ZephyrUi:
         self._tv().use(simulator.start(open_page=True), simulator.NAME)
 
     def _refresh_tv(self) -> None:
+        if self._automation_refused and not self.act_automation.isVisible():
+            self.act_automation.setVisible(True)
         tv = self._tv()
         if self.act_tv.isChecked() != tv.active:
             self.act_tv.setChecked(tv.active)

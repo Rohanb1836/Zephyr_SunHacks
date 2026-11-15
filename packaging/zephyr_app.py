@@ -55,6 +55,41 @@ def _log_to_file() -> None:
     print(f"\n----- Zephyr started {time.strftime('%Y-%m-%d %H:%M:%S')} -----")
 
 
+def _add_shipped_gestures(data: Path) -> None:
+    """The app keeps its own gestures, so ones recorded from the repo after the first launch
+    never showed up. Each launch adds any gesture the app was built with that this folder has
+    not had yet, once: a gesture you delete stays deleted."""
+    seed = bundle_dir() / "data"
+    try:
+        shipped = json.loads((seed / "bindings.json").read_text(encoding="utf-8")).get("bindings", [])
+    except Exception:
+        return
+    path, seen_path = data / "bindings.json", data / ".shipped.json"
+    try:
+        mine = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"version": 1, "bindings": []}
+        have = {b.get("id") for b in mine.get("bindings", [])}
+        seen = set(json.loads(seen_path.read_text(encoding="utf-8"))) if seen_path.exists() else set(have)
+        added = []
+        for b in shipped:
+            if b.get("id") in seen or b.get("id") in have:
+                continue
+            template = b.get("template")
+            if template and (seed / template).exists():
+                (data / template).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(seed / template, data / template)
+            mine.setdefault("bindings", []).append(b)
+            added.append(b.get("id"))
+        if added:
+            mine["updated_ms"] = int(time.time() * 1000)
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(mine, indent=2), encoding="utf-8")
+            tmp.replace(path)
+            print(f"[app] added gestures from this build: {', '.join(map(str, added))}")
+        seen_path.write_text(json.dumps(sorted(seen | {b.get("id") for b in shipped})), encoding="utf-8")
+    except Exception as exc:
+        print(f"[app] could not add this build's gestures: {exc!r}")
+
+
 def prepare() -> Path:
     """Home folder, gestures, config and keys. Safe to run on every launch."""
     HOME.mkdir(parents=True, exist_ok=True)
@@ -67,6 +102,7 @@ def prepare() -> Path:
         if seed.is_dir():
             shutil.copytree(seed, data, dirs_exist_ok=True)   # gestures shipped with the app
     (data / "gestures").mkdir(parents=True, exist_ok=True)
+    _add_shipped_gestures(data)
     os.environ["ZEPHYR_DATA"] = str(data)
     os.environ["ZEPHYR_HOME"] = str(HOME)
 
