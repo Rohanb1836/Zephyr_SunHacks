@@ -1,5 +1,11 @@
+import os, tempfile
+# where things are: HAGRID_DATA = the folder of HaGRID test annotation .json files,
+# HAGRID_WORK = a folder for intermediate files (default: a "hg" folder in the temp dir)
+DATA = os.environ.get("HAGRID_DATA", "/mnt/user-data/uploads/test")
+WORK = os.environ.get("HAGRID_WORK", os.path.join(tempfile.gettempdir(), "hg")); os.makedirs(WORK, exist_ok=True)
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pickle, collections, csv, numpy as np
-rows = pickle.load(open("/tmp/hg/rows.pkl", "rb"))
+rows = pickle.load(open(WORK + "/rows.pkl", "rb"))
 # The palm is rigid whatever the fingers do: solve per hand for the image aspect that makes its palm
 # bones match a template, take the median per person, snap to the common photo shapes.
 P = [(0,5),(0,9),(0,13),(0,17),(5,9),(9,13),(13,17),(5,17),(5,13),(9,17),(0,1),(1,5)]
@@ -15,4 +21,4 @@ vals = np.array(list(est.values()))
 print("people with estimate", len(est), "of", len({r[2] for r in rows}))
 h, e = np.histogram(np.log2(vals), bins=np.linspace(-1.5, 1.5, 37))
 for hh, ee in zip(h, e): print(f"{2**ee:5.2f} {'#'*(hh//25)} {hh}")
-pickle.dump(est, open("/tmp/hg/aspect_raw.pkl", "wb"))
+pickle.dump(est, open(WORK + "/aspect_raw.pkl", "wb"))

@@ -1,4 +1,10 @@
 """Real hand shapes through the full engine. sim.py <zephyr root> mac|win"""
+import os, tempfile
+# where things are: HAGRID_DATA = the folder of HaGRID test annotation .json files,
+# HAGRID_WORK = a folder for intermediate files (default: a "hg" folder in the temp dir)
+DATA = os.environ.get("HAGRID_DATA", "/mnt/user-data/uploads/test")
+WORK = os.environ.get("HAGRID_WORK", os.path.join(tempfile.gettempdir(), "hg")); os.makedirs(WORK, exist_ok=True)
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sys, pickle, collections
 root, which = sys.argv[1], sys.argv[2]
 sys.path.insert(0, root)
@@ -23,7 +29,7 @@ ev = []
 for top in (T.GESTURE, T.LEVEL, T.POINTER):
     bus.subscribe(top, lambda m, top=top: ev.append((top, m)))
 bus.publish(T.PRESENCE, None); bus.publish(T.CONTEXT, None); bus.publish(T.WRITE, None)
-hands = pickle.load(open("/tmp/hg/hands.pkl", "rb"))
+hands = pickle.load(open(WORK + "/hands.pkl", "rb"))
 rng = np.random.default_rng(0)
 by = collections.defaultdict(list)
 for lab, user, h, w in hands: by[lab].append((h, w))
@@ -59,4 +65,4 @@ for lab, mode in [("no_gesture","still"), ("no_gesture","swing"), ("palm","still
         c["level_moved"] += lv; c["knob_grab"] += knob; c["pointer"] += ptr; c["anything"] += bool(g or lv)
     n = len(idx); res[(lab, mode)] = {k: v / n for k, v in c.items()}
     print(f"[{which}] {lab:11s} {mode:5s} n={n:4d} " + "  ".join(f"{k}:{v/n:.1%}" for k, v in sorted(c.items()) if v))
-pickle.dump(res, open(f"/tmp/hg/sim_{which}_{sys.argv[4] if len(sys.argv)>4 else 'x'}.pkl", "wb"))
+pickle.dump(res, open(os.path.join(WORK, f"sim_{which}_{sys.argv[4] if len(sys.argv) > 4 else 'x'}.pkl"), "wb"))

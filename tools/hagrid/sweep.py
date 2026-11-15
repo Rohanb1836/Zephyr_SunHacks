@@ -1,10 +1,16 @@
+import os, tempfile
+# where things are: HAGRID_DATA = the folder of HaGRID test annotation .json files,
+# HAGRID_WORK = a folder for intermediate files (default: a "hg" folder in the temp dir)
+DATA = os.environ.get("HAGRID_DATA", "/mnt/user-data/uploads/test")
+WORK = os.environ.get("HAGRID_WORK", os.path.join(tempfile.gettempdir(), "hg")); os.makedirs(WORK, exist_ok=True)
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sys, pickle, collections, numpy as np
-sys.path.insert(0, "/home/claude/zephyr")
+sys.path.insert(0, ROOT)
 from zephyr import contracts; contracts.ASPECT = 4/3
 from zephyr.core.poses import PoseState
 from zephyr.core import features as F
 from zephyr.contracts import Side
-feat = pickle.load(open("/tmp/hg/feat.pkl", "rb"))
+feat = pickle.load(open(WORK + "/feat.pkl", "rb"))
 print("pinch.down sweep: share of hands reading as pinched")
 print("thr    ok(real pinch)  one(pointing up)  palm   stop   peace  like   no_gesture")
 for t in (0.22, 0.25, 0.28, 0.30, 0.32, 0.35):
@@ -16,7 +22,7 @@ print("\npalm_min_width sweep: share rejected")
 for t in (0.35, 0.40, 0.45, 0.50, 0.55):
     print(f"{t:.2f}   " + "  ".join(f"{c}:{np.mean(feat[c][:,1] < t):6.1%}" for c in ("palm","stop","stop_inverted","four","grip","no_gesture")))
 # pose proxy
-hands = pickle.load(open("/tmp/hg/hands.pkl", "rb"))
+hands = pickle.load(open(WORK + "/hands.pkl", "rb"))
 conf = collections.defaultdict(collections.Counter); elig = collections.Counter(); n = collections.Counter()
 for lab, user, h, w in hands:
     ps = PoseState(); s = F.raw_scale(h)

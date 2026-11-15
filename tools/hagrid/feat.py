@@ -1,11 +1,17 @@
+import os, tempfile
+# where things are: HAGRID_DATA = the folder of HaGRID test annotation .json files,
+# HAGRID_WORK = a folder for intermediate files (default: a "hg" folder in the temp dir)
+DATA = os.environ.get("HAGRID_DATA", "/mnt/user-data/uploads/test")
+WORK = os.environ.get("HAGRID_WORK", os.path.join(tempfile.gettempdir(), "hg")); os.makedirs(WORK, exist_ok=True)
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sys, pickle, collections, numpy as np
-sys.path.insert(0, "/home/claude/zephyr")
+sys.path.insert(0, ROOT)
 from zephyr import contracts
 from zephyr.core import features as F
 from zephyr.contracts import Side
 contracts.ASPECT = 4/3
-rows = pickle.load(open("/tmp/hg/rows.pkl", "rb"))
-raw = pickle.load(open("/tmp/hg/aspect_raw.pkl", "rb"))
+rows = pickle.load(open(WORK + "/rows.pkl", "rb"))
+raw = pickle.load(open(WORK + "/aspect_raw.pkl", "rb"))
 def conf_aspect(v):
     if 0.72 <= v <= 0.90: return 0.75
     if 1.30 <= v <= 1.62: return 4/3
@@ -20,7 +26,7 @@ for fc, lab, user, lm, bb, key in rows:
     w = np.zeros((21, 3), np.float32); w[:, 0] = lm[:, 0] * a; w[:, 1] = lm[:, 1]
     out.append((lab, user, h, w))
 print(len(out), "hands from", len({o[1] for o in out}), "people with a confident image shape")
-pickle.dump(out, open("/tmp/hg/hands.pkl", "wb"))
+pickle.dump(out, open(WORK + "/hands.pkl", "wb"))
 feat = collections.defaultdict(list)
 for lab, user, h, w in out:
     s = F.raw_scale(h)
@@ -28,7 +34,7 @@ for lab, user, h, w in out:
     v1 = h[5, :2] - h[0, :2]; v2 = h[17, :2] - h[0, :2]
     up = (h[0, 1] - h[9, 1]) / s      # 1 = fingers straight up
     feat[lab].append((F.pinch_ratio(h, s), F.palm_width(h, s), s, *ang, up))
-feat = {k: np.array(v) for k, v in feat.items()}; pickle.dump(feat, open("/tmp/hg/feat.pkl", "wb"))
+feat = {k: np.array(v) for k, v in feat.items()}; pickle.dump(feat, open(WORK + "/feat.pkl", "wb"))
 pc = lambda x: np.percentile(x, [1, 5, 25, 50, 75, 95, 99]).round(2)
 print("class            n   pinch<.25 <.40 <.50 | palm_width<.45 <.50 | scale p5/p50 | pinch pcts")
 for lab in ["one","point","ok","thumb_index","palm","stop","stop_inverted","four","three","three2","peace","two_up","fist","grip","grabbing","like","rock","no_gesture"]:

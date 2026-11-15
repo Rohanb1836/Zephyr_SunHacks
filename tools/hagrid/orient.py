@@ -1,9 +1,15 @@
+import os, tempfile
+# where things are: HAGRID_DATA = the folder of HaGRID test annotation .json files,
+# HAGRID_WORK = a folder for intermediate files (default: a "hg" folder in the temp dir)
+DATA = os.environ.get("HAGRID_DATA", "/mnt/user-data/uploads/test")
+WORK = os.environ.get("HAGRID_WORK", os.path.join(tempfile.gettempdir(), "hg")); os.makedirs(WORK, exist_ok=True)
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sys, pickle, collections, numpy as np
-sys.path.insert(0, "/home/claude/zephyr")
+sys.path.insert(0, ROOT)
 from zephyr import contracts; contracts.ASPECT = 4/3
 from zephyr.core.poses import PoseState
 from zephyr.core import features as F
-hands = pickle.load(open("/tmp/hg/hands.pkl", "rb"))
+hands = pickle.load(open(WORK + "/hands.pkl", "rb"))
 def tilt(h):
     """Degrees between 'wrist to middle knuckle' and straight up in the picture (0 = fingers up, 180 = down)."""
     dx = (h[9,0]-h[0,0]) * contracts.ASPECT; dy = h[0,1]-h[9,1]
