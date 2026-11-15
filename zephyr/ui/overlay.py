@@ -47,7 +47,7 @@ class Overlay(QWidget):
         super().__init__()
         self.state = state
         ui_cfg = section("ui")
-        self.hud_size = tuple(ui_cfg.get("hud_size", [300, 225]))
+        self.hud_size = tuple(ui_cfg.get("hud_size", [420, 315]))
         self.hud_corner = str(ui_cfg.get("hud_corner", "bottom_right"))
 
         self.setWindowFlags(
@@ -64,7 +64,7 @@ class Overlay(QWidget):
         self.setAttribute(Qt.WA_MacAlwaysShowToolWindow)
         self.setGeometry(screen.geometry())
 
-        self._t = now_ms()
+        widgets.init_fx()
         self._timer = QTimer(self)
         self._timer.setTimerType(Qt.PreciseTimer)
         self._timer.timeout.connect(self._tick)
@@ -72,8 +72,8 @@ class Overlay(QWidget):
 
     def _tick(self) -> None:
         t = now_ms()
-        if self.state.update(t):
-            self._t = t
+        # state.update() always runs first: it drains the stroke and toast queues
+        if self.state.update(t) or widgets.fx_animating(t):
             self.update()
 
     def paintEvent(self, _event) -> None:

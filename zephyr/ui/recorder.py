@@ -15,12 +15,12 @@ from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from zephyr.bus import bus
-from zephyr.contracts import Role, T
+from zephyr.contracts import T
 from zephyr.custom.capture import CaptureResult, CaptureSession, controller_hand
 from zephyr.custom.conf import section
 from zephyr.ui.style import big_button, label
 from zephyr.ui.state import now_ms
-from zephyr.ui.widgets import ACCENT, BONES, GREY, WHITE
+from zephyr.ui.widgets import ACCENT, BONES, WHITE, draw_hands
 
 
 class LiveHand(QWidget):
@@ -53,10 +53,8 @@ class LiveHand(QWidget):
             self._draw_hand(p, r, self.frozen, self.tint)
         else:
             frame = bus.latest(T.HANDS)
-            if frame is not None:
-                for hand in frame.hands:
-                    color = GREY if hand.role is Role.STRANGER else ACCENT
-                    self._draw_hand(p, r, hand.landmarks[:, :2], color)
+            # same state-coloured hands as the HUD, so curled and extended fingers are easy to see
+            draw_hands(p, r.adjusted(16, 16, -16, -16), frame, now_ms())
             if frame is None or controller_hand(frame) is None:
                 p.setPen(QColor(255, 255, 255, 120))
                 f = p.font()

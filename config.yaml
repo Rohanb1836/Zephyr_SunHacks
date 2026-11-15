@@ -37,4 +37,4 @@ aws:      {region: us-west-2, bedrock_model_id: "", timeout_s: 4}
 
 # ---------- [Swayam] ui and custom gestures ----------
 custom:   {samples: 30, default_threshold: 0.16, margin: 0.03}
-ui:       {hud_corner: bottom_right, hud_size: [300, 225], show_video: false}
+ui:       {hud_corner: bottom_right, hud_size: [420, 315], show_video: false}

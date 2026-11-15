@@ -18,6 +18,13 @@ from zephyr.contracts import Role
 from zephyr.ui.state import (ACCESS_IN_MS, ACCESS_TOTAL_MS, CHIP_ANIM_MS, LEVEL_HIDE_MS, TOAST_MS,
                              WRITE_ERROR_MS, UiState)
 
+try:
+    # Aadharsh's state-coloured hands, swipe trail, pinch line and click ripple
+    from zephyr.hud import handfx
+except Exception as exc:  # fail soft: plain skeletons below
+    handfx = None
+    print(f"[ui] zephyr.hud.handfx not available, drawing plain skeletons: {exc!r}")
+
 ACCENT = QColor(64, 196, 255)
 ACCENT_SOFT = QColor(64, 196, 255, 90)
 GREY = QColor(150, 150, 150)
@@ -26,6 +33,7 @@ CARD = QColor(0, 0, 0, 178)          # about 70 percent black
 RED = QColor(255, 90, 90)
 AMBER = QColor(255, 190, 70)
 GREEN = QColor(90, 220, 140)
+PURPLE = QColor(186, 130, 255)       # guest in control, same as handfx
 
 BONES = [
     (0, 1), (1, 2), (2, 3), (3, 4),          # thumb
@@ -70,11 +78,15 @@ def text_width(f: QFont, text: str) -> float:
 
 # ---------------------------------------------------------------- HUD card
 
+POSE_PT = 24          # pose word under the HUD card, big enough to read from a distance
+POSE_ROOM = 48        # space kept under the card for it
+
+
 def hud_rect(w: float, h: float, hud_size: tuple[int, int], corner: str) -> QRectF:
     cw, ch = hud_size
     m = 24.0
     x = w - cw - m if "right" in corner else m
-    y = h - ch - m - 26 if "bottom" in corner else m + 60
+    y = h - ch - m - POSE_ROOM if "bottom" in corner else m + 60
     return QRectF(x, y, cw, ch)
 
 
@@ -83,48 +95,86 @@ def hand_points(landmarks, rect: QRectF) -> list[QPointF]:
             for x, y in ((lm[0], lm[1]) for lm in landmarks)]
 
 
-def draw_hud(p: QPainter, w: float, h: float, s: UiState, hud_size, corner) -> QRectF:
+_fx_failed = False
+
+
+def init_fx() -> None:
+    """Start handfx's gesture listener now, so the first flash and ripple are not missed."""
+    if handfx is not None:
+        try:
+            handfx.fx()
+        except Exception as exc:
+            print(f"[ui] handfx init failed: {exc!r}")
+
+
+def fx_animating(t: int) -> bool:
+    if handfx is None or _fx_failed:
+        return False
+    try:
+        return handfx.animating(t)
+    except Exception:
+        return False
+
+
+def _plain_hands(p: QPainter, rect: QRectF, frame) -> str:
+    """Fallback skeletons: accent for owner and guest, grey with "ignored" for strangers."""
+    for hand in frame.hands:
+        ignored = hand.role is Role.STRANGER
+        color = GREY if ignored else ACCENT
+        pts = hand_points(hand.landmarks, rect)
+        p.setPen(QPen(with_alpha(color, 0.9), max(2.2, rect.height() / 90), Qt.SolidLine, Qt.RoundCap))
+        for a, b in BONES:
+            p.drawLine(pts[a], pts[b])
+        p.setPen(Qt.NoPen)
+        p.setBrush(WHITE if not ignored else GREY)
+        for pt in pts:
+            p.drawEllipse(pt, 2.6, 2.6)
+        if ignored:
+            p.setFont(font(11, True))
+            p.setPen(GREY)
+            wrist = pts[0]
+            p.drawText(QPointF(wrist.x() - 22, min(rect.bottom() - 2, wrist.y() + 16)), "ignored")
+    controller = [hd for hd in frame.hands if hd.role is not Role.STRANGER]
+    return max(controller, key=lambda hd: hd.scale).pose.value if controller else ""
+
+
+def draw_hands(p: QPainter, rect: QRectF, frame, t: int) -> str:
+    """Hands inside rect, through handfx when it is there. Returns the controller's pose word."""
+    global _fx_failed
+    if frame is None or not frame.hands:
+        return ""
+    if handfx is not None and not _fx_failed:
+        try:
+            return handfx.draw_hands(p, rect, frame, t)
+        except Exception as exc:  # say it once, then stay on the plain drawing
+            _fx_failed = True
+            print(f"[ui] handfx.draw_hands failed, switching to plain skeletons: {exc!r}")
+    return _plain_hands(p, rect, frame)
+
+
+def draw_hud(p: QPainter, w: float, h: float, s: UiState, hud_size, corner, t: int) -> QRectF:
     rect = hud_rect(w, h, hud_size, corner)
     rounded_card(p, rect, 14)
     inner = rect.adjusted(10, 10, -10, -10)
 
-    frame = s.hands
-    pose_text = "no hand"
-    if frame is not None and frame.hands:
-        controller = [hd for hd in frame.hands if hd.role is not Role.STRANGER]
-        if controller:
-            pose_text = max(controller, key=lambda hd: hd.scale).pose.value
-        for hand in frame.hands:
-            ignored = hand.role is Role.STRANGER
-            color = GREY if ignored else ACCENT
-            pts = hand_points(hand.landmarks, inner)
-            p.setPen(QPen(with_alpha(color, 0.9), 2.2, Qt.SolidLine, Qt.RoundCap))
-            for a, b in BONES:
-                p.drawLine(pts[a], pts[b])
-            p.setPen(Qt.NoPen)
-            p.setBrush(WHITE if not ignored else GREY)
-            for pt in pts:
-                p.drawEllipse(pt, 2.6, 2.6)
-            if ignored:
-                p.setFont(font(11, True))
-                p.setPen(GREY)
-                wrist = pts[0]
-                p.drawText(QPointF(wrist.x() - 22, min(inner.bottom() - 2, wrist.y() + 16)), "ignored")
-    else:
+    pose_text = draw_hands(p, inner, s.hands, t)
+    if s.hands is None or not s.hands.hands:
         p.setFont(font(12))
         p.setPen(with_alpha(WHITE, 0.45))
         p.drawText(rect, Qt.AlignCenter, "Show a hand")
 
     # pose name under the card
-    p.setFont(font(12, True))
-    p.setPen(with_alpha(WHITE, 0.85))
-    p.drawText(QRectF(rect.left(), rect.bottom() + 4, rect.width(), 20), Qt.AlignHCenter, pose_text)
+    if pose_text:
+        p.setFont(font(POSE_PT, True))
+        p.setPen(with_alpha(WHITE, 0.9))
+        p.drawText(QRectF(rect.left(), rect.bottom() + 4, rect.width(), POSE_ROOM - 4),
+                   Qt.AlignHCenter | Qt.AlignTop, pose_text)
     return rect
 
 
 # ---------------------------------------------------------------- status pill + app chip
 
-TONE_COLORS = {"off": GREY, "ready": GREEN, "paused": AMBER, "guest": ACCENT}
+TONE_COLORS = {"off": GREY, "ready": GREEN, "paused": AMBER, "guest": PURPLE}
 
 
 def draw_status(p: QPainter, w: float, s: UiState, t: int) -> None:
@@ -406,7 +456,7 @@ def draw_access(p: QPainter, w: float, h: float, s: UiState, t: int) -> None:
     k = ease_out(age / ACCESS_IN_MS)
     fade = 1.0 if age < ACCESS_TOTAL_MS - 300 else (ACCESS_TOTAL_MS - age) / 300
     text = "Access granted" if s.access_kind == "granted" else "Control returned"
-    color = ACCENT if s.access_kind == "granted" else GREEN
+    color = PURPLE if s.access_kind == "granted" else GREEN
     c = QPointF(w / 2, h / 2)
     p.setOpacity(max(0.0, fade))
     # expanding ring
@@ -427,7 +477,7 @@ def draw_all(p: QPainter, w: float, h: float, s: UiState, t: int, hud_size, corn
     p.setRenderHint(QPainter.Antialiasing, True)
     p.setRenderHint(QPainter.TextAntialiasing, True)
     draw_ink(p, w, h, s)
-    hud = draw_hud(p, w, h, s, hud_size, corner)
+    hud = draw_hud(p, w, h, s, hud_size, corner, t)
     draw_status(p, w, s, t)
     draw_level(p, w, h, s, t)
     draw_write(p, w, h, s, t)
@@ -436,3 +486,16 @@ def draw_all(p: QPainter, w: float, h: float, s: UiState, t: int, hud_size, corn
     draw_access(p, w, h, s, t)
     draw_hold(p, w, h, s, hud)
     draw_pointer(p, w, h, s)
+    draw_ripples(p, w, h, t)
+
+
+def draw_ripples(p: QPainter, w: float, h: float, t: int) -> None:
+    """handfx's click ripple where a pinch landed, drawn last so it sits on top."""
+    global _fx_failed
+    if handfx is None or _fx_failed:
+        return
+    try:
+        handfx.draw_ripples(p, w, h, t)
+    except Exception as exc:
+        _fx_failed = True
+        print(f"[ui] handfx.draw_ripples failed, switching to plain skeletons: {exc!r}")

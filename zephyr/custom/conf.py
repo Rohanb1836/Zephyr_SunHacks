@@ -17,7 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULTS: dict[str, dict[str, Any]] = {
     "custom": {"samples": 30, "default_threshold": 0.16, "margin": 0.03,
                "max_threshold": 0.30, "countdown_ms": 3000},
-    "ui": {"hud_corner": "bottom_right", "hud_size": [300, 225], "show_video": False,
+    "ui": {"hud_corner": "bottom_right", "hud_size": [420, 315], "show_video": False,
            "open_settings": False},
 }
 
