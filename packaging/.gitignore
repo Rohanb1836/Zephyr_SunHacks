@@ -1,0 +1,3 @@
+# build output of packaging/build_mac.sh
+dist/
+build/

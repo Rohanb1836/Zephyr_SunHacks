@@ -23,7 +23,9 @@ import numpy as np
 
 from zephyr.custom.conf import REPO_ROOT
 
-DATA_DIR = REPO_ROOT / "data"
+# the double-click app sets ZEPHYR_DATA to ~/Library/Application Support/Zephyr/data,
+# because an app cannot write inside itself; from the repo it is data/ as before
+DATA_DIR = Path(os.environ["ZEPHYR_DATA"]) if os.environ.get("ZEPHYR_DATA") else REPO_ROOT / "data"
 BINDINGS_PATH = DATA_DIR / "bindings.json"
 GESTURES_DIR = DATA_DIR / "gestures"
 
