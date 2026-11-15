@@ -10,14 +10,16 @@ def describe_action_types():
         {'type': 'text', 'label': 'Paste text', 'value_hint': 'Text to paste'},
         {'type': 'open', 'label': 'Open a file', 'value_hint': '~/Desktop/file.pdf'},
         {'type': 'media', 'label': 'Media control', 'value_hint': 'playpause, next, previous'},
+        {'type': 'tv', 'label': 'Roku TV', 'value_hint': 'Home, Play, launch YouTube, mode on'},
     ]
 
 
 class ActionRunner:
-    def __init__(self, backend, search=None, set_mode=None):
+    def __init__(self, backend, search=None, set_mode=None, tv=None):
         self.backend = backend
         self.search = search
         self.set_mode = set_mode
+        self.tv = tv          # zephyr.tv.remote.TvRemote.run: one Roku TV action
 
     def run(self, spec, confirmed=False):
         if not isinstance(spec, dict):
@@ -50,5 +52,6 @@ class ActionRunner:
         if kind == 'mode' and self.set_mode is not None:
             if value not in ('normal', 'tv'): raise ValueError('Invalid mode')
             return self.set_mode(value)
+        if kind == 'tv' and self.tv is not None: return self.tv(value)
         # Shell and HTTP require a confirmation and security design before execution.
         raise ValueError(f'Unsupported action type: {kind}')

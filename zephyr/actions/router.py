@@ -12,6 +12,7 @@ from zephyr.actions.mac import MacBackend
 from zephyr.actions.runner import ActionRunner
 from zephyr.actions.writing.flow import WritingFlow
 from zephyr.actions.writing.memory import WritingMemory
+from zephyr.tv.remote import tv_remote
 
 LOG = logging.getLogger(__name__)
 
@@ -19,7 +20,10 @@ LOG = logging.getLogger(__name__)
 class ActionRouter:
     def __init__(self, event_bus, backend):
         self.bus, self.backend = event_bus, backend
-        self.runner = ActionRunner(backend, search=self._open_search)
+        # TV mode (zephyr/tv): while it is on, gestures, the pointer, the knob and air writing go to the Roku TV
+        self.tv = tv_remote(event_bus)
+        self.tv.on_search = self._tv_search
+        self.runner = ActionRunner(backend, search=self._open_search, set_mode=self.tv.set_mode, tv=self.tv.run)
         self.memory = WritingMemory(cfg, on_saved=self._memory_saved)
         self.writing = WritingFlow(event_bus, cfg, self._enqueue_paste, memory=self.memory)
         self.search_active = False
@@ -74,6 +78,17 @@ class ActionRouter:
             self.backend.hotkey('mod', 'space')
         self.search_active = True
         self.writing.ready(self.app_label, 'search')
+
+    def _tv_search(self):
+        self.writing.ready(self.tv.label, 'search')
+
+    def _update_tv_context(self):
+        if self.tv.searching and self.writing.phase in ('idle', 'cancelled', 'accepted'):
+            self.tv.searching = False
+        context = ContextState('roku', self.tv.label, 'tv', self.tv.searching, 'search' if self.tv.searching else 'tv')
+        if context != self._last_context:
+            self._last_context = context
+            self.bus.publish(T.CONTEXT, context)
 
     def _close_search(self, escape=False):
         if self.search_active and escape:
@@ -130,12 +145,18 @@ class ActionRouter:
                 continue
             try:
                 event = pending[1]
+                if self.tv.active:
+                    self.tv.pointer(event)       # the air D-pad; the Mac pointer stays put
+                    continue
                 pos = (event.x, event.y) if event.visible else cfg.pointer.park
                 self.backend.move_cursor(*self._screen_point(pos, self.backend.screen_size_points()))
             except Exception:
                 LOG.exception('Pointer movement failed')
 
     def _update_app(self):
+        if self.tv.active:
+            self._update_tv_context()
+            return
         try:
             app_id, label = front_app()
             if not self.search_active and app_id and label.lower() not in ('python', 'python3', 'zephyr'):
@@ -177,6 +198,9 @@ class ActionRouter:
         for kind, delta in pending.items():
             if not delta:
                 continue
+            if self.tv.active:
+                self.tv.level(kind, delta)      # the knob turns the TV's volume
+                continue
             try:
                 with self.lock:
                     if self.mode != SystemMode.ARMED or self.generation != generation:
@@ -212,6 +236,9 @@ class ActionRouter:
                     continue
                 if kind == 'paste':
                     text, mode = item
+                    if self.tv.active:
+                        self.tv.typed(text, mode)       # into the keyboard open on the TV
+                        continue
                     self.backend.paste_text(text + (' ' if mode == 'document' else ''))
                     if mode == 'search':
                         time.sleep(.5)
@@ -219,6 +246,8 @@ class ActionRouter:
                         self._close_search()
                     continue
                 if kind == 'gesture' and self.writing.gesture(item.key):
+                    continue
+                if kind == 'gesture' and self.tv.active and self.tv.gesture(item):
                     continue
                 if kind == 'gesture' and item.key == 'pinch_tap':
                     if item.pos is None:
