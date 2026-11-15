@@ -1195,7 +1195,7 @@ class Engine {
       ev.push({ type: "hold", kind: "fist", side: c.side, progress: Math.min(1, held / lv.engageMs), x: c.cx, y: c.cy });
       if (held >= lv.engageMs) {
         c.state = "level";
-        c.lvlKind = c.side === "Left" ? "brightness" : "volume";
+        c.lvlKind = c.side === "Left" ? "volume" : "brightness";
         c.lvlTick = ts; c.lvlOpenSince = null;
         c.knobFilter = new OneEuro(lv.knobMinCutoff, lv.knobBeta);
         c.knobLast = knobAngle(c.lm, aspect);
