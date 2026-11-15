@@ -98,6 +98,8 @@ The gesture-to-gesture rules are the same as on the Mac, with the same keys (set
 - **Resting fist:** a fist that grabbed the knob and never turned it lets go after 2.5 seconds (`level.idle_park_ms`), so a chin resting on a fist does not lock out the other hand.
 - **Swipe and return:** a swipe also ends when the hand turns back, so swiping again about a second later works without a pause.
 - **Pointer after a click:** stays on when the pinch briefly reads as a fist.
+- **Knob wobble:** turning the knob back the other way needs 4 points more than carrying on (`level.knob_reverse_step`), so a resting fist wobbling at the edge of the dead zone no longer flicks the level up and down. A deliberate turn back still works.
+- **Right click:** pinch twice quickly while pointing (`pinch.double_ms`, 320 ms). A single pinch left-clicks once that time has passed. Works in every app.
 
 ### Mac: forgiving limits
 
@@ -115,6 +117,8 @@ The Mac engine shares the fixes below with the Windows one; its limits are in `c
 - **Resting fist:** a fist that grabbed the knob and never turned it lets go after 2.5 seconds (`level.idle_park_ms`), so a chin resting on a fist does not lock out the other hand.
 - **Swipe and return:** a swipe also ends when the hand turns back, so swiping again about a second later works without a pause.
 - **Pointer after a click:** stays on when the pinch briefly reads as a fist.
+- **Knob wobble:** turning the knob back the other way needs 4 points more than carrying on (`level.knob_reverse_step`), so a resting fist wobbling at the edge of the dead zone no longer flicks the level up and down. A deliberate turn back still works.
+- **Pinch with no pointer:** does nothing unless the writing preview is showing, where it accepts (`pinch.tap_needs_pointer`). Before, a resting hand's pinches counted as taps: harmless to the mouse, but in TV mode each one pressed Select.
 
 Each of these rules is a key in `config.yaml`, and 0 turns it off. They are covered on both engines by the shared tests in `tools/flow_tests.py` (synthetic hands, no camera). The tilt limits were measured on the HaGRID v2 test annotations (`tools/hagrid`).
 
@@ -135,6 +139,17 @@ Use the demo display's actual pixel dimensions. Clips go in `clips/` and are exc
 ## Accuracy and speed
 
 Measurements are pending testing on the demo Mac. Targets include at least 19/20 detections per built-in gesture, at most one false trigger per two minutes, and median/p95 capture-to-event latency of 30/50 ms. Actual results and any gaps should be added after testing.
+
+Replay of real webcam clips recorded on a Windows laptop (26 clips: each gesture 5 to 10 times, plus 2 minutes of normal movement; `tools/live_check.py`), through both engines. The clips come from one Windows webcam, so the Mac numbers are a guide until the demo Mac is tested:
+
+| Engine | Gestures detected | Events during 2 min of normal movement |
+| --- | --- | --- |
+| Mac, before the `gesture-robustness` branch | 98 | 125 |
+| Mac, with it | 95 | 84 |
+| Mac, with it and the knob and no-pointer pinch rules | 95 | 15 |
+| Windows, with all of them | 100 | 9 |
+
+Frame to event on the Windows laptop: median 15 to 16 ms, p95 16 to 46 ms (target 30 / 50). Two-finger swipes remain the weakest gesture (2 to 6 of 10 per clip).
 
 ## Credits and tools
 

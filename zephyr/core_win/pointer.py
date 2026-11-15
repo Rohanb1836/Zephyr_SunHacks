@@ -220,7 +220,8 @@ def pinch_step(eng, ctx: HandCtx) -> bool:
         # so click_max_ms is about a second, not the old 300 ms (which missed 10 of 10).
         # A tap with no pointer showing only has a job while the writing preview is up (accept).
         # Anywhere else it was noise, and in TV mode it would press Select on the TV.
-        if held <= click_max and (ctx.pinch_from_pointer or preview):
+        needs_pointer = bool(pc.get("tap_needs_pointer", True))
+        if held <= click_max and (ctx.pinch_from_pointer or preview or not needs_pointer):
             if ctx.pinch_second:
                 # pinch twice = right click (the first pinch's left click is never sent)
                 ctx.tap_pending = None

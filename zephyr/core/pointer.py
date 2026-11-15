@@ -17,6 +17,7 @@ Pinch: down below pinch.down, up above pinch.up (hysteresis).
 from __future__ import annotations
 
 from zephyr.config import cfg
+from zephyr.bus import bus
 from zephyr.contracts import GestureKind, PointerEvent, Pose, T
 from zephyr.core import strokes
 from zephyr.core.filters import OneEuro2D
@@ -168,6 +169,11 @@ def _pinch_travel(ctx: HandCtx) -> float:
     return (dx * dx + dy * dy) ** 0.5 / max(ctx.scale, 1e-4)
 
 
+def _preview_showing() -> bool:
+    w = bus.latest(T.WRITE)
+    return w is not None and getattr(w, "phase", "") == "preview"
+
+
 def pinch_step(eng, ctx: HandCtx) -> bool:
     """PINCHING state. Always consumes the frame."""
     pc = cfg.pinch
@@ -176,7 +182,12 @@ def pinch_step(eng, ctx: HandCtx) -> bool:
     # 870 ms, so a click may last click_max_ms, not just tap_max_ms.
     click_max = max(int(pc.get("click_max_ms", pc.tap_max_ms)), int(pc.tap_max_ms))
     if ctx.hand.pinch > float(pc.up):
-        if held <= click_max:
+        # pinch.tap_needs_pointer: a tap with no pointer showing only counts while the writing
+        # preview is up (accept). Measured on recorded clips: 56 such taps in 2 minutes of normal
+        # movement on this engine (Windows, which has the rule: 0). They click nothing, but in TV
+        # mode each one pressed Select, and over the writing preview each one accepted it.
+        needs_pointer = bool(pc.get("tap_needs_pointer", False))
+        if held <= click_max and (ctx.pinch_from_pointer or not needs_pointer or _preview_showing()):
             eng.gesture(GestureKind.PINCH_TAP, ctx, pos=ctx.pinch_pos)
         _after_release(eng, ctx)
         return True

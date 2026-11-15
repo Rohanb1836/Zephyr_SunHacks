@@ -120,6 +120,65 @@ def flow_case(tg):
                 r.run(n(20, lambda i: [hand("open")]))
             self.assertEqual(r.keys(), ["fist_tap", "fist_tap"])
 
+        # ---- knob: a resting fist wobbling at the dead-zone edge (Ryan, from a recorded clip) ----
+        def _wobble(self, r):
+            """A fist that grabs the knob, then wobbles 3 degrees just past the dead zone for 3 s."""
+            dead = float(cfg.level.get("knob_dead_deg", 8))
+            r.run(n(20, lambda i: [hand("fist")]))
+            r.run(n(90, lambda i: [turned("fist", dead + (6 if (i // 3) % 2 else 9))]))
+            return [e.delta for e in r.of(T.LEVEL) if e.delta]
+
+        def test_resting_fist_wobble_does_not_flick_the_level(self):
+            """Fails before level.knob_reverse_step: a chin-on-fist wobble at the dead-zone edge sent
+            +2, -2, +1.7, -1.7 ... (15 brightness changes in 5 s on a recorded clip)."""
+            changes = self._wobble(rig())
+            self.assertLessEqual(len(changes), 2, changes)
+
+        def test_knob_reverse_step_is_behind_its_key(self):
+            """level.knob_reverse_step: 0 brings back the flicking."""
+            with _Setting("level", "knob_reverse_step", 0):
+                changes = self._wobble(rig())
+            self.assertGreater(len(changes), 2, changes)
+
+        def test_a_deliberate_turn_back_still_lowers_the_level(self):
+            """Turning up and then back down is one long change each way: the level goes up, then down."""
+            r = rig()
+            dead = float(cfg.level.get("knob_dead_deg", 8))
+            r.run(n(20, lambda i: [hand("fist")]))
+            r.run(n(20, lambda i: [turned("fist", (dead + 25) * (i + 1) / 20)]))
+            r.run(n(10, lambda i: [turned("fist", dead + 25)]))
+            r.run(n(20, lambda i: [turned("fist", (dead + 25) * (1 - (i + 1) / 20))]))
+            r.run(n(10, lambda i: [turned("fist", 0)]))
+            deltas = [e.delta for e in r.of(T.LEVEL) if e.delta]
+            self.assertTrue(any(d > 0 for d in deltas), deltas)
+            self.assertTrue(any(d < 0 for d in deltas), deltas)
+            self.assertLess(abs(sum(deltas)), 5, deltas)    # back near where it started
+
+        # ---- a pinch with no pointer showing (Ryan, from recorded clips) ----
+        def test_a_pinch_with_no_pointer_does_nothing(self):
+            """Fails on the Mac before pinch.tap_needs_pointer: 56 such taps in 2 minutes of normal
+            movement on recorded clips; in TV mode each one pressed Select."""
+            r = rig()
+            r.run(n(10, lambda i: [hand("open")]))
+            r.run(n(5, lambda i: [hand("ppinch")]))
+            r.run(n(20, lambda i: [hand("open")]))
+            self.assertNotIn("pinch_tap", r.keys())
+
+        def test_a_pinch_with_no_pointer_still_accepts_the_preview(self):
+            r = rig(ink=True, preview=True)
+            r.run(n(10, lambda i: [hand("open")]))
+            r.run(n(5, lambda i: [hand("ppinch")]))
+            r.run(n(20, lambda i: [hand("open")]))
+            self.assertEqual(r.keys().count("pinch_tap"), 1)
+
+        def test_tap_needs_pointer_is_behind_its_key(self):
+            with _Setting("pinch", "tap_needs_pointer", False):
+                r = rig()
+                r.run(n(10, lambda i: [hand("open")]))
+                r.run(n(5, lambda i: [hand("ppinch")]))
+                r.run(n(20, lambda i: [hand("open")]))
+            self.assertEqual(r.keys().count("pinch_tap"), 1)
+
         def test_after_release_is_behind_its_key(self):
             """holds.after_release_ms: 0 brings back the old behaviour."""
             with _Setting("holds", "after_release_ms", 0):

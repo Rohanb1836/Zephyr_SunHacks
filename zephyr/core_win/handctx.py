@@ -69,6 +69,7 @@ class HandCtx:
         self.knob_unwrapped = 0.0
         self.knob_a0 = 0.0
         self.knob_sent = 0.0
+        self.knob_dir = 0.0         # direction of the last knob change (+1, -1, 0 none yet)
         self.knob_twist = 0.0
         self.lvl_moved = False      # the knob changed the level at least once
         # pointer
