@@ -54,16 +54,22 @@ def hide(eng, ctx: HandCtx) -> None:
     ctx.pt_last_point = None
 
 
-def pinch_is_down(ctx: HandCtx, from_pointer: bool = False) -> bool:
-    """Thumb and index closed, and not a fist. From the pointer a pinch may read as a fist: the other
-    three fingers are already curled, so the index bending to the thumb curls the last one. It still
-    counts when the hand was pointing within pinch.fist_grace_ms."""
+def pinch_is_down(ctx: HandCtx, eng=None, from_pointer: bool = False) -> bool:
+    """A new pinch: thumb and index closed, not a fist, and clearly apart for pinch.open_before_ms
+    just before (pinch.pen_open_before_ms while writing, where the gap between two strokes of a
+    letter is short). A resting or gripping hand flickers across the pinch thresholds; a real click
+    (point, then pinch) always starts open.
+    From the pointer a pinch may read as a fist: the other three fingers are already curled, so the
+    index bending to the thumb curls the last one. It still counts when the hand was pointing within
+    pinch.fist_grace_ms."""
     if ctx.hand.pinch >= float(cfg.pinch.down):
         return False
-    if ctx.hand.pose is Pose.FIST:
-        return from_pointer and \
-            ctx.ts - (ctx.pt_last_point or -10**9) <= int(cfg.pinch.get("fist_grace_ms", 0))
-    return True
+    if ctx.hand.pose is Pose.FIST and not (
+            from_pointer and ctx.ts - (ctx.pt_last_point or -10**9) <= int(cfg.pinch.get("fist_grace_ms", 0))):
+        return False
+    writing = eng is not None and eng.ink_enabled()
+    need = int(cfg.pinch.get("pen_open_before_ms", 0) if writing else cfg.pinch.get("open_before_ms", 0))
+    return ctx.open_span >= need
 
 
 def idle_point(eng, ctx: HandCtx) -> bool:
@@ -86,7 +92,7 @@ def idle_point(eng, ctx: HandCtx) -> bool:
 
 def pointer_step(eng, ctx: HandCtx) -> bool:
     """POINTER state. Returns True when the frame was consumed."""
-    if pinch_is_down(ctx, from_pointer=True):
+    if pinch_is_down(ctx, eng, from_pointer=True):
         start_pinch(eng, ctx, from_pointer=True)
         return True
     pose = ctx.hand.pose

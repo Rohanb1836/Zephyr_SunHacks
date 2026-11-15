@@ -38,6 +38,8 @@ class HandCtx:
         self.swipe_settle = False   # after a swipe: wait for the hand to slow down
         self.swipe_cut = -1         # swipe detector ignores history up to this timestamp
         self.pinch_end_at = -10**9  # when the last pinch or pen stroke let go
+        self.open_since: Optional[int] = None   # thumb and index clearly apart since (pinch > pinch.up)
+        self.open_span = 0          # length of the latest clearly-apart run, ms
         self.pinch_cx0 = self.pinch_cy0 = 0.0   # palm centre when the pinch closed
         self.reset()
 

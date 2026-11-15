@@ -15,7 +15,8 @@ pointer:  {box: [0.25, 0.20, 0.75, 0.65], min_cutoff: 1.0, beta: 0.02, hide_afte
 # click_max_ms: a pinch let go within this is a click (tap_max_ms is only when the pen may start).
 # Where ink is on, a pinch made while pointing stays a click until the hand moves pen_start_travel_scales.
 pinch:    {down: 0.25, up: 0.40, prefreeze: 0.50, tap_max_ms: 300, post_freeze_ms: 80,
-           click_max_ms: 900, pen_start_travel_scales: 0.25, fist_grace_ms: 250}
+           click_max_ms: 900, pen_start_travel_scales: 0.25, fist_grace_ms: 250,
+           open_before_ms: 150, pen_open_before_ms: 60}   # a pinch must start from a clear opening
 pen:      {min_cutoff: 1.5, beta: 0.02, ink_default: false}   # ink_default: pen works before Rohan publishes ContextState
 # two_*: two-finger swipes are gentler than open-hand ones. bridge_*: a swipe so fast the hand blurs out
 # and comes back to the side still counts (bridge_max_ms: 0 turns that off).
