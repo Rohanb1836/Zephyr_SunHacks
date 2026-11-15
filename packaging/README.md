@@ -1,7 +1,23 @@
-# Zephyr.app (macOS)
+# Zephyr.app (macOS) and Zephyr.exe (Windows)
 
-Zephyr as a normal Mac app: double-click it and it lives in the menu bar. No Terminal, no Dock icon. Mac only.
-A Mac app has to be built on a Mac, so one person builds it once and shares the `.dmg`.
+Zephyr as a normal app: double-click it and it lives in the menu bar (Mac) or the tray (Windows). No terminal.
+An app has to be built on the system it is for, so one person on a Mac and one on Windows each build it once,
+and both files go on the same GitHub release. The website's download buttons point there.
+
+## Publish a release (what the website links to)
+
+The buttons link to `releases/latest/download/Zephyr.dmg` and `.../Zephyr-Windows.zip`, so the files must keep
+exactly those names.
+
+1. Mac: `bash packaging/build_mac.sh`, then
+   `gh release create v1.0 packaging/dist/Zephyr.dmg --title "Zephyr 1.0" --notes "Hands-free control for Mac and Windows."`
+2. Windows: `powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1`, then
+   `gh release upload v1.0 packaging\dist\Zephyr-Windows.zip`
+
+No `gh`? On GitHub: Releases > Draft a new release, tag `v1.0`, attach the file, Publish. To add the other file
+later, edit that release and attach it.
+
+# Mac
 
 ## Build (once, on a Mac)
 
@@ -66,3 +82,29 @@ Only the files listed in `Zephyr.spec` go into the app. Never add `.env`, `~/.aw
 - **"Zephyr could not start"**: the alert names `zephyr.log`; the error is at the end of it.
 - **Camera light never comes on**: System Settings > Privacy & Security > Camera > turn on Zephyr, then reopen it.
 - **Pointer does not move**: Privacy & Security > Accessibility. After a rebuild, remove Zephyr with − and allow it again.
+
+# Windows
+
+## Build (once, on Windows 10 or 11)
+
+1. In the repo, activate the project venv (Python 3.11 or 3.12; see the main README).
+2. In PowerShell: `powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1`. It installs PyInstaller,
+   downloads the models, builds and zips. Takes a few minutes.
+3. You get `packaging\dist\Zephyr\Zephyr.exe` and `packaging\dist\Zephyr-Windows.zip`. Double-click the exe to test
+   it before sharing the zip.
+
+## Install
+
+1. Download `Zephyr-Windows.zip`, right-click it > Extract All, and open the `Zephyr` folder.
+2. Double-click `Zephyr.exe`. The app is not signed, so Windows shows "Windows protected your PC": click
+   More info > Run anyway. Only needed once.
+3. Allow the camera if Windows asks (Settings > Privacy & security > Camera > Let desktop apps access your camera).
+   The Zephyr icon appears in the tray; it may be under the ^ arrow.
+
+Keep the whole folder together: `Zephyr.exe` needs the `_internal` folder next to it. To start Zephyr with
+Windows, put a shortcut to `Zephyr.exe` in `shell:startup` (Win+R).
+
+## Where Zephyr keeps your files
+
+Tray icon > **Open Zephyr folder** opens `%APPDATA%\Zephyr`: the same `data/`, `.env`, `config.yaml` and
+`zephyr.log` as on the Mac, plus an optional `config_windows.yaml` to tune the Windows settings.

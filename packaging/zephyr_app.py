@@ -1,15 +1,18 @@
-"""packaging/zephyr_app.py  Entry point of the double-click Zephyr.app (macOS). Owner: Swayam.
+"""packaging/zephyr_app.py  Entry point of the double-click Zephyr.app (macOS) and
+Zephyr.exe (Windows). Owner: Swayam.
 
 A downloaded app cannot write inside itself and has no terminal, so before
 run.py starts this gives Zephyr a home folder:
 
-    ~/Library/Application Support/Zephyr/
+    Mac:      ~/Library/Application Support/Zephyr/
+    Windows:  %APPDATA%\\Zephyr\\
         data/         custom gestures (copied from the app on first launch)
         .env          API keys for air writing and cloud sync, if you use them
         config.yaml   optional: put a full copy of config.yaml here to tune it live
+        config_windows.yaml   Windows only, the same for the Windows settings
         zephyr.log    everything Zephyr prints
 
-The menu bar icon has "Open Zephyr folder" to get there from Finder. Everything
+The menu bar (or tray) icon has "Open Zephyr folder" to get there. Everything
 else is the normal run.py. From the repo, `python packaging/zephyr_app.py` runs
 the same setup without building, which is a quick check before a build.
 """
@@ -26,7 +29,11 @@ import time
 import traceback
 from pathlib import Path
 
-HOME = Path.home() / "Library" / "Application Support" / "Zephyr"
+WINDOWS = sys.platform.startswith("win")
+if WINDOWS:
+    HOME = Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "Zephyr"
+else:
+    HOME = Path.home() / "Library" / "Application Support" / "Zephyr"
 FROZEN = getattr(sys, "frozen", False)
 
 
@@ -66,6 +73,9 @@ def prepare() -> Path:
     # the app's config, unless a full copy was put in the home folder to tune
     user_cfg = HOME / "config.yaml"
     os.environ["ZEPHYR_CONFIG"] = str(user_cfg if user_cfg.exists() else bundle_dir() / "config.yaml")
+    if WINDOWS:
+        user_win = HOME / "config_windows.yaml"
+        os.environ["ZEPHYR_WINDOWS_CONFIG"] = str(user_win if user_win.exists() else bundle_dir() / "config_windows.yaml")
 
     # keys live next to the user's files, never inside the app. An app opened from
     # Finder does not see variables exported in Terminal, so they go in this .env
@@ -77,13 +87,20 @@ def prepare() -> Path:
 
     # run.py's own load_dotenv() looks in the current folder when frozen
     os.chdir(HOME)
-    # Finder can add launch arguments run.py does not know
+    # Finder can add launch arguments run.py does not know (and Explorer passes none we need)
     sys.argv = sys.argv[:1]
     return HOME
 
 
 def _alert(title: str, message: str) -> None:
-    """A Mac alert that works before (or without) Qt."""
+    """An alert that works before (or without) Qt."""
+    if WINDOWS:
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(None, message, title, 0x10)   # MB_ICONERROR
+        except Exception:
+            pass
+        return
     # json.dumps gives a double-quoted string with backslash escapes, which AppleScript reads
     script = (f"display alert {json.dumps(title, ensure_ascii=False)} "
               f"message {json.dumps(message, ensure_ascii=False)} as critical")

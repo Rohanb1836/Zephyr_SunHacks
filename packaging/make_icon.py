@@ -1,11 +1,11 @@
-"""packaging/make_icon.py  Draws the Zephyr app icon (packaging/Zephyr.icns). Owner: Swayam.
+"""packaging/make_icon.py  Draws the Zephyr app icon (Zephyr.icns for the Mac, Zephyr.ico for Windows). Owner: Swayam.
 
 The mark is a Z written in the air, flipped upside down: one stroke that starts
 faint at the bottom left and brightens to the website's pale aqua toward the
 fingertip at the top right.
 The menu bar draws the same stroke in zephyr/ui/app.py, and the website uses it too.
 
-    python packaging/make_icon.py              writes packaging/Zephyr.icns
+    python packaging/make_icon.py              writes packaging/Zephyr.icns and Zephyr.ico
     python packaging/make_icon.py out.png      writes a 1024 px PNG instead
 """
 from __future__ import annotations
@@ -116,6 +116,14 @@ def render(out: int = 1024, palette: str = PALETTE) -> Image.Image:
 
 
 if __name__ == "__main__":
-    target = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).with_name("Zephyr.icns")
-    render().save(target)
-    print(f"wrote {target}")
+    if len(sys.argv) > 1:
+        targets = [Path(sys.argv[1])]
+        render().save(targets[0])
+    else:
+        icon = render()
+        targets = [Path(__file__).with_name("Zephyr.icns"), Path(__file__).with_name("Zephyr.ico")]
+        icon.save(targets[0])
+        # the Windows icon carries its own sizes; Explorer and the taskbar pick the nearest
+        icon.save(targets[1], sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+    for target in targets:
+        print(f"wrote {target}")
