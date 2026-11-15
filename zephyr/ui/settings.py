@@ -40,12 +40,12 @@ FRIENDLY = {"url": "Website", "app": "App", "hotkey": "Shortcut", "text": "Type 
 
 # scope values are Rohan's profile ids
 SCOPES = [("*", "All apps"), ("chrome", "Chrome"), ("spotify", "Spotify"), ("word", "Word"),
-          ("powerpoint", "PowerPoint")]
+          ("powerpoint", "PowerPoint"), ("tv", "Roku TV")]
 
 
 # one-value types the wizard can fill with Paste alone. Media is left out because it
 # needs a typed value, and the built-in fist tap and swipes already cover it.
-WIZARD_TYPES = ("url", "app", "hotkey", "text", "open")
+WIZARD_TYPES = ("url", "app", "hotkey", "text", "open", "tv")
 
 
 def action_types() -> list[dict[str, str]]:
@@ -83,6 +83,8 @@ def action_label(kind: str, value: str) -> str:
         return "Type text"
     if kind == "media":
         return {"playpause": "Play / Pause", "next": "Next track", "previous": "Previous track"}.get(v, v)
+    if kind == "tv":
+        return f"TV: {v}"
     return v
 
 

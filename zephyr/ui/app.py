@@ -10,9 +10,9 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import QPointF, Qt, QUrl
+from PySide6.QtCore import QPointF, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QIcon, QPainter, QPainterPath, QPen, QPixmap
-from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PySide6.QtWidgets import QApplication, QInputDialog, QLineEdit, QMenu, QSystemTrayIcon
 
 from zephyr.custom.conf import value
 from zephyr.ui.overlay import Overlay, make_overlay_native
@@ -103,16 +103,21 @@ def _tray_pixmap() -> QPixmap:
     return pm
 
 
-def bring_to_front(window) -> None:
-    window.show()
-    window.raise_()
-    window.activateWindow()
+def activate_app() -> None:
+    """A menu bar app has no Dock icon, so macOS must be told to bring its windows forward."""
     if sys.platform == "darwin":
         try:
             from AppKit import NSApp
             NSApp.activateIgnoringOtherApps_(True)
         except Exception as exc:
             print(f"[ui] could not activate app: {exc!r}")
+
+
+def bring_to_front(window) -> None:
+    window.show()
+    window.raise_()
+    window.activateWindow()
+    activate_app()
 
 
 class ZephyrUi:
@@ -144,6 +149,7 @@ class ZephyrUi:
             act_access = QAction("Allow Accessibility…", menu)
             act_access.triggered.connect(self.open_accessibility)
             menu.addAction(act_access)
+        self._add_tv_menu(menu)
         menu.addSeparator()
         menu.addAction(act_quit)
         self.tray.setContextMenu(menu)
@@ -156,6 +162,54 @@ class ZephyrUi:
             from zephyr.ui.settings import SettingsWindow
             self.settings = SettingsWindow()
         bring_to_front(self.settings)
+
+    # ---------- Roku TV (zephyr/tv) ----------
+    def _add_tv_menu(self, menu: QMenu) -> None:
+        tv_menu = menu.addMenu("Roku TV")
+        self.act_tv = QAction("Control the TV", tv_menu)
+        self.act_tv.setCheckable(True)
+        self.act_tv.triggered.connect(self.toggle_tv)
+        act_find = QAction("Find TV on this Wi-Fi", tv_menu)
+        act_find.triggered.connect(lambda: self._tv().find())
+        act_address = QAction("Type TV address…", tv_menu)
+        act_address.triggered.connect(self.type_tv_address)
+        act_sim = QAction("Start TV simulator", tv_menu)
+        act_sim.triggered.connect(self.start_tv_simulator)
+        self.act_tv_status = QAction("No TV yet", tv_menu)
+        self.act_tv_status.setEnabled(False)
+        for act in (self.act_tv, act_find, act_address, act_sim):
+            tv_menu.addAction(act)
+        tv_menu.addSeparator()
+        tv_menu.addAction(self.act_tv_status)
+        self._tv_timer = QTimer()
+        self._tv_timer.timeout.connect(self._refresh_tv)    # a gesture can turn TV mode on or off too
+        self._tv_timer.start(400)
+
+    @staticmethod
+    def _tv():
+        from zephyr.tv.remote import tv_remote
+        return tv_remote()
+
+    def toggle_tv(self, checked: bool) -> None:
+        self._tv().set_mode("tv" if checked else "normal")
+
+    def type_tv_address(self) -> None:
+        tv = self._tv()
+        activate_app()
+        text, ok = QInputDialog.getText(None, "Roku TV", "The TV's address (on the TV: Settings > Network > About):",
+                                        QLineEdit.Normal, tv.host)
+        if ok and text.strip():
+            tv.use(text.strip())
+
+    def start_tv_simulator(self) -> None:
+        from zephyr.tv import simulator
+        self._tv().use(simulator.start(open_page=True), simulator.NAME)
+
+    def _refresh_tv(self) -> None:
+        tv = self._tv()
+        if self.act_tv.isChecked() != tv.active:
+            self.act_tv.setChecked(tv.active)
+        self.act_tv_status.setText(tv.status_text())
 
     def open_folder(self) -> None:
         folder = zephyr_folder()
