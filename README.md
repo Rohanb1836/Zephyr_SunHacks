@@ -26,7 +26,7 @@ Windows 10 or 11, Python 3.11 or 3.12, from the repository root in PowerShell:
 
 ```powershell
 py -3.11 -m venv .venv
-.venv\Scriptsctivate
+.venv\Scripts\activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python tools/get_models.py

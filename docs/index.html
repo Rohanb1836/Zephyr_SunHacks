@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Zephyr: hands-free control for your Mac</title>
-<meta name="description" content="Zephyr turns your webcam into a hands-free controller for your Mac and your Roku TV. Try the live hand tracking demo in your browser, then download the app.">
+<title>Zephyr: hands-free control for Mac and Windows</title>
+<meta name="description" content="Zephyr turns your webcam into a hands-free controller for your Mac or Windows PC, and your Roku TV. Try the live hand tracking demo in your browser, then download the app.">
 <meta name="theme-color" content="#bfe5e6">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='21' fill='%23121b1e'/%3E%3Cpath d='M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27' fill='none' stroke='%23bfe5e6' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='77' cy='27' r='9' fill='%23f4fbfb'/%3E%3C/svg%3E">
 <style>
@@ -254,7 +254,7 @@ section { padding-block: clamp(56px, 8vw, 120px); }
 .setup span { color: #34494b; }
 .note { margin: 24px 0 0; color: #34494b; font-size: 15px; max-width: 56ch; }
 
-/* what the Mac app adds */
+/* what the desktop app adds */
 .fgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--ink); }
 .fgrid article { padding: 26px 28px 34px 0; border-bottom: 1px solid var(--line); }
 .fgrid article:not(:nth-child(3n + 1)) { padding-left: 28px; border-left: 1px solid var(--line); }
@@ -283,6 +283,10 @@ section { padding-block: clamp(56px, 8vw, 120px); }
 .get a:not(.pill) { color: var(--aqua); }
 .get .pill { background: var(--aqua); border-color: var(--aqua); color: var(--ink); }
 .get .pill:hover { background: var(--paper); border-color: var(--paper); }
+.install .os { margin: 0 0 14px; color: var(--ink-2); }
+.install.win { margin-top: clamp(40px, 6vw, 72px); }
+.code { margin: 0; width: 100%; padding: 16px 18px; border-radius: 16px; background: #050708; color: var(--aqua); font: 400 13.5px/1.7 var(--font-mono); overflow-x: auto; }
+.get code { font-family: var(--font-mono); font-size: 0.92em; color: var(--aqua); }
 
 footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow: hidden; }
 .foot-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
@@ -358,7 +362,7 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
 
   <div class="wrap hero" id="top">
     <div>
-      <p class="eyebrow label">(Hands-free control for your Mac)</p>
+      <p class="eyebrow label">(Hands-free control for Mac and Windows)</p>
       <h1 class="display"><span>Point.</span><span>Pinch.</span><span>Swipe.</span><span class="serif">and twist.</span></h1>
     </div>
     <div class="hero-mark" aria-hidden="true">
@@ -384,15 +388,16 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
       </svg>
     </div>
     <div class="hero-foot">
-      <p class="lede">Zephyr turns the webcam you already have into a controller for your Mac, and for the Roku TV across the room. Gestures change with the app in front, and you can teach it your own.</p>
+      <p class="lede">Zephyr turns the webcam you already have into a controller for your Mac or Windows PC, and for the Roku TV across the room. Gestures change with the app in front, and you can teach it your own.</p>
       <div class="cta">
         <a class="pill solid" href="https://github.com/Rohanb1836/Zephyr_SunHacks/releases/latest/download/Zephyr.dmg">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
           Download for Mac
         </a>
+        <a class="pill" href="#windows">Windows setup</a>
         <a class="pill" href="#demo">Try it in your browser</a>
       </div>
-      <p class="fine label">Free · Apple silicon Macs · camera video stays on your Mac</p>
+      <p class="fine label">Free · Mac app for Apple silicon · runs on Windows 10 and 11 · camera video stays on your computer</p>
     </div>
   </div>
 </div>
@@ -408,7 +413,7 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
   <div class="wrap stats" role="list">
     <div role="listitem"><b>21</b><span>points tracked on each hand, every frame</span></div>
     <div role="listitem"><b>10</b><span>gestures built in, plus any you record</span></div>
-    <div role="listitem"><b>0</b><span>frames of camera video leave your Mac</span></div>
+    <div role="listitem"><b>0</b><span>frames of camera video leave your computer</span></div>
     <div role="listitem"><b>1</b><span>webcam. Nothing else to buy or wear.</span></div>
   </div>
 
@@ -416,7 +421,7 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
     <div class="sec-head">
       <span class="sec-n label">(01)</span>
       <h2 id="demo-title" class="display">Try it in your browser</h2>
-      <p>The same hand tracking and gesture rules as the Mac app, running in this tab. Your video never leaves your device.</p>
+      <p>The same hand tracking and gesture rules as the desktop app, running in this tab. Your video never leaves your device.</p>
     </div>
 
     <div class="bench">
@@ -446,7 +451,7 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
       <div class="panel">
         <div class="tabs" role="tablist" aria-label="Demo modes">
           <button role="tab" id="tab-point" aria-selected="true" aria-controls="pane-point" type="button">Pointer</button>
-          <button role="tab" id="tab-apps" aria-selected="false" aria-controls="pane-apps" type="button" tabindex="-1">Mac apps</button>
+          <button role="tab" id="tab-apps" aria-selected="false" aria-controls="pane-apps" type="button" tabindex="-1">Apps</button>
           <button role="tab" id="tab-tv" aria-selected="false" aria-controls="pane-tv" type="button" tabindex="-1">Roku TV</button>
           <button role="tab" id="tab-custom" aria-selected="false" aria-controls="pane-custom" type="button" tabindex="-1">Your gesture</button>
         </div>
@@ -543,10 +548,10 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
       <li><h3>Pinch</h3><p class="do">Tap thumb and index together.</p><p class="does">A click, right where the pointer froze.</p></li>
       <li><h3>Pinch &amp; hold</h3><p class="do">Keep them together and move.</p><p class="does">Writes in the air. AI reads it as text.</p></li>
       <li><h3>Two-finger swipe</h3><p class="do">Index and middle up, a quick move sideways.</p><p class="does">Next or previous: slide, track, tab.</p></li>
-      <li><h3>Open-hand swipe</h3><p class="do">The whole hand, a quick move sideways.</p><p class="does">Switches desktops.</p></li>
+      <li><h3>Open-hand swipe</h3><p class="do">The whole hand, a quick move sideways.</p><p class="does">Switches desktops, on a Mac or in Windows.</p></li>
       <li><h3>Quick fist</h3><p class="do">Close your hand and open it, under a third of a second.</p><p class="does">Play or pause.</p></li>
       <li><h3>Fist knob</h3><p class="do">Hold a fist for 0.4 seconds, then twist it.</p><p class="does">Right hand turns the volume, left hand the brightness.</p></li>
-      <li><h3>Palm held</h3><p class="do">An open palm to the camera, still, for 0.8 seconds.</p><p class="does">Opens search. Write what you're looking for.</p></li>
+      <li><h3>Palm held</h3><p class="do">An open palm to the camera, still, for 0.8 seconds.</p><p class="does">Opens Spotlight or Windows Search. Write what you're looking for.</p></li>
       <li><h3>Both palms</h3><p class="do">Both hands up for a second.</p><p class="does">Arms or pauses Zephyr, and locks it to you.</p></li>
       <li><h3>Handshake</h3><p class="do">Shake hands with someone in view.</p><p class="does">Lets them drive until you raise both palms.</p></li>
     </ol>
@@ -557,7 +562,7 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
       <div class="sec-head">
         <span class="sec-n label">(03)</span>
         <h2 id="tv-title" class="display">And the TV <span class="serif">across the room</span></h2>
-        <p>Turn on TV mode from the menu bar and the same gestures drive a Roku TV over your Wi-Fi: the home screen, apps, playback, volume, even typing into search. It talks to the TV the way Roku's own phone app does.</p>
+        <p>Turn on TV mode from the menu bar (the tray on Windows) and the same gestures drive a Roku TV over your Wi-Fi: the home screen, apps, playback, volume, even typing into search. It talks to the TV the way Roku's own phone app does.</p>
       </div>
       <div class="tv-cols">
         <table class="keys">
@@ -575,11 +580,11 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
         </table>
         <div>
           <ol class="setup">
-            <li><div><b>Put the TV and the Mac on the same Wi-Fi.</b><span>Guest and campus Wi-Fi keep devices apart, so a phone hotspot works best there.</span></div></li>
+            <li><div><b>Put the TV and the computer on the same Wi-Fi.</b><span>Guest and campus Wi-Fi keep devices apart, so a phone hotspot works best there.</span></div></li>
             <li><div><b>Let apps control the TV.</b><span>On the TV: Settings › System › Advanced system settings › Control by mobile apps › Network access: Enabled.</span></div></li>
-            <li><div><b>Find it from the menu bar.</b><span>Roku TV › Find TV on this Wi-Fi, then Control the TV.</span></div></li>
+            <li><div><b>Find it from the Zephyr icon.</b><span>In the menu bar or the Windows tray: Roku TV › Find TV on this Wi-Fi, then Control the TV.</span></div></li>
           </ol>
-          <p class="note">Works with Roku TVs, like the Hisense R6 we demo on. No TV handy? The menu bar can start a TV simulator in your browser that answers the same way.</p>
+          <p class="note">Works with Roku TVs, like the Hisense R6 we demo on. No TV handy? The Zephyr icon can start a TV simulator in your browser that answers the same way.</p>
         </div>
       </div>
     </div>
@@ -588,8 +593,8 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
   <section id="features" class="wrap" aria-labelledby="features-title">
     <div class="sec-head">
       <span class="sec-n label">(04)</span>
-      <h2 id="features-title" class="display">What the Mac app adds</h2>
-      <p>The browser can show the hand tracking. On your Mac, Zephyr also runs the actions, knows who is in front of the camera and reads what you write.</p>
+      <h2 id="features-title" class="display">What the desktop app adds</h2>
+      <p>The browser can show the hand tracking. On your Mac or PC, Zephyr also runs the actions, knows who is in front of the camera and reads what you write.</p>
     </div>
     <div class="fgrid">
       <article>
@@ -610,7 +615,7 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
       <article>
         <p class="label">Any hand shape · 3 seconds</p>
         <h3>Your own gestures</h3>
-        <p>Record a shape and bind it to a website, an app, a shortcut, text or a TV action. Optional cloud sync brings them to your other Macs.</p>
+        <p>Record a shape and bind it to a website, an app, a shortcut, text or a TV action. Optional cloud sync brings them to your other computers.</p>
       </article>
       <article>
         <p class="label">Palm held · pinch and hold</p>
@@ -631,30 +636,56 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
       <h2 id="how-title" class="display">How it works</h2>
     </div>
     <ol class="steps">
-      <li><h3>Your webcam</h3><p>MediaPipe finds 21 points on each hand, on your Mac, every frame.</p></li>
+      <li><h3>Your webcam</h3><p>MediaPipe finds 21 points on each hand, on your computer, every frame.</p></li>
       <li><h3>Points become a gesture</h3><p>Finger angles decide the pose: open palm, fist, point or two fingers. The palm's path over time makes swipes, holds and the knob.</p></li>
       <li><h3>The app in front decides</h3><p>Zephyr checks which app is in front, or the TV, and runs that action, or the one you recorded.</p></li>
     </ol>
-    <p class="privacy">Camera video never leaves your Mac. Air writing sends only the strokes you draw, so they can be read as text.</p>
+    <p class="privacy">Camera video never leaves your computer. Air writing sends only the strokes you draw, so they can be read as text.</p>
   </section>
 
   <section id="install" class="wrap" aria-labelledby="install-title">
     <div class="sec-head">
       <span class="sec-n label">(06)</span>
       <h2 id="install-title" class="display">Install</h2>
+      <p>A download for Mac. On Windows, Zephyr runs from the source in a few commands.</p>
     </div>
     <div class="install">
-      <ol>
-        <li><div><b>Download Zephyr.dmg and open it.</b><span>Drag Zephyr into Applications, then open it from there.</span></div></li>
-        <li><div><b>Allow it the first time.</b><span>Zephyr isn't notarized yet, so macOS blocks the first launch. Open System Settings › Privacy &amp; Security, click Open Anyway next to Zephyr and enter your password.</span></div></li>
-        <li><div><b>Grant the camera and Accessibility.</b><span>Allow the camera, then turn on Zephyr under Accessibility so it can move the pointer and press keys.</span></div></li>
-        <li><div><b>Raise both palms.</b><span>Zephyr lives in the menu bar. Arm it with both palms and start pointing.</span></div></li>
-      </ol>
+      <div>
+        <p class="label os">On a Mac</p>
+        <ol>
+          <li><div><b>Download Zephyr.dmg and open it.</b><span>Drag Zephyr into Applications, then open it from there.</span></div></li>
+          <li><div><b>Allow it the first time.</b><span>Zephyr isn't notarized yet, so macOS blocks the first launch. Open System Settings › Privacy &amp; Security, click Open Anyway next to Zephyr and enter your password.</span></div></li>
+          <li><div><b>Grant the camera and Accessibility.</b><span>Allow the camera, then turn on Zephyr under Accessibility so it can move the pointer and press keys.</span></div></li>
+          <li><div><b>Raise both palms.</b><span>Zephyr lives in the menu bar. Arm it with both palms and start pointing.</span></div></li>
+        </ol>
+      </div>
       <div class="get">
         <h3>Get <span class="serif">Zephyr</span></h3>
         <a class="pill solid" href="https://github.com/Rohanb1836/Zephyr_SunHacks/releases/latest/download/Zephyr.dmg">Download for Mac</a>
         <p>For Apple silicon Macs (M1 or later) with a webcam.</p>
         <p>Prefer to build it yourself? The source and build steps are <a href="https://github.com/Rohanb1836/Zephyr_SunHacks">on GitHub</a>.</p>
+      </div>
+    </div>
+    <div class="install win" id="windows">
+      <div>
+        <p class="label os">On Windows 10 or 11</p>
+        <ol>
+          <li><div><b>Install Python 3.11 or 3.12 and get the source.</b><span>Download the code from <a href="https://github.com/Rohanb1836/Zephyr_SunHacks">GitHub</a> (Code › Download ZIP) and unzip it, or clone it.</span></div></li>
+          <li><div><b>Set it up once, in PowerShell.</b><span>Open PowerShell in the Zephyr folder and run the commands on the right.</span></div></li>
+          <li><div><b>Allow the camera.</b><span>Settings › Privacy &amp; security › Camera › Let desktop apps access your camera. No other permissions are needed.</span></div></li>
+          <li><div><b>Raise both palms.</b><span>Zephyr sits in the tray. Arm it with both palms and start pointing.</span></div></li>
+        </ol>
+      </div>
+      <div class="get win-card">
+        <h3>Run it <span class="serif">on Windows</span></h3>
+<pre class="code" aria-label="PowerShell commands"><code>py -3.11 -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python tools/get_models.py
+python run.py</code></pre>
+        <p>Next time, just activate and <code>python run.py</code>.</p>
+        <p>On Windows, open-hand swipes move between virtual desktops (make them in Task View, Win+Tab), a held palm opens Windows Search, and the knob turns the system volume and the screen brightness.</p>
       </div>
     </div>
   </section>
@@ -1813,7 +1844,7 @@ function renderApp() {
     html = `<p class="app-kicker">Desktop · media ${appState.playing ? "playing" : "paused"}</p>
       <div class="desks">${[1, 2, 3].map((n) => `<span class="${n === appState.desktop ? "on" : ""}">Desktop ${n}</span>`).join("")}</div>`;
   }
-  if (searching) html += `<div class="searchbar">${appState.searchLabel}…<small>On the Mac you'd write your search in the air now.</small></div>`;
+  if (searching) html += `<div class="searchbar">${appState.searchLabel}…<small>In the app you'd write your search in the air now.</small></div>`;
   v.innerHTML = html;
 }
 
@@ -1881,7 +1912,7 @@ function renderTv() {
     html = `<div style="position:absolute;inset:0;background:radial-gradient(120% 100% at 70% 20%, ${color}, #050608 75%)"></div>` + html +
       `<div class="tv-player"><span>${tv.playing ? "▶ Playing" : "❚❚ Paused"}</span><b>${name}</b><div class="tv-progress"><i style="width:${(tv.pos * 100).toFixed(1)}%"></i></div></div>`;
   } else {
-    html += `<div class="tv-search"><b>Search</b><span>With the Mac app, write the words in the air. They're typed here.</span></div>`;
+    html += `<div class="tv-search"><b>Search</b><span>With the desktop app, write the words in the air. They're typed here.</span></div>`;
   }
   if (performance.now() < tv.volUntil) html += `<div class="tv-vol"><i style="height:${tv.volume}%"></i><span>${tv.volume}</span></div>`;
   html += `<div class="tv-ecp">${tv.last}</div>`;

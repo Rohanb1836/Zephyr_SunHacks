@@ -76,7 +76,10 @@ def _toward(p: QPointF, q: QPointF, k: float) -> QPointF:
     return p + v * (k / max((v.x() ** 2 + v.y() ** 2) ** 0.5, 1e-6))
 
 
-def _tray_pixmap() -> QPixmap:
+def _tray_pixmap(tile: bool = False) -> QPixmap:
+    """The mark in black for the macOS menu bar (macOS recolours it). With tile=True it is drawn
+    like the app icon instead, light blue on a dark square, for the Windows taskbar, which shows
+    icons as they are and would hide a black mark on its dark theme."""
     a, b, c, d = (QPointF(x, y) for x, y in TRAY_CORNERS)
     path = QPainterPath(a)
     for corner, came_from, going_to in ((b, a, c), (c, b, d)):
@@ -88,16 +91,25 @@ def _tray_pixmap() -> QPixmap:
     pm.fill(Qt.transparent)
     p = QPainter(pm)
     p.setRenderHint(QPainter.Antialiasing)
+    ink, tip = QColor(0, 0, 0), QColor(0, 0, 0)
+    if tile:
+        p.setPen(Qt.NoPen)
+        p.setBrush(QColor(18, 27, 30))
+        p.drawRoundedRect(0, 0, 44, 44, 10, 10)
+        p.translate(22, 22)                              # shrink the mark a little inside the square
+        p.scale(0.78, 0.78)
+        p.translate(-21, -23)
+        ink, tip = QColor(191, 229, 230), QColor(244, 251, 251)
     steps = 48
     last = path.pointAtPercent(0.0)
     for i in range(1, steps + 1):                        # thin at the start, thicker at the tip
         t = i / steps
         here = path.pointAtPercent(t)
-        p.setPen(QPen(QColor(0, 0, 0), 3.4 + 1.2 * t, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        p.setPen(QPen(ink, 3.4 + 1.2 * t, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         p.drawLine(last, here)
         last = here
     p.setPen(Qt.NoPen)
-    p.setBrush(QColor(0, 0, 0))
+    p.setBrush(tip)
     p.drawEllipse(d, 4.4, 4.4)
     p.end()
     return pm
@@ -129,8 +141,9 @@ class ZephyrUi:
         self.native = make_overlay_native(self.overlay)
         self.settings = None
 
-        icon = QIcon(_tray_pixmap())
-        icon.setIsMask(True)  # macOS draws it in the menu bar colour
+        mac = sys.platform == "darwin"
+        icon = QIcon(_tray_pixmap(tile=not mac))
+        icon.setIsMask(mac)  # macOS draws it in the menu bar colour
         self.tray = QSystemTrayIcon(icon)
         menu = QMenu()
         act_settings = QAction("Settings…", menu)
