@@ -30,6 +30,7 @@ class HandCtx:
         self.scale = 0.1
         self.facing = False     # palm faces the camera
         self.speed = 0.0        # palm speed, scales per second (about 100 ms window)
+        self.raw_pose = None    # this frame's undebounced pose (the published pose lags a few frames)
         self.hist: deque[tuple[int, float, float, str, float]] = deque()   # (ts, cx, cy, pose, scale)
         self.reset()
 
@@ -45,6 +46,12 @@ class HandCtx:
         self.lvl_y0 = 0.0
         self.lvl_tick = 0
         self.lvl_open_since: Optional[int] = None
+        self.knob_filter = None
+        self.knob_last = 0.0
+        self.knob_unwrapped = 0.0
+        self.knob_a0 = 0.0
+        self.knob_sent = 0.0
+        self.knob_twist = 0.0
         # pointer
         self.pt_frames = 0
         self.pt_last_point: Optional[int] = None

@@ -15,8 +15,9 @@ pinch:    {down: 0.25, up: 0.40, prefreeze: 0.50, tap_max_ms: 300, post_freeze_m
 pen:      {min_cutoff: 1.5, beta: 0.02, ink_default: false}   # ink_default: pen works before Rohan publishes ContextState
 swipe:    {natural: true, min_travel_scales: 2.0, max_ms: 450, min_peak_speed: 6.0,
            max_slope: 0.5, rest_speed: 1.0, refractory_ms: 600, opposite_block_ms: 700}
-level:    {engage_ms: 400, dead_zone_scales: 0.4, min_rate: 10, max_rate: 60, gain: 40,
-           tick_ms: 100, release_ms: 150}
+level:    {mode: knob, knob_gain: 1.0, knob_dead_deg: 8, knob_min_step: 0.5, knob_invert: false,
+           knob_min_cutoff: 1.0, knob_beta: 0.05, engage_ms: 400, tick_ms: 100, release_ms: 150,
+           dead_zone_scales: 0.4, min_rate: 10, max_rate: 60, gain: 40}   # mode: vertical = old up/down
 holds:    {palm_ms: 500, palm_max_speed: 0.5, both_palms_ms: 1000, fist_tap_min_ms: 80,
            fist_tap_max_ms: 350, fist_tap_max_travel: 0.3, custom_ms: 500, custom_agree: 0.8}
 

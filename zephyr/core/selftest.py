@@ -85,13 +85,42 @@ run(seq(7, lambda i:[hand("fist",0.5)]))
 run(seq(5, lambda i:[hand("open",0.5)]))
 report("fist tap", gestures()==["fist_tap"])
 run(seq(30, lambda i:[])); clear()
-# 5 level right hand up
+# 5 level knob: right fist twisted right (clockwise) raises volume, twisted back lowers it
+def rot(raw, deg):
+    th = np.radians(deg); lm = raw.landmarks.copy(); w = lm[0].copy()
+    d = lm[:, :2] - w[:2]
+    # clockwise as seen in the image (y down): top of the hand moves right
+    lm[:, 0] = w[0] + d[:, 0] * np.cos(th) - d[:, 1] * np.sin(th)
+    lm[:, 1] = w[1] + d[:, 0] * np.sin(th) + d[:, 1] * np.cos(th)
+    return RawHand(lm, raw.world, raw.side, raw.score)
+run(seq(14, lambda i:[hand("fist",0.5,0.6)]))
+run(seq(20, lambda i:[rot(hand("fist",0.5,0.6), 2.5*(i+1))]))     # twist to +50 deg
+run(seq(10, lambda i:[rot(hand("fist",0.5,0.6), 50)]))
+up=[m for top,m in ev if top==T.LEVEL]
+run(seq(20, lambda i:[rot(hand("fist",0.5,0.6), 50-2.5*(i+1))]))  # back to 0
+run(seq(10, lambda i:[hand("fist",0.5,0.6)]))
+run(seq(10, lambda i:[hand("open",0.5,0.6)]))
+lv=[m for top,m in ev if top==T.LEVEL]
+total_up=sum(m.delta for m in up); total=sum(m.delta for m in lv)
+report("knob: twist right raises volume", up and all(m.kind=="volume" and m.delta>0 for m in up) and 35 < total_up < 45)
+report("knob: twisting back undoes it, then release", abs(total) < 1.0 and lv[-1].active is False and not gestures())
+print("   knob up total", round(total_up,1), "net", round(total,1), "events", len(lv))
+run(seq(30, lambda i:[])); clear()
+# 5b left fist twisted left lowers brightness
+run(seq(14, lambda i:[hand("fist",0.4,0.6,side=Side.LEFT)]))
+run(seq(20, lambda i:[rot(hand("fist",0.4,0.6,side=Side.LEFT), -2*(i+1))]))
+run(seq(10, lambda i:[hand("open",0.4,0.6,side=Side.LEFT)]))
+lv=[m for top,m in ev if top==T.LEVEL]
+report("knob: left fist twisted left lowers brightness", lv and all(m.kind=="brightness" for m in lv) and sum(m.delta for m in lv) < -20)
+run(seq(30, lambda i:[])); clear()
+# 5c vertical mode still works
+cfg.level.__dict__["mode"]="vertical"
 run(seq(14, lambda i:[hand("fist",0.5,0.6)]))
 run(seq(20, lambda i:[hand("fist",0.5,0.6-0.01*i)]))
 run(seq(10, lambda i:[hand("open",0.5,0.4)]))
 lv=[m for top,m in ev if top==T.LEVEL]
-report("level volume up then release", lv and all(m.kind=="volume" for m in lv) and lv[-1].active is False and all(m.delta>0 for m in lv[:-1]) and not gestures())
-print("   level ticks:", len(lv)-1, "deltas", [round(m.delta,2) for m in lv[:4]])
+report("vertical mode: fist up raises volume", lv and lv[-1].active is False and all(m.delta>0 for m in lv[:-1]))
+cfg.level.__dict__["mode"]="knob"
 run(seq(30, lambda i:[])); clear()
 # 6 palm hold
 run(seq(25, lambda i:[hand("open",0.5)]))

@@ -12,9 +12,11 @@ What the audience reads from it:
     fingers         extended fingers are bright with a white tip, curled fingers are dim
     pinch           a line between thumb and index that closes to a dot on click
     swipe           a fading trail behind the palm and an arrow when the swipe fires
+    knob            a dial with a needle around the fist while brightness or volume is being turned
 """
 from __future__ import annotations
 
+import math
 import time
 from collections import deque
 from typing import Optional
@@ -59,7 +61,22 @@ class _Fx:
         self.ripples: deque[tuple[float, float, int]] = deque(maxlen=6)
         self.trails: dict[int, deque[tuple[int, float, float]]] = {}
         self.last_frame = -1
+        self.level_t = -10**9         # last active LevelEvent
+        self.level_kind = ""
+        self.engaging = 0.0           # level hold progress (fist held, knob about to engage)
         bus.subscribe(T.GESTURE, self._on_gesture)
+        bus.subscribe(T.LEVEL, self._on_level)
+        bus.subscribe(T.HOLD, self._on_hold)
+
+    def _on_level(self, e) -> None:
+        self.level_kind = e.kind
+        self.level_t = _now() if e.active else -10**9
+
+    def _on_hold(self, e) -> None:
+        if e.kind == "level":
+            self.engaging = e.progress
+            if e.progress >= 1.0:
+                self.level_t = _now()
 
     def _on_gesture(self, e) -> None:
         t = _now()
@@ -204,6 +221,11 @@ def draw_hands(p: QPainter, rect: QRectF, frame, t: Optional[int] = None) -> str
                 p.drawLine(pts[4], pts[8])
                 p.setPen(Qt.NoPen)
 
+        # knob dial around the fist
+        knob_on = t - state.level_t < 1500 or state.engaging > 0.0
+        if not ignored and mode is SystemMode.ARMED and hand.pose is Pose.FIST and knob_on:
+            _draw_knob(p, lm, pts, colour, lw, state, hand)
+
         if ignored and mode is not SystemMode.DISARMED:
             p.setFont(_font(lw * 3.0))
             p.setPen(OFF)
@@ -239,6 +261,33 @@ def draw_hands(p: QPainter, rect: QRectF, frame, t: Optional[int] = None) -> str
     if not acting:
         return ""
     return POSE_WORDS.get(max(acting, key=lambda h: h.scale).pose, "")
+
+
+def _draw_knob(p: QPainter, lm, pts, colour: QColor, lw: float, state: _Fx, hand) -> None:
+    kx = sum(pts[i].x() for i in (5, 9, 13, 17)) / 4
+    ky = sum(pts[i].y() for i in (5, 9, 13, 17)) / 4
+    c = QPointF((kx + pts[0].x()) / 2, (ky + pts[0].y()) / 2)
+    r = math.hypot(kx - pts[0].x(), ky - pts[0].y()) * 1.05 + lw * 3
+    ang = math.atan2(kx - pts[0].x(), pts[0].y() - ky)       # 0 = straight up, + = clockwise
+    p.setBrush(Qt.NoBrush)
+    p.setPen(QPen(_alpha(colour, 0.35), lw * 0.8))
+    p.drawEllipse(c, r, r)
+    for k in range(-6, 7):                                   # tick marks every 15 degrees
+        a = math.radians(15 * k)
+        inner, outer = r - lw * (1.6 if k % 3 == 0 else 0.9), r
+        p.setPen(QPen(_alpha(WHITE, 0.55 if k % 3 == 0 else 0.3), lw * 0.5, Qt.SolidLine, Qt.RoundCap))
+        p.drawLine(QPointF(c.x() + inner * math.sin(a), c.y() - inner * math.cos(a)),
+                   QPointF(c.x() + outer * math.sin(a), c.y() - outer * math.cos(a)))
+    tip = QPointF(c.x() + (r + lw * 1.5) * math.sin(ang), c.y() - (r + lw * 1.5) * math.cos(ang))
+    p.setPen(QPen(WHITE, lw * 1.1, Qt.SolidLine, Qt.RoundCap))
+    p.drawLine(QPointF(c.x() + r * 0.55 * math.sin(ang), c.y() - r * 0.55 * math.cos(ang)), tip)
+    p.setPen(Qt.NoPen)
+    p.setBrush(colour)
+    p.drawEllipse(tip, lw * 1.2, lw * 1.2)
+    label = "Brightness" if state.level_kind == "brightness" or (not state.level_kind and hand.side.value == "left") else "Volume"
+    p.setFont(_font(lw * 3.2))
+    p.setPen(_alpha(WHITE, 0.9))
+    p.drawText(QRectF(c.x() - 90, c.y() + r + lw * 1.5, 180, lw * 5), Qt.AlignHCenter, f"↺ {label} ↻")
 
 
 def draw_ripples(p: QPainter, w: float, h: float, t: Optional[int] = None) -> None:

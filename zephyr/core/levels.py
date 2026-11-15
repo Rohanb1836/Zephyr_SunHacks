@@ -3,17 +3,26 @@
 FIST from idle enters FIST_PENDING. Then exactly one of:
   fist opens to OPEN after fist_tap_min_ms..fist_tap_max_ms with little travel -> FIST_TAP
   fist held level.engage_ms                                                 -> LEVEL
-In LEVEL: offset = (y0 - y) / scale (up is positive). Inside the dead zone nothing is published.
-Outside it, rate = clamp((|offset| - dead_zone) * gain, min_rate, max_rate) %/s, and every tick_ms
-LevelEvent(kind, rate * tick_s * sign, active=True). Left hand brightness, right hand volume.
+In LEVEL (level.mode: knob, the default): the fist is a dial. Twist it like turning a knob:
+  turning right (clockwise as you see it) raises the level, turning left lowers it.
+  The twist is the angle of the line from the wrist to the middle of the knuckles, measured from the
+  angle when the knob engaged. Inside level.knob_dead_deg nothing changes. Past it, the target change
+  is (|twist| - dead) * knob_gain percent, with the sign of the twist. Every tick_ms the engine sends
+  LevelEvent(kind, target - already_sent, active=True) when that difference is at least knob_min_step.
+  Like a real knob, turning back undoes the change. To go further, open the fist and grab again.
+level.mode: vertical keeps the old behaviour (move the fist up or down for a rate).
+Left hand brightness, right hand volume (by detected side, so hands.swap_sides is respected).
 When the fist has been open for level.release_ms: LevelEvent(active=False).
 """
 from __future__ import annotations
+
+import math
 
 from zephyr import contracts
 from zephyr.config import cfg
 from zephyr.contracts import GestureKind, HoldProgress, LevelEvent, Pose, Side, T
 from zephyr.core import holds
+from zephyr.core.filters import OneEuro
 from zephyr.core.handctx import FIST_PENDING, IDLE, LEVEL, HandCtx
 
 RELEASE_WAIT_MS = 250   # after a fist opens, how long transitional poses may last before OPEN
@@ -51,6 +60,11 @@ def _pending(eng, ctx: HandCtx) -> bool:
             ctx.lvl_y0 = ctx.cy
             ctx.lvl_tick = ctx.ts
             ctx.lvl_open_since = None
+            ctx.knob_filter = OneEuro(float(lv.get("knob_min_cutoff", 1.0)), float(lv.get("knob_beta", 0.05)))
+            ctx.knob_last = knob_angle(ctx)
+            ctx.knob_unwrapped = ctx.knob_last
+            ctx.knob_a0 = ctx.knob_filter(ctx.knob_unwrapped, ctx.ts / 1000.0)
+            ctx.knob_sent = 0.0
         return True
     # the fist has opened (or is opening)
     if ctx.fist_end is None:
@@ -78,6 +92,9 @@ def _level(eng, ctx: HandCtx) -> bool:
             return False
         return True
     ctx.lvl_open_since = None
+    if str(lv.get("mode", "knob")) == "knob":
+        _knob(eng, ctx)
+        return True
     offset = (ctx.lvl_y0 - ctx.cy) / max(ctx.scale, 1e-4)
     dz = float(lv.dead_zone_scales)
     if abs(offset) <= dz:
@@ -92,6 +109,48 @@ def _level(eng, ctx: HandCtx) -> bool:
         if ctx.ts - ctx.lvl_tick >= tick:      # fell behind (slow frame): do not burst
             ctx.lvl_tick = ctx.ts
     return True
+
+
+def knob_angle(ctx: HandCtx) -> float:
+    """Hand twist in degrees: 0 when the knuckles are straight above the wrist, positive when the
+    top of the fist leans to the right of the (mirrored) image, which is clockwise as the user sees it."""
+    lm = ctx.hand.landmarks
+    kx = (float(lm[5, 0]) + float(lm[9, 0]) + float(lm[13, 0]) + float(lm[17, 0])) / 4
+    ky = (float(lm[5, 1]) + float(lm[9, 1]) + float(lm[13, 1]) + float(lm[17, 1])) / 4
+    dx = (kx - float(lm[0, 0])) * contracts.ASPECT
+    dy = float(lm[0, 1]) - ky
+    return math.degrees(math.atan2(dx, dy))
+
+
+def knob_twist(ctx: HandCtx) -> float:
+    """Filtered twist since the knob engaged, in degrees (unwrapped across +-180)."""
+    a = knob_angle(ctx)
+    d = (a - ctx.knob_last + 180.0) % 360.0 - 180.0
+    ctx.knob_last = a
+    ctx.knob_unwrapped += d
+    lv = cfg.level
+    ctx.knob_filter.min_cutoff = float(lv.get("knob_min_cutoff", 1.0))
+    ctx.knob_filter.beta = float(lv.get("knob_beta", 0.05))
+    twist = ctx.knob_filter(ctx.knob_unwrapped, ctx.ts / 1000.0) - ctx.knob_a0
+    return -twist if lv.get("knob_invert", False) else twist
+
+
+def _knob(eng, ctx: HandCtx) -> None:
+    lv = cfg.level
+    if ctx.raw_pose is not None and ctx.raw_pose is not Pose.FIST:
+        return          # the fist is opening: hold the level, do not read the moving hand
+    twist = knob_twist(ctx)
+    ctx.knob_twist = twist
+    dead = float(lv.get("knob_dead_deg", 8))
+    target = math.copysign(max(0.0, abs(twist) - dead) * float(lv.get("knob_gain", 1.0)), twist)
+    tick = int(lv.tick_ms)
+    if ctx.ts - ctx.lvl_tick < tick:
+        return
+    ctx.lvl_tick = ctx.ts
+    delta = target - ctx.knob_sent
+    if abs(delta) >= float(lv.get("knob_min_step", 0.5)):
+        eng.pub(T.LEVEL, LevelEvent(ctx.lvl_kind, delta, True))
+        ctx.knob_sent = target
 
 
 def _end(eng, ctx: HandCtx) -> None:

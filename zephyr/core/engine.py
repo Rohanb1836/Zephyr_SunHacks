@@ -172,6 +172,8 @@ class Engine:
                 ctx = self.ctxs[h.hand_id] = HandCtx(h.hand_id)
             ctx.hand = h
             ctx.ts = ts
+            tr = self.tracker.tracks.get(h.hand_id)
+            ctx.raw_pose = tr.poses.raw if tr is not None else h.pose
             ctx.cx, ctx.cy = F.palm_centre(h.landmarks)
             ctx.scale = h.scale
             ctx.facing = F.palm_facing(h.landmarks, h.side, sign)
