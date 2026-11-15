@@ -115,6 +115,13 @@ class ActionRouter:
             LOG.debug('Could not read foreground app', exc_info=True)
 
     def _resolve(self, key):
+        if key.startswith('custom.'):
+            try:
+                from zephyr.custom.store import custom_action
+                return custom_action(key, self.profile.get('id', 'default'))
+            except Exception:
+                LOG.exception('Could not load custom gesture binding')
+                return None
         return self.profile.get('map', {}).get(key) or self.profiles['default'].get('map', {}).get(key)
 
     def _flush_levels(self):
