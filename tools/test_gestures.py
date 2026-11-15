@@ -319,6 +319,12 @@ class SwipeAndTrackerTests(unittest.TestCase):
         self.assertTrue(set(r.eng.ctxs) - first, "the left hand got the right hand's id")
 
 
+# gesture-to-gesture tests, shared with the other engine's suite (tools/flow_tests.py)
+from types import SimpleNamespace as _NS  # noqa: E402
+from flow_tests import flow_case  # noqa: E402
+FlowTests = flow_case(_NS(hand=hand, n=n, rig=rig, RawHand=RawHand))
+
+
 if __name__ == "__main__":
     for stream in (sys.stdout, sys.stderr):
         try:
