@@ -220,7 +220,8 @@ def pinch_step(eng, ctx: HandCtx) -> bool:
         # so click_max_ms is about a second, not the old 300 ms (which missed 10 of 10).
         # A tap with no pointer showing only has a job while the writing preview is up (accept).
         # Anywhere else it was noise, and in TV mode it would press Select on the TV.
-        if held <= click_max and (ctx.pinch_from_pointer or preview):
+        needs_pointer = bool(pc.get("tap_needs_pointer", True))
+        if held <= click_max and (ctx.pinch_from_pointer or preview or not needs_pointer):
             if ctx.pinch_second:
                 # pinch twice = right click (the first pinch's left click is never sent)
                 ctx.tap_pending = None
@@ -262,7 +263,12 @@ def _after_release(eng, ctx: HandCtx) -> None:
     ctx.pinch_start = None
     ctx.pinch_end_at = ctx.ts     # a pinching hand reads as a fist: no fist tap straight after
     ctx.pen_buf = []
-    if ctx.pinch_from_pointer and ctx.hand.pose is Pose.POINT:
+    ctx.palm_block_until = max(ctx.palm_block_until, ctx.ts + int(cfg.holds.get("after_release_ms", 0)))
+    # Back to the pointer unless the hand clearly became something else. As a click lets go the
+    # index is still bent and the hand reads as a fist for a few frames; hiding the pointer for
+    # that made it blink off and back on after a click. pointer_step hides it after
+    # pointer.hide_after_ms if the pointing hand does not come back.
+    if ctx.pinch_from_pointer and ctx.hand.pose not in SWITCH_POSES:
         ctx.state = POINTER
         ctx.pt_last_point = ctx.ts
         ctx.pt_unfreeze_at = ctx.ts + int(cfg.pinch.post_freeze_ms)

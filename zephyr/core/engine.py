@@ -179,13 +179,40 @@ class Engine:
             ctx.cx, ctx.cy = F.palm_centre(h.landmarks)
             ctx.scale = h.scale
             ctx.facing = F.palm_facing(h.landmarks, h.side, sign)
+            # how long thumb and index have been clearly apart: a pinch must start from a clear
+            # opening, so a resting or gripping hand whose pinch flickers never clicks
+            if h.pinch > float(cfg.pinch.up):
+                if ctx.open_since is None:
+                    ctx.open_since = ts
+                ctx.open_span = ts - ctx.open_since
+            else:
+                ctx.open_since = None
             ctx.push_hist(HIST_KEEP_MS)
             if ctx.state not in (IDLE, HOLD_PALM, HOLD_CUSTOM):
                 ctx.swipe_cut = ts      # movement made while pointing, writing or turning a knob is never a swipe
             ctx.speed = ctx.compute_speed(100)
             ctx.still_speed = ctx.compute_speed(int(cfg.holds.get("still_window_ms", 300)))
+            ctx.tilt = F.tilt_deg(h.landmarks)
+            # A hand hanging with its fingers toward the floor is resting, not gesturing
+            # (hands.rest_tilt_deg; 0 = off). On 11,000 resting hands of the HaGRID set the middle
+            # value was 164 degrees; deliberate fists, palms and swipe poses stayed under 62.
+            rest_lim = float(cfg.hands.get("rest_tilt_deg", 0))
+            if rest_lim > 0 and ctx.tilt > rest_lim:
+                if ctx.rest_since is None:
+                    ctx.rest_since = ts
+                ctx.resting = ts - ctx.rest_since >= int(cfg.hands.get("rest_ms", 150))
+            else:
+                ctx.rest_since, ctx.resting = None, False
+            if ctx.resting:
+                ctx.swipe_cut = ts      # movement of a hanging hand (an arm swinging) is never a swipe
             if h.pose is not Pose.OPEN:
                 ctx.palm_fired = False
+            elif ts < ctx.palm_block_until:
+                # an open hand seen right after a swipe, a fist, a pinch or a pen stroke is the tail
+                # of that gesture: it must change shape before it can open Search
+                ctx.palm_fired = True
+            if ctx.fist_parked and h.pose in (Pose.OPEN, Pose.POINT, Pose.TWO):
+                ctx.fist_parked = False
             if h.pose is not Pose.UNKNOWN:
                 ctx.custom_fired = False
         # hands past their dropout grace: cancel and forget
@@ -281,6 +308,18 @@ class Engine:
                 self._run_hand(ctx, n_open, both_active)
                 if ctx.state == IDLE:
                     self.acting = None
+                elif self._idle_knob(ctx):
+                    # A fist that grabbed the knob and never turned it (a chin on a fist, a hand
+                    # around a cup) must not lock out the other hand for good. Once it has idled
+                    # for level.idle_park_ms the other hand may start a gesture; if it does, the
+                    # idle fist is parked until it clearly changes shape.
+                    for other in sorted((c for c in allowed if c is not ctx), key=self._prio):
+                        self._run_hand(other, n_open, both_active)
+                        if other.state != IDLE:
+                            levels.cancel(self, ctx)
+                            ctx.fist_parked = True
+                            self.acting = other.hand_id
+                            break
                 return
             elif self.acting in visible_ids:
                 self._cancel_ctx(ctx)         # visible but its role changed: stop it
@@ -289,21 +328,28 @@ class Engine:
                 return                        # inside dropout grace: keep its state and wait
 
         # nobody holds the lock: fists, pinches and points get the first look
-        def prio(c: HandCtx) -> int:
-            p = c.hand.pose
-            if p is Pose.FIST:
-                return 0
-            if c.hand.pinch < float(cfg.pinch.down):
-                return 1
-            if p is Pose.POINT:
-                return 2
-            return 3
-
-        for ctx in sorted(allowed, key=prio):
+        for ctx in sorted(allowed, key=self._prio):
             self._run_hand(ctx, n_open, both_active)
             if ctx.state != IDLE:
                 self.acting = ctx.hand_id
                 break
+
+    @staticmethod
+    def _prio(c: HandCtx) -> int:
+        p = c.hand.pose
+        if p is Pose.FIST:
+            return 0 if not (c.fist_parked or c.resting) else 3
+        if c.hand.pinch < float(cfg.pinch.down):
+            return 1
+        if p is Pose.POINT:
+            return 2
+        return 3
+
+    @staticmethod
+    def _idle_knob(ctx: HandCtx) -> bool:
+        park = int(cfg.level.get("idle_park_ms", 0))
+        return (park > 0 and ctx.state == LEVEL and not ctx.lvl_moved
+                and ctx.fist_start is not None and ctx.ts - ctx.fist_start >= park)
 
     def _run_hand(self, ctx: HandCtx, n_open: int, both_active: bool) -> None:
         st = ctx.state
@@ -338,21 +384,24 @@ class Engine:
         fast = ctx.speed > float(cfg.swipe.get("busy_speed", 3.0))
         # a pinching hand reads as a fist; right after letting go of a pinch it is not a new fist
         just_pinched = ctx.ts - ctx.pinch_end_at < int(cfg.holds.get("after_pinch_ms", 0))
-        if pose is Pose.FIST and not fast and not just_pinched:
+        resting = ctx.resting
+        if pose is Pose.FIST and not fast and not just_pinched and not resting and not ctx.fist_parked:
             ctx.pt_frames = 0
             levels.start(self, ctx)
             levels.step(self, ctx)
             return
-        if not fast and pointer.pinch_is_down(ctx):
+        if not fast and pointer.pinch_is_down(ctx, eng=self):
             pointer.start_pinch(self, ctx, from_pointer=False)
             return
         if pointer.idle_point(self, ctx):
             return
-        sw = self.swipes.check(ctx)
+        # pointing and pinching are not held back for a hanging hand: a finger pointed at the
+        # screen from below the camera can look as if it points down
+        sw = None if resting else self.swipes.check(ctx)
         if sw:
             self._swiped(ctx, sw)
             return
-        if holds.palm_can_start(ctx, n_open, both_active):
+        if not resting and holds.palm_can_start(ctx, n_open, both_active):
             holds.palm_start(self, ctx)
             holds.palm_step(self, ctx, n_open, both_active)
             return

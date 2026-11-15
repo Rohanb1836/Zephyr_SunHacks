@@ -77,6 +77,7 @@ These come from recorded test sessions on a laptop webcam, and apply on any comp
 - **Sit 60 to 80 cm back** and gesture at chest to face height, where the camera can see your hands.
 - **Swipes:** a firm sideways movement of the arm with the hand facing the camera and fingers up, then a slower return.
 - **Both palms:** raise them together; one palm held up alone for about a second opens Search first.
+- **Point up, not at the camera:** hold the pointing finger toward the ceiling. A finger pointed straight at the camera is foreshortened, and about 15% of such hands read as a starting pinch, which freezes the pointer.
 
 ### Windows: tuned engine
 
@@ -89,6 +90,17 @@ On Windows, `run.py` uses a copy of the engine tuned on Windows laptop webcams (
 - **Volume / brightness:** the knob needs a 15 degree twist, and the left/right hand is judged by which side of your body it is on.
 - **Presence:** a hand passing in front of your face does not pause Zephyr; a hand must be within arm's reach of you to count as yours. Looking away pauses only after a clear head turn (about 40 degrees to the side, 35 up or down) held for about 1.2 seconds.
 
+The gesture-to-gesture rules are the same as on the Mac, with the same keys (set in `config.yaml`, override them in `config_windows.yaml`; 0 turns a rule off):
+
+- **Resting hands:** a hand hanging with its fingers toward the floor (more than 120 degrees from upright, `hands.rest_tilt_deg`) starts no fist, swipe or Search, so an arm swinging as you walk past does nothing. Pointing and pinching are not held back.
+- **Search needs the palm up:** the palm must lean less than 75 degrees from upright (`holds.palm_max_tilt_deg`); a hand lying sideways never opens it.
+- **After a gesture:** for 1.5 seconds after a fist, a knob turn, a click or a pen stroke lets go, the open hand left up does not open Search (`holds.after_release_ms`). Change the hand's shape first.
+- **Resting fist:** a fist that grabbed the knob and never turned it lets go after 2.5 seconds (`level.idle_park_ms`), so a chin resting on a fist does not lock out the other hand.
+- **Swipe and return:** a swipe also ends when the hand turns back, so swiping again about a second later works without a pause.
+- **Pointer after a click:** stays on when the pinch briefly reads as a fist.
+- **Knob wobble:** turning the knob back the other way needs 4 points more than carrying on (`level.knob_reverse_step`), so a resting fist wobbling at the edge of the dead zone no longer flicks the level up and down. A deliberate turn back still works.
+- **Right click:** pinch twice quickly while pointing (`pinch.double_ms`, 320 ms). A single pinch left-clicks once that time has passed. Works in every app.
+
 ### Mac: forgiving limits
 
 The Mac engine shares the fixes below with the Windows one; its limits are in `config.yaml`. They are covered by `python tools/test_gestures_mac.py` and `python tools/test_presence_mac.py` (synthetic hands, no camera) and still need a pass on the demo Mac's camera.
@@ -99,6 +111,16 @@ The Mac engine shares the fixes below with the Windows one; its limits are in `c
 - **Swipes:** a little shorter and slower than before; two-finger swipes can be gentler than open-hand ones; a swipe that blurs out of the picture and comes back to the side still counts.
 - **Search:** the palm must face the camera flat; an edge-on hand never opens Search.
 - **Pointer and knob:** the pointer holds still under a resting hand; one glitched frame cannot move the volume or brightness.
+- **Resting hands:** a hand hanging with its fingers toward the floor (more than 120 degrees from upright, `hands.rest_tilt_deg`) starts no fist, swipe or Search, so an arm swinging as you walk past does nothing. Pointing and pinching are not held back.
+- **Search needs the palm up:** the palm must lean less than 75 degrees from upright (`holds.palm_max_tilt_deg`); a hand lying sideways never opens it.
+- **After a gesture:** for 1.5 seconds after a fist, a knob turn, a click or a pen stroke lets go, the open hand left up does not open Search (`holds.after_release_ms`). Change the hand's shape first.
+- **Resting fist:** a fist that grabbed the knob and never turned it lets go after 2.5 seconds (`level.idle_park_ms`), so a chin resting on a fist does not lock out the other hand.
+- **Swipe and return:** a swipe also ends when the hand turns back, so swiping again about a second later works without a pause.
+- **Pointer after a click:** stays on when the pinch briefly reads as a fist.
+- **Knob wobble:** turning the knob back the other way needs 4 points more than carrying on (`level.knob_reverse_step`), so a resting fist wobbling at the edge of the dead zone no longer flicks the level up and down. A deliberate turn back still works.
+- **Pinch with no pointer:** does nothing unless the writing preview is showing, where it accepts (`pinch.tap_needs_pointer`). Before, a resting hand's pinches counted as taps: harmless to the mouse, but in TV mode each one pressed Select.
+
+Each of these rules is a key in `config.yaml`, and 0 turns it off. They are covered on both engines by the shared tests in `tools/flow_tests.py` (synthetic hands, no camera). The tilt limits were measured on the HaGRID v2 test annotations (`tools/hagrid`).
 
 ## Test clips
 
@@ -117,6 +139,17 @@ Use the demo display's actual pixel dimensions. Clips go in `clips/` and are exc
 ## Accuracy and speed
 
 Measurements are pending testing on the demo Mac. Targets include at least 19/20 detections per built-in gesture, at most one false trigger per two minutes, and median/p95 capture-to-event latency of 30/50 ms. Actual results and any gaps should be added after testing.
+
+Replay of real webcam clips recorded on a Windows laptop (26 clips: each gesture 5 to 10 times, plus 2 minutes of normal movement; `tools/live_check.py`), through both engines. The clips come from one Windows webcam, so the Mac numbers are a guide until the demo Mac is tested:
+
+| Engine | Gestures detected | Events during 2 min of normal movement |
+| --- | --- | --- |
+| Mac, before the `gesture-robustness` branch | 98 | 125 |
+| Mac, with it | 95 | 84 |
+| Mac, with it and the knob and no-pointer pinch rules | 95 | 15 |
+| Windows, with all of them | 100 | 9 |
+
+Frame to event on the Windows laptop: median 15 to 16 ms, p95 16 to 46 ms (target 30 / 50). Two-finger swipes remain the weakest gesture (2 to 6 of 10 per clip).
 
 ## Credits and tools
 

@@ -17,6 +17,7 @@ Pinch: down below pinch.down, up above pinch.up (hysteresis).
 from __future__ import annotations
 
 from zephyr.config import cfg
+from zephyr.bus import bus
 from zephyr.contracts import GestureKind, PointerEvent, Pose, T
 from zephyr.core import strokes
 from zephyr.core.filters import OneEuro2D
@@ -54,16 +55,22 @@ def hide(eng, ctx: HandCtx) -> None:
     ctx.pt_last_point = None
 
 
-def pinch_is_down(ctx: HandCtx, from_pointer: bool = False) -> bool:
-    """Thumb and index closed, and not a fist. From the pointer a pinch may read as a fist: the other
-    three fingers are already curled, so the index bending to the thumb curls the last one. It still
-    counts when the hand was pointing within pinch.fist_grace_ms."""
+def pinch_is_down(ctx: HandCtx, eng=None, from_pointer: bool = False) -> bool:
+    """A new pinch: thumb and index closed, not a fist, and clearly apart for pinch.open_before_ms
+    just before (pinch.pen_open_before_ms while writing, where the gap between two strokes of a
+    letter is short). A resting or gripping hand flickers across the pinch thresholds; a real click
+    (point, then pinch) always starts open.
+    From the pointer a pinch may read as a fist: the other three fingers are already curled, so the
+    index bending to the thumb curls the last one. It still counts when the hand was pointing within
+    pinch.fist_grace_ms."""
     if ctx.hand.pinch >= float(cfg.pinch.down):
         return False
-    if ctx.hand.pose is Pose.FIST:
-        return from_pointer and \
-            ctx.ts - (ctx.pt_last_point or -10**9) <= int(cfg.pinch.get("fist_grace_ms", 0))
-    return True
+    if ctx.hand.pose is Pose.FIST and not (
+            from_pointer and ctx.ts - (ctx.pt_last_point or -10**9) <= int(cfg.pinch.get("fist_grace_ms", 0))):
+        return False
+    writing = eng is not None and eng.ink_enabled()
+    need = int(cfg.pinch.get("pen_open_before_ms", 0) if writing else cfg.pinch.get("open_before_ms", 0))
+    return ctx.open_span >= need
 
 
 def idle_point(eng, ctx: HandCtx) -> bool:
@@ -86,7 +93,7 @@ def idle_point(eng, ctx: HandCtx) -> bool:
 
 def pointer_step(eng, ctx: HandCtx) -> bool:
     """POINTER state. Returns True when the frame was consumed."""
-    if pinch_is_down(ctx, from_pointer=True):
+    if pinch_is_down(ctx, eng, from_pointer=True):
         start_pinch(eng, ctx, from_pointer=True)
         return True
     pose = ctx.hand.pose
@@ -162,6 +169,11 @@ def _pinch_travel(ctx: HandCtx) -> float:
     return (dx * dx + dy * dy) ** 0.5 / max(ctx.scale, 1e-4)
 
 
+def _preview_showing() -> bool:
+    w = bus.latest(T.WRITE)
+    return w is not None and getattr(w, "phase", "") == "preview"
+
+
 def pinch_step(eng, ctx: HandCtx) -> bool:
     """PINCHING state. Always consumes the frame."""
     pc = cfg.pinch
@@ -170,7 +182,12 @@ def pinch_step(eng, ctx: HandCtx) -> bool:
     # 870 ms, so a click may last click_max_ms, not just tap_max_ms.
     click_max = max(int(pc.get("click_max_ms", pc.tap_max_ms)), int(pc.tap_max_ms))
     if ctx.hand.pinch > float(pc.up):
-        if held <= click_max:
+        # pinch.tap_needs_pointer: a tap with no pointer showing only counts while the writing
+        # preview is up (accept). Measured on recorded clips: 56 such taps in 2 minutes of normal
+        # movement on this engine (Windows, which has the rule: 0). They click nothing, but in TV
+        # mode each one pressed Select, and over the writing preview each one accepted it.
+        needs_pointer = bool(pc.get("tap_needs_pointer", False))
+        if held <= click_max and (ctx.pinch_from_pointer or not needs_pointer or _preview_showing()):
             eng.gesture(GestureKind.PINCH_TAP, ctx, pos=ctx.pinch_pos)
         _after_release(eng, ctx)
         return True
@@ -193,7 +210,12 @@ def _after_release(eng, ctx: HandCtx) -> None:
     ctx.pinch_start = None
     ctx.pinch_end_at = ctx.ts     # a pinching hand reads as a fist: no fist tap straight after
     ctx.pen_buf = []
-    if ctx.pinch_from_pointer and ctx.hand.pose is Pose.POINT:
+    ctx.palm_block_until = max(ctx.palm_block_until, ctx.ts + int(cfg.holds.get("after_release_ms", 0)))
+    # Back to the pointer unless the hand clearly became something else. As a click lets go the
+    # index is still bent and the hand reads as a fist for a few frames; hiding the pointer for
+    # that made it blink off and back on after a click. pointer_step hides it after
+    # pointer.hide_after_ms if the pointing hand does not come back.
+    if ctx.pinch_from_pointer and ctx.hand.pose not in SWITCH_POSES:
         ctx.state = POINTER
         ctx.pt_last_point = ctx.ts
         ctx.pt_unfreeze_at = ctx.ts + int(cfg.pinch.post_freeze_ms)

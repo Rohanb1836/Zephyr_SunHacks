@@ -185,9 +185,17 @@ def _knob(eng, ctx: HandCtx) -> None:
         return
     ctx.lvl_tick = ctx.ts
     delta = target - ctx.knob_sent
-    if abs(delta) >= float(lv.get("knob_min_step", 0.5)):
+    need = float(lv.get("knob_min_step", 0.5))
+    # level.knob_reverse_step (0 = off): turning the other way needs a bigger move than carrying on.
+    # A resting fist whose angle wobbles at the dead-zone edge sent +2, -2, +1.7, -1.7 ... (measured
+    # on a recorded clip: 15 brightness changes in 5 s); a deliberate turn back is one long change.
+    reverse = float(lv.get("knob_reverse_step", 0.0))
+    if reverse > 0 and ctx.knob_dir and delta * ctx.knob_dir < 0:
+        need = max(need, reverse)
+    if abs(delta) >= need:
         eng.pub(T.LEVEL, LevelEvent(ctx.lvl_kind, delta, True))
         ctx.knob_sent = target
+        ctx.knob_dir = 1.0 if delta > 0 else -1.0
         ctx.lvl_moved = True
 
 
@@ -196,6 +204,7 @@ def _end(eng, ctx: HandCtx) -> None:
     ctx.state = IDLE
     ctx.fist_start = None
     ctx.fist_end = None
+    holds.release_block(ctx)    # the hand that just let go of a fist must not open Search
 
 
 def cancel(eng, ctx: HandCtx) -> None:

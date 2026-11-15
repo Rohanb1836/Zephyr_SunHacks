@@ -38,6 +38,12 @@ class HandCtx:
         self.swipe_cls = 0      # this frame: 5 = open-hand swipe shape, 2 = two-finger, 0 = neither
         self.swipe_settle = False   # after a swipe: wait for the hand to slow down
         self.swipe_cut = -1         # swipe detector ignores history up to this timestamp
+        self.swipe_sign = 0.0       # direction of this hand's last swipe movement (+1 right, -1 left)
+        self.tilt = 0.0             # degrees from upright in the picture (features.tilt_deg)
+        self.rest_since: Optional[int] = None
+        self.resting = False        # hanging with the fingers toward the floor: starts no fist, swipe or Search
+        self.fist_parked = False    # a fist that held the knob without turning it while the other hand
+                                    # went to work: it starts nothing until the hand clearly changes shape
         self.open_since: Optional[int] = None   # thumb and index clearly apart since (pinch > pinch.up)
         self.open_span = 0          # length of the latest clearly-apart run, ms
         self.pinch_end_at = -10**9  # when the last pinch let go
@@ -63,6 +69,7 @@ class HandCtx:
         self.knob_unwrapped = 0.0
         self.knob_a0 = 0.0
         self.knob_sent = 0.0
+        self.knob_dir = 0.0         # direction of the last knob change (+1, -1, 0 none yet)
         self.knob_twist = 0.0
         self.lvl_moved = False      # the knob changed the level at least once
         # pointer

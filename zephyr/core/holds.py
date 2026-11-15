@@ -38,7 +38,7 @@ class BothPalms:
         """ctxs: candidate hands (same role). Returns True on the frame it fires."""
         # Palm facing is also judged by position (the hand on the left of the picture is the left
         # hand), because with two hands up MediaPipe sometimes gives both the same left/right label.
-        opens = sorted((c for c in ctxs if c.hand.pose is Pose.OPEN), key=lambda c: -c.scale)[:2]
+        opens = sorted((c for c in ctxs if c.hand.pose is Pose.OPEN and _upright(c)), key=lambda c: -c.scale)[:2]
         opens.sort(key=lambda c: c.cx)
         sign = float(cfg.poses.get("palm_sign", 1))
         open_facing = [c for c, side in zip(opens, (Side.LEFT, Side.RIGHT))
@@ -82,7 +82,7 @@ def palm_can_start(ctx: HandCtx, n_open_allowed: int, both_active: bool) -> bool
     return (ctx.hand.pose is Pose.OPEN and ctx.facing and n_open_allowed == 1 and not both_active
             and ctx.hand.pinch > float(cfg.pinch.up)      # a pinching hand is clicking or writing, not a palm
             and ctx.still_speed < float(cfg.holds.palm_max_speed)
-            and _square(ctx))
+            and _square(ctx) and _upright(ctx))
 
 
 def _square(ctx: HandCtx) -> bool:
@@ -90,6 +90,20 @@ def _square(ctx: HandCtx) -> bool:
     Measured on recorded sessions: deliberate palm holds were 0.66 to 0.72 wide, the open hands
     that fired Search by accident during normal movement 0.16 and 0.30."""
     return F.palm_width(ctx.hand.landmarks, ctx.scale) >= float(cfg.holds.get("palm_min_width", 0.0))
+
+
+def _upright(ctx: HandCtx) -> bool:
+    """The palm is held up, fingers toward the ceiling (holds.palm_max_tilt_deg; 0 = off). On the
+    HaGRID set 99.9% of 10,000 deliberate palms leaned under 41 degrees, while resting open hands
+    hang down: this rule alone took the resting hands that could open Search from 27% to 4%."""
+    lim = float(cfg.holds.get("palm_max_tilt_deg", 0))
+    return lim <= 0 or ctx.tilt <= lim
+
+
+def release_block(ctx: HandCtx) -> None:
+    """Called when a fist, a pinch or a pen stroke lets go: the open hand that follows is the tail
+    of that gesture, so it cannot open Search (holds.after_release_ms)."""
+    ctx.palm_block_until = max(ctx.palm_block_until, ctx.ts + int(cfg.holds.get("after_release_ms", 0)))
 
 
 def palm_start(eng, ctx: HandCtx) -> None:
@@ -106,7 +120,7 @@ def palm_step(eng, ctx: HandCtx, n_open_allowed: int, both_active: bool) -> bool
         palm_cancel(eng, ctx)           # the thumb and index closed: this is a pinch, hand it over now
         return False
     ok = (pose is Pose.OPEN and ctx.facing and n_open_allowed == 1 and not both_active
-          and ctx.still_speed < float(cfg.holds.palm_max_speed) and _square(ctx))
+          and ctx.still_speed < float(cfg.holds.palm_max_speed) and _square(ctx) and _upright(ctx))
     if not ok:
         # a clear new pose or a second palm ends the hold at once; a shaky frame gets a short grace
         if pose in (Pose.FIST, Pose.POINT, Pose.TWO) or both_active:

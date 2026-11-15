@@ -124,6 +124,15 @@ class PinchTests(unittest.TestCase):
         r.run(n(5, lambda i: [hand("point")]))
         self.assertNotIn("pinch_tap", r.keys())
 
+    def test_flicker_from_a_resting_hand_never_taps(self):
+        """pinch.open_before_ms: a gripping hand flickered across the pinch thresholds (64 taps in a
+        minute on Windows before this). On the GitHub landmark set, 4% of plain pointing hands
+        already read as a pinch."""
+        r = rig()
+        r.run(n(10, lambda i: [hand("point")]))
+        r.run(n(40, lambda i: [hand("ppinch" if i % 2 else "point")]))
+        self.assertLessEqual(r.keys().count("pinch_tap"), 1)
+
     def test_where_ink_is_on_a_still_pinch_clicks_and_a_moving_pinch_writes(self):
         r = rig(ink=True)
         r.run(n(10, lambda i: [hand("point")]))
@@ -297,6 +306,12 @@ class SwipeAndTrackerTests(unittest.TestCase):
         r.run(n(3, lambda i: []))
         r.run(n(5, lambda i: [hand("open", side=Side.LEFT)]))
         self.assertTrue(set(r.eng.ctxs) - first, "the left hand got the right hand's id")
+
+
+# gesture-to-gesture tests, shared with the other engine's suite (tools/flow_tests.py)
+from types import SimpleNamespace as _NS  # noqa: E402
+from flow_tests import flow_case  # noqa: E402
+FlowTests = flow_case(_NS(hand=hand, n=n, rig=rig, RawHand=RawHand))
 
 
 if __name__ == "__main__":
