@@ -74,7 +74,12 @@ class Gate:
                 self.on_disarm()
                 return False, "owner_left"
             controller = self.guest_id if self.guest_id is not None else self.owner_id
-            if not any(p.person_id == controller for p in self.people) or not self.attentive:
+            # A body missing for a frame or two is a detector dropout, not someone leaving:
+            # only count it once it has been gone for away_ms.
+            seen = self.guest_seen if self.guest_id is not None else self.owner_seen
+            present = any(p.person_id == controller for p in self.people) or \
+                self.clock() - seen < int(cfg.presence.away_ms)
+            if not present or not self.attentive:
                 return False, "looking_away"
             return True, "ok"
 
@@ -98,7 +103,9 @@ class Gate:
             self.guest_id = None
             self.cache.clear()
             self.enrolment += 1
-            self.attentive = False
+            # they just showed both palms to the camera: they are looking. Starting at False showed
+            # "Paused: looking away" for a moment after every arm.
+            self.attentive = True
             return True
 
     def on_disarm(self):
@@ -115,7 +122,7 @@ class Gate:
         with self.lock:
             self.guest_id = None
             self.cache.clear()
-            self.attentive = False
+            self.attentive = True   # the owner just took control back with both palms, facing the camera
 
     def grant(self, person_id, now):
         with self.lock:

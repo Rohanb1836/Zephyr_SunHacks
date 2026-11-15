@@ -7,10 +7,12 @@ When POINT is lost for hide_after_ms (or the hand clearly switches to OPEN, TWO 
 one PointerEvent(visible=False) is published.
 
 Pinch: down below pinch.down, up above pinch.up (hysteresis).
-  released within tap_max_ms  -> GestureEvent(PINCH_TAP, pos=frozen pointer position, or None
-                                 when no pointer was showing, so the router can skip the click)
-  held longer and ink enabled -> PEN (strokes.py), with the points buffered since pinch down
-  held longer, no ink         -> nothing
+  released within click_max_ms -> GestureEvent(PINCH_TAP, pos=frozen pointer position, or None
+                                  when no pointer was showing, so the router can skip the click)
+  held past tap_max_ms, ink on -> PEN (strokes.py), with the points buffered since pinch down.
+                                  A pinch made while pointing stays a click until the hand moves
+                                  pen_start_travel_scales or click_max_ms passes.
+  held longer, no ink          -> nothing
 """
 from __future__ import annotations
 
@@ -52,8 +54,16 @@ def hide(eng, ctx: HandCtx) -> None:
     ctx.pt_last_point = None
 
 
-def pinch_is_down(ctx: HandCtx) -> bool:
-    return ctx.hand.pinch < float(cfg.pinch.down) and ctx.hand.pose is not Pose.FIST
+def pinch_is_down(ctx: HandCtx, from_pointer: bool = False) -> bool:
+    """Thumb and index closed, and not a fist. From the pointer a pinch may read as a fist: the other
+    three fingers are already curled, so the index bending to the thumb curls the last one. It still
+    counts when the hand was pointing within pinch.fist_grace_ms."""
+    if ctx.hand.pinch >= float(cfg.pinch.down):
+        return False
+    if ctx.hand.pose is Pose.FIST:
+        return from_pointer and \
+            ctx.ts - (ctx.pt_last_point or -10**9) <= int(cfg.pinch.get("fist_grace_ms", 0))
+    return True
 
 
 def idle_point(eng, ctx: HandCtx) -> bool:
@@ -76,7 +86,7 @@ def idle_point(eng, ctx: HandCtx) -> bool:
 
 def pointer_step(eng, ctx: HandCtx) -> bool:
     """POINTER state. Returns True when the frame was consumed."""
-    if pinch_is_down(ctx):
+    if pinch_is_down(ctx, from_pointer=True):
         start_pinch(eng, ctx, from_pointer=True)
         return True
     pose = ctx.hand.pose
@@ -112,7 +122,22 @@ def _update_pos(ctx: HandCtx) -> None:
             return
         ctx.pt_frozen = False
         ctx.pt_unfreeze_at = None
-    ctx.pt_x, ctx.pt_y = x, y
+    ctx.pt_x, ctx.pt_y = _deadband(ctx.pt_x, ctx.pt_y, x, y)
+
+
+def _deadband(ox: float, oy: float, x: float, y: float) -> tuple[float, float]:
+    """Hold the pointer still inside pointer.deadband (screen fraction) of where it is, and past it
+    follow by only the distance beyond the band, so there is never a jump. 0 turns it off."""
+    band = float(cfg.pointer.get("deadband", 0.0))
+    if band <= 0:
+        return x, y
+    from zephyr import contracts
+    dx, dy = (x - ox) * contracts.ASPECT, y - oy     # screen is wide: compare in the same units
+    d = (dx * dx + dy * dy) ** 0.5
+    if d <= band:
+        return ox, oy
+    k = (d - band) / d
+    return ox + (x - ox) * k, oy + (y - oy) * k
 
 
 def start_pinch(eng, ctx: HandCtx, from_pointer: bool) -> None:
@@ -124,31 +149,49 @@ def start_pinch(eng, ctx: HandCtx, from_pointer: bool) -> None:
         ctx.pt_frozen = True
         ctx.pt_unfreeze_at = None
         _publish(eng, ctx)
+    ctx.pinch_cx0, ctx.pinch_cy0 = ctx.cx, ctx.cy
     ctx.pen_buf = []
     strokes.buffer_point(ctx)
+
+
+def _pinch_travel(ctx: HandCtx) -> float:
+    """How far the pinching hand has moved since the pinch closed, in hand scales."""
+    from zephyr import contracts
+    dx = (ctx.cx - ctx.pinch_cx0) * contracts.ASPECT
+    dy = ctx.cy - ctx.pinch_cy0
+    return (dx * dx + dy * dy) ** 0.5 / max(ctx.scale, 1e-4)
 
 
 def pinch_step(eng, ctx: HandCtx) -> bool:
     """PINCHING state. Always consumes the frame."""
     pc = cfg.pinch
     held = ctx.ts - ctx.pinch_start
+    # People pinch slower than it looks: clicks measured on recorded sessions were held 470 to
+    # 870 ms, so a click may last click_max_ms, not just tap_max_ms.
+    click_max = max(int(pc.get("click_max_ms", pc.tap_max_ms)), int(pc.tap_max_ms))
     if ctx.hand.pinch > float(pc.up):
-        if held <= int(pc.tap_max_ms):
+        if held <= click_max:
             eng.gesture(GestureKind.PINCH_TAP, ctx, pos=ctx.pinch_pos)
         _after_release(eng, ctx)
         return True
     strokes.buffer_point(ctx)
     if ctx.pinch_from_pointer:
         _publish(eng, ctx)                 # frozen dot stays on screen
+    # Pen, where ink is on. A pinch made while pointing stays a click until the hand moves (pinch
+    # and move writes, pinch and let go clicks); the points since the pinch closed are buffered,
+    # so no ink is lost. A pinch made without the pointer writes after tap_max_ms as before.
     if held > int(pc.tap_max_ms) and eng.ink_enabled():
-        if ctx.pinch_from_pointer:
-            hide(eng, ctx)
-        strokes.begin(eng, ctx)
+        if (not ctx.pinch_from_pointer or held > click_max
+                or _pinch_travel(ctx) > float(pc.get("pen_start_travel_scales", 0.25))):
+            if ctx.pinch_from_pointer:
+                hide(eng, ctx)
+            strokes.begin(eng, ctx)
     return True
 
 
 def _after_release(eng, ctx: HandCtx) -> None:
     ctx.pinch_start = None
+    ctx.pinch_end_at = ctx.ts     # a pinching hand reads as a fist: no fist tap straight after
     ctx.pen_buf = []
     if ctx.pinch_from_pointer and ctx.hand.pose is Pose.POINT:
         ctx.state = POINTER

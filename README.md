@@ -80,7 +80,7 @@ These come from recorded test sessions on a laptop webcam, and apply on any comp
 
 ### Windows: tuned engine
 
-On Windows, `run.py` uses a copy of the engine tuned on Windows laptop webcams (`zephyr/core_win`, `zephyr/presence_win`, settings in `config_windows.yaml`). The Mac runs `zephyr/core` and `zephyr/presence` unchanged and never reads `config_windows.yaml`. On Windows:
+On Windows, `run.py` uses a copy of the engine tuned on Windows laptop webcams (`zephyr/core_win`, `zephyr/presence_win`, settings in `config_windows.yaml`). The Mac runs `zephyr/core` and `zephyr/presence` with the settings in `config.yaml`, and never reads `config_windows.yaml`. On Windows:
 
 - **Click:** a pinch while pointing counts if released within about 1 second, and not while the hand is moving fast.
 - **Play / pause:** a fist held up to about 2 seconds without twisting, then opened.
@@ -88,6 +88,17 @@ On Windows, `run.py` uses a copy of the engine tuned on Windows laptop webcams (
 - **Writing:** a pinch made while pointing stays a click until the hand moves; pinch and move writes.
 - **Volume / brightness:** the knob needs a 15 degree twist, and the left/right hand is judged by which side of your body it is on.
 - **Presence:** a hand passing in front of your face does not pause Zephyr; a hand must be within arm's reach of you to count as yours.
+
+### Mac: forgiving limits
+
+The Mac engine shares the fixes below with the Windows one; its limits are in `config.yaml`. They are covered by `python tools/test_gestures_mac.py` and `python tools/test_presence_mac.py` (synthetic hands, no camera) and still need a pass on the demo Mac's camera.
+
+- **Looking away:** pauses only after a clear head turn (about 40 degrees to the side, 35 up or down) held for about 1.2 seconds. A glance at the keyboard, a hand over the face or a missed camera frame does not pause. `presence.mode: off` turns the owner lock off.
+- **Click:** a pinch while pointing counts if released within about 0.9 seconds. Where writing is on, pinch and let go clicks; pinch and move writes.
+- **Play / pause:** a fist held up to about 2.5 seconds without twisting, then opened (a relaxed open hand counts).
+- **Swipes:** a little shorter and slower than before; two-finger swipes can be gentler than open-hand ones; a swipe that blurs out of the picture and comes back to the side still counts.
+- **Search:** the palm must face the camera flat; an edge-on hand never opens Search.
+- **Pointer and knob:** the pointer holds still under a resting hand; one glitched frame cannot move the volume or brightness.
 
 ## Test clips
 

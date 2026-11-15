@@ -67,4 +67,5 @@ def end(eng, ctx: HandCtx, x: float | None = None, y: float | None = None) -> No
         eng.pub(T.STROKE, StrokeEvent("end", ctx.stroke_id, x, y, ctx.ts))
     ctx.stroke_id = None
     ctx.pinch_start = None
+    ctx.pinch_end_at = ctx.ts   # a writing hand reads as a fist: no fist tap as it lets go
     ctx.state = IDLE

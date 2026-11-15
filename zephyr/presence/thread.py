@@ -31,13 +31,17 @@ class PresenceProcessor:
         gate = self.gate
         with gate.lock:
             owner, guest, enrolled = gate.owner_id, gate.guest_id, gate.enrolment
+            attentive_now = gate.attentive
         if self.generation != enrolled:
             self.attention = {}
             self.generation = enrolled
         current = {p.person_id: p for p in people}
         controller = guest if guest is not None else owner
         if controller is not None:
-            attention = self.attention.setdefault(controller, Attention())
+            if controller not in self.attention:
+                # start from the gate's view: True right after arming or taking control back
+                self.attention[controller] = Attention(initial=attentive_now)
+            attention = self.attention[controller]
             attentive = attention.update(current.get(controller), now, controller == owner)
         else:
             attentive = False

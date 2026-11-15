@@ -37,6 +37,8 @@ class HandCtx:
         self.swipe_cls = 0      # this frame: 5 = open-hand swipe shape, 2 = two-finger, 0 = neither
         self.swipe_settle = False   # after a swipe: wait for the hand to slow down
         self.swipe_cut = -1         # swipe detector ignores history up to this timestamp
+        self.pinch_end_at = -10**9  # when the last pinch or pen stroke let go
+        self.pinch_cx0 = self.pinch_cy0 = 0.0   # palm centre when the pinch closed
         self.reset()
 
     def reset(self) -> None:
@@ -57,6 +59,7 @@ class HandCtx:
         self.knob_a0 = 0.0
         self.knob_sent = 0.0
         self.knob_twist = 0.0
+        self.lvl_moved = False      # the knob changed the level at least once
         # pointer
         self.pt_frames = 0
         self.pt_last_point: Optional[int] = None

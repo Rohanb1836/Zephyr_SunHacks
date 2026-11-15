@@ -336,7 +336,9 @@ class Engine:
         pose = ctx.hand.pose
         # a hand flying sideways is swiping: blurred frames must not start a fist or a pinch
         fast = ctx.speed > float(cfg.swipe.get("busy_speed", 3.0))
-        if pose is Pose.FIST and not fast:
+        # a pinching hand reads as a fist; right after letting go of a pinch it is not a new fist
+        just_pinched = ctx.ts - ctx.pinch_end_at < int(cfg.holds.get("after_pinch_ms", 0))
+        if pose is Pose.FIST and not fast and not just_pinched:
             ctx.pt_frames = 0
             levels.start(self, ctx)
             levels.step(self, ctx)

@@ -1,6 +1,7 @@
 """Match visible bodies across frames and associate faces by nose position."""
 from dataclasses import dataclass
 
+from zephyr.config import cfg
 from zephyr.contracts import dist2d
 
 
@@ -24,7 +25,10 @@ class PeopleTracker:
         self.next_id = 1
 
     def update(self, poses, faces, ts_ms):
-        self.previous = {i: v for i, v in self.previous.items() if ts_ms - v[1] <= 500}
+        # Remember people through short detection dropouts (a turned body, an arm across the
+        # chest). Forgetting the owner after 0.5 s gave them a new id and disarmed Zephyr.
+        keep_ms = int(cfg.presence.get("reid_ms", 1500))
+        self.previous = {i: v for i, v in self.previous.items() if ts_ms - v[1] <= keep_ms}
         bodies = []
         for lm in poses.pose_landmarks:
             if len(lm) < 17:
