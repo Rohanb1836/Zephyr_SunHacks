@@ -21,7 +21,8 @@ from zephyr.contracts import ContextState, Role, Side, SystemMode, T, WriteState
 from zephyr.core.engine import Engine  # noqa: E402
 from zephyr.core.hands import RawHand  # noqa: E402
 
-FINGERS = {"open": (1, 1, 1, 1), "fist": (0, 0, 0, 0), "point": (1, 0, 0, 0), "ppinch": (1, 0, 0, 0)}
+FINGERS = {"open": (1, 1, 1, 1), "fist": (0, 0, 0, 0), "point": (1, 0, 0, 0), "ppinch": (1, 0, 0, 0),
+           "two": (1, 1, 0, 0), "tpinch": (1, 1, 0, 0)}
 
 
 def hand(kind="open", ox=0.5, oy=0.6, s=0.1, side=Side.RIGHT, width=1.0):
@@ -50,7 +51,7 @@ def hand(kind="open", ox=0.5, oy=0.6, s=0.1, side=Side.RIGHT, width=1.0):
     else:
         lm[3] = [ox - mir * 0.5 * s, oy - 0.75 * s, 0]
         lm[4] = [ox - mir * 0.3 * s, oy - 0.8 * s, 0]
-    if kind == "ppinch":
+    if kind in ("ppinch", "tpinch"):
         lm[4] = lm[8] + np.array([0.01 * s, 0, 0], np.float32)
         lm[3] = (lm[2] + lm[4]) / 2
     return RawHand(lm, lm.copy(), side, 0.95)
@@ -154,6 +155,17 @@ class PinchTests(unittest.TestCase):
         r.run(n(5, lambda i: [hand("point", ox=0.6)]))
         phases = [s.phase for s in r.of(T.STROKE)]
         self.assertTrue(phases and phases[0] == "begin" and phases[-1] == "end")
+        self.assertNotIn("pinch_tap", r.keys())
+
+
+class TwoFingerTests(unittest.TestCase):
+    def test_a_two_finger_hand_never_starts_a_pinch(self):
+        """Blur at the start of a two-finger flick read as a pinch and blocked the swipe."""
+        r = rig()
+        r.run(n(10, lambda i: [hand("two")]))
+        r.run(n(3, lambda i: [hand("tpinch")]))
+        r.run(n(6, lambda i: [hand("two")]))
+        self.assertTrue(all(c.state != "pinching" for c in r.eng.ctxs.values()))
         self.assertNotIn("pinch_tap", r.keys())
 
 

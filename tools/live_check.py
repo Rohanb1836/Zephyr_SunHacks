@@ -39,6 +39,8 @@ ROUNDS = [
     ("pointer_still", "Point with one finger and hold it STILL. (pointer jitter)", None, None, 8),
     ("negative", "Act normally: talk with your hands, touch your face, drink, type. Do NOT gesture.",
      None, None, 60),
+    ("arm", "Both palms up, held until the ring fills. Drop both hands. 5 times.", "arm_toggle", 5, 30),
+    ("knob", "Right fist, hold, twist RIGHT then back LEFT, open. 5 times.", None, None, 35),
 ]
 GESTURE_SECONDS = {r[0]: r[4] for r in ROUNDS}
 
@@ -105,6 +107,8 @@ def run(name: str, only: list[str], screen_w: int, screen_h: int) -> int:
 
     bus.subscribe(T.GESTURE, on_gesture)
     bus.subscribe(T.POINTER, on_pointer)
+    levels: list[tuple[int, str, float]] = []
+    bus.subscribe(T.LEVEL, lambda e: e.delta and levels.append((int(time.monotonic() * 1000), e.kind, e.delta)))
     bus.subscribe(T.LATENCY, lambda d: latency.append(d["publish_ms"] - d["capture_ms"]))
 
     hub = FrameHub()
@@ -120,6 +124,7 @@ def run(name: str, only: list[str], screen_w: int, screen_h: int) -> int:
     window = "Zephyr live check"
     try:
         for key, text, expect_key, expect_n, seconds in rounds:
+            engine._set_mode(SystemMode.ARMED, "live_check")   # the arm round may have paused it
             # 4 s get-ready, then the round
             ready_until = time.monotonic() + 4
             writer = None
@@ -171,6 +176,10 @@ def run(name: str, only: list[str], screen_w: int, screen_h: int) -> int:
                 got = Counter(k for _, k in events[events_before:])
                 pts = pointer[pointer_before:]
             row = {"round": key, "expect": expect_key, "n": expect_n, "got": dict(got)}
+            lv = [x for x in levels if x[0] >= int(t_start * 1000)] if t_start else []
+            if lv:
+                row["levels"] = {k: round(sum(d for _, kk, d in lv if kk == k), 1) for k in {x[1] for x in lv}}
+                row["level_steps"] = len(lv)
             if key == "pointer_still" and len(pts) > 10:
                 xs = [p[1] * screen_w for p in pts[len(pts) // 4:]]   # skip the settling quarter
                 ys = [p[2] * screen_h for p in pts[len(pts) // 4:]]
@@ -198,6 +207,9 @@ def run(name: str, only: list[str], screen_w: int, screen_h: int) -> int:
             hit = r["got"].get(r["expect"], 0)
             target = "19/20 → 10 of 10 (9 ok)" if r["n"] == 10 else f"{r['n']} of {r['n']}"
             lines.append(f"| {r['round']} | {r['n']} × {r['expect']} | {hit} | {other or '-'} | {target} |")
+        elif r["round"] == "knob":
+            lines.append(f"| knob | volume up then down | {r.get('level_steps', 0)} level steps, net "
+                         f"{r.get('levels', {})} | {r['got'] or '-'} | moves both ways, no taps |")
         elif r["round"] == "pointer_still":
             lines.append(f"| pointer_still | jitter | {r.get('jitter_px', 'n/a')} px σ | - | ≤ 4 px |")
         else:

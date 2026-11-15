@@ -64,6 +64,8 @@ def pinch_is_down(ctx: HandCtx, eng=None, from_pointer: bool = False) -> bool:
     fists). It still counts when the hand was pointing within pinch.fist_grace_ms."""
     if ctx.hand.pinch >= float(cfg.pinch.down):
         return False
+    if ctx.hand.pose is Pose.TWO:
+        return False    # the two-finger swipe pose: blur at the start of a flick looked like a pinch
     if ctx.hand.pose is Pose.FIST and not (
             from_pointer and ctx.ts - (ctx.pt_last_point or -10**9) <= int(cfg.pinch.get("fist_grace_ms", 250))):
         return False
