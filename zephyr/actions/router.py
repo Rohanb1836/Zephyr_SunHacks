@@ -11,6 +11,7 @@ from zephyr.actions.frontapp import find_profile, front_app, load_profiles
 from zephyr.actions.mac import MacBackend
 from zephyr.actions.runner import ActionRunner
 from zephyr.actions.writing.flow import WritingFlow
+from zephyr.actions.writing.memory import WritingMemory
 
 LOG = logging.getLogger(__name__)
 
@@ -18,8 +19,10 @@ LOG = logging.getLogger(__name__)
 class ActionRouter:
     def __init__(self, event_bus, backend):
         self.bus, self.backend = event_bus, backend
-        self.runner = ActionRunner(backend)
-        self.writing = WritingFlow(event_bus, cfg, self._enqueue_paste)
+        self.runner = ActionRunner(backend, search=self._open_search)
+        self.memory = WritingMemory(cfg, on_saved=self._memory_saved)
+        self.writing = WritingFlow(event_bus, cfg, self._enqueue_paste, memory=self.memory)
+        self.search_active = False
         self.profiles = load_profiles()
         self.queue = queue.Queue(maxsize=128)
         self.lock = threading.Lock()
@@ -35,6 +38,7 @@ class ActionRouter:
         if self._started:
             return self
         self._started = True
+        self.memory.start()
         self.writing.start()
         for topic, handler in ((T.SYSTEM, self._system), (T.GESTURE, self._gesture),
                                (T.ACTION_REQUEST, self._request), (T.POINTER, self._pointer),
@@ -55,7 +59,26 @@ class ActionRouter:
                 self.pending_pointer = None
                 self.levels = {'volume': 0.0, 'brightness': 0.0}
         if state.mode != SystemMode.ARMED:
+            self.search_active = False
             self.writing.cancel()
+
+    def _memory_saved(self):
+        self.bus.publish(T.ACTION, ActionFired('Saved to memory', self.app_label, True, int(time.monotonic() * 1000)))
+
+    def _open_search(self):
+        if self.profile.get('id') == 'chrome':
+            self.backend.hotkey('mod', 'l')
+        elif self.profile.get('id') == 'spotify':
+            self.backend.hotkey('mod', 'k')
+        else:
+            self.backend.hotkey('mod', 'space')
+        self.search_active = True
+        self.writing.ready(self.app_label, 'search')
+
+    def _close_search(self, escape=False):
+        if self.search_active and escape:
+            self.backend.hotkey('esc')
+        self.search_active = False
 
     def _stroke(self, event):
         self._enqueue('stroke', event)
@@ -115,17 +138,20 @@ class ActionRouter:
     def _update_app(self):
         try:
             app_id, label = front_app()
-            if app_id and label.lower() not in ('python', 'python3', 'zephyr'):
+            if not self.search_active and app_id and label.lower() not in ('python', 'python3', 'zephyr'):
                 self.app_id, self.app_label = app_id, label
                 self.profile = find_profile(app_id, self.profiles)
-            ink = bool(self.profile.get('ink'))
+            ink = self.search_active or bool(self.profile.get('ink'))
             with self.lock:
                 armed = self.mode == SystemMode.ARMED
-            if armed and ink and (self.writing.phase in ('idle', 'cancelled', 'accepted') or self.writing.app_label != self.app_label):
+            if self.search_active and self.writing.phase == 'cancelled':
+                self._close_search(escape=armed)
+                ink = bool(self.profile.get('ink'))
+            if armed and ink and not self.search_active and (self.writing.phase in ('idle', 'cancelled', 'accepted') or self.writing.app_label != self.app_label):
                 self.writing.ready(self.app_label, 'document')
             elif (not armed or not ink) and self.writing.phase not in ('idle', 'cancelled'):
                 self.writing.cancel()
-            context = ContextState(self.app_id, self.app_label, self.profile['id'], ink, 'normal')
+            context = ContextState(self.app_id, self.app_label, self.profile['id'], ink, 'search' if self.search_active else 'normal')
             if context != self._last_context:
                 self._last_context = context
                 self.bus.publish(T.CONTEXT, context)
@@ -187,6 +213,10 @@ class ActionRouter:
                 if kind == 'paste':
                     text, mode = item
                     self.backend.paste_text(text + (' ' if mode == 'document' else ''))
+                    if mode == 'search':
+                        time.sleep(.5)
+                        self.backend.hotkey('enter')
+                        self._close_search()
                     continue
                 if kind == 'gesture' and self.writing.gesture(item.key):
                     continue

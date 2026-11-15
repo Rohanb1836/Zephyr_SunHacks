@@ -102,6 +102,9 @@ class WritingFlow:
             time.sleep(.05)
             with self.lock:
                 elapsed = (time.monotonic() - self.last_activity) * 1000
+                if self.mode == 'search' and self.phase == 'ready' and elapsed >= float(self.config.write.idle_cancel_ms):
+                    self.generation += 1
+                    self._publish('cancelled')
                 if self.phase == 'error' and time.monotonic() - self.error_at >= 1.5:
                     self.strokes, self.open_strokes = {}, set()
                     self._publish('ready')
