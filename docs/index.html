@@ -3,280 +3,369 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Zephyr for Mac</title>
-<meta name="description" content="Zephyr turns your webcam into a hands-free controller for your Mac. Try the live hand tracking demo in your browser, then download the app.">
-<meta name="theme-color" content="#0b0814">
+<title>Zephyr: hands-free control for your Mac</title>
+<meta name="description" content="Zephyr turns your webcam into a hands-free controller for your Mac and your Roku TV. Try the live hand tracking demo in your browser, then download the app.">
+<meta name="theme-color" content="#bfe5e6">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='21' fill='%231c1430'/%3E%3Cpath d='M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27' fill='none' stroke='%23c6a3ff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='77' cy='27' r='9' fill='%23f8f4ff'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
+@font-face { font-family: "Big Shoulders"; src: url("fonts/BigShoulders-Bold.woff") format("woff"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("fonts/InstrumentSans-Regular.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("fonts/InstrumentSans-Bold.woff") format("woff"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("fonts/InstrumentSerif-Italic.woff") format("woff"); font-style: italic; font-weight: 400; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/JetBrainsMono-Regular.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/JetBrainsMono-Bold.woff") format("woff"); font-weight: 600 700; font-display: swap; }
 :root {
-  /* layout: a left-aligned hero beside the self-writing mark, then the demo bench (camera stage left,
-     controls right), then quiet reference sections on the same 1200px measure */
-  --night: #0b0814;
-  --dusk: #141020;
-  --dusk-2: #1d1630;
-  --rim: #2c2444;
-  --mist: #efe9fa;
-  --haze: #a99ec2;
-  --ink: #c6a3ff;
-  --tip: #f8f4ff;
-  --ok: #8fe3c0;
-  --warn: #ffd08a;
-  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
-  --font-body: "Atkinson Hyperlegible", -apple-system, "Segoe UI", system-ui, sans-serif;
+  /* an editorial page on pale aqua and paper: huge condensed uppercase titles, a serif italic for
+     the quiet words, pill buttons, ticker bands. The demo bench is the one dark object, like a device. */
+  --aqua: #bfe5e6;
+  --aqua-2: #a9dcdd;
+  --paper: #f4f2ed;
+  --ink: #0f1718;
+  --ink-2: #4a5759;
+  --line: rgba(15, 23, 24, 0.16);
+  --violet: #5b3fe0;
+  --night: #0b0d12;
+  --font-display: "Big Shoulders", "Arial Narrow", "Helvetica Neue", system-ui, sans-serif;
+  --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-body: "Instrument Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
-body {
-  margin: 0;
-  background: var(--night);
-  color: var(--mist);
-  font: 400 17px/1.55 var(--font-body);
-  -webkit-font-smoothing: antialiased;
-}
-a { color: var(--ink); }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.55 var(--font-body); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
 img, svg, canvas { max-width: 100%; }
-.wrap { max-width: 1200px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
-.skip { position: absolute; left: -999px; top: 8px; background: var(--tip); color: var(--night); padding: 8px 12px; border-radius: 8px; z-index: 10; }
+.wrap { max-width: 1320px; margin-inline: auto; padding-inline: clamp(18px, 4vw, 48px); }
+.skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: var(--paper); padding: 8px 12px; border-radius: 8px; z-index: 10; }
 .skip:focus { left: 8px; }
-:is(a, button, input):focus-visible { outline: 2px solid var(--tip); outline-offset: 3px; }
-.mono { font-family: var(--font-mono); }
+:is(a, button, input):focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; }
+.display { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; letter-spacing: -0.012em; line-height: 0.86; }
+.serif { font-family: var(--font-serif); font-style: italic; font-weight: 400; text-transform: none; letter-spacing: -0.01em; }
+.label { font: 600 12px/1.2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; }
 
-/* header */
-.top { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; padding-block: 20px; flex-wrap: wrap; }
-.brand { display: flex; align-items: center; gap: 10px; color: var(--mist); text-decoration: none; font: 700 21px/1 var(--font-display); letter-spacing: -0.01em; }
-.brand svg { width: 30px; height: 30px; }
-.top nav { display: flex; gap: clamp(14px, 2.6vw, 30px); flex-wrap: wrap; }
-.top nav a { color: var(--haze); text-decoration: none; font-size: 15px; }
-.top nav a:hover { color: var(--mist); }
+/* pills */
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 600 13px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 16px 24px; border-radius: 999px; border: 1px solid var(--ink); color: var(--ink); background: transparent; text-decoration: none; cursor: pointer; transition: background 0.18s, color 0.18s, border-color 0.18s; }
+.pill svg { width: 16px; height: 16px; }
+.pill:hover { background: var(--ink); color: var(--paper); }
+.pill.solid { background: var(--ink); color: var(--paper); }
+.pill.solid:hover { background: var(--violet); border-color: var(--violet); }
+.pill.small { padding: 11px 16px; font-size: 12px; }
+.pill:disabled { opacity: 0.55; cursor: progress; }
 
-/* hero */
-.hero { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.45fr); gap: clamp(24px, 5vw, 64px); align-items: center; padding-block: clamp(28px, 6vw, 72px) clamp(28px, 4vw, 52px); }
-.eyebrow { font: 600 12px/1.2 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); margin: 0 0 20px; }
-h1 { font-family: var(--font-display); font-optical-sizing: auto; font-weight: 760; font-size: clamp(42px, 6.6vw, 86px); line-height: 0.93; letter-spacing: -0.04em; margin: 0; text-wrap: balance; }
-h1 span { display: block; }
-h1 em { font-style: normal; color: var(--ink); }
-.lede { font-size: clamp(17px, 1.6vw, 20px); color: var(--haze); max-width: 50ch; margin: 28px 0 0; }
-.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 700 16px/1 var(--font-body); padding: 15px 22px; border-radius: 999px; border: 1px solid var(--rim); color: var(--mist); background: transparent; text-decoration: none; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
-.btn svg { width: 18px; height: 18px; }
-.btn.primary { background: var(--ink); border-color: var(--ink); color: #170f28; }
-.btn.primary:hover { background: var(--tip); border-color: var(--tip); }
-.btn.ghost:hover { border-color: var(--haze); }
-.btn.small { font-size: 14px; padding: 10px 16px; }
-.btn:disabled { opacity: 0.55; cursor: progress; }
-.fine { font: 400 13px/1.5 var(--font-mono); color: var(--haze); margin: 18px 0 0; }
-.hero-mark svg { display: block; width: 100%; max-width: 400px; margin-inline: auto; overflow: visible; }
-.mark-stroke { fill: none; stroke: url(#markInk); stroke-width: 7.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; animation: write 1.6s cubic-bezier(0.65, 0.05, 0.3, 1) 0.25s both; }
-.mark-tip { fill: var(--tip); filter: url(#tipGlow); transform-box: fill-box; transform-origin: center; animation: tip 0.5s ease-out 1.7s both, breathe 4s ease-in-out 2.4s infinite; }
+/* header and hero, on aqua */
+.hero-band { background: var(--aqua); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; padding-block: 22px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.brand svg { width: 34px; height: 34px; }
+.brand span { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: 0.02em; text-transform: uppercase; }
+.top nav { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.top nav a { font: 600 12px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; padding: 11px 14px; border-radius: 999px; }
+.top nav a:hover { background: rgba(15, 23, 24, 0.08); }
+.top nav a.pill { padding: 11px 16px; }
+.top nav a.pill:hover { background: var(--violet); }
+
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px clamp(24px, 4vw, 56px); padding-block: clamp(28px, 5vw, 64px) clamp(36px, 5vw, 64px); align-items: end; }
+.hero h1 { margin: 0; font-size: clamp(64px, 13.4vw, 196px); }
+.hero h1 span { display: block; }
+.hero h1 .serif { font-size: 0.86em; line-height: 0.95; }
+.eyebrow { margin: 0 0 22px; }
+.hero-mark { width: clamp(150px, 22vw, 300px); align-self: start; margin-top: 40px; }
+.hero-mark svg { display: block; width: 100%; overflow: visible; filter: drop-shadow(0 30px 40px rgba(15, 23, 24, 0.22)); }
+.mark-stroke { fill: none; stroke: url(#markInk); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; animation: write 1.6s cubic-bezier(0.65, 0.05, 0.3, 1) 0.25s both; }
+.mark-tip { fill: #f8f4ff; filter: url(#tipGlow); transform-box: fill-box; transform-origin: center; animation: tip 0.5s ease-out 1.7s both, breathe 4s ease-in-out 2.4s infinite; }
 @keyframes write { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes tip { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
 @keyframes breathe { 50% { opacity: 0.78; } }
+.hero-foot { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.1fr) auto; gap: 24px 48px; align-items: end; border-top: 1px solid var(--line); padding-top: 28px; }
+.lede { margin: 0; font-size: clamp(18px, 1.7vw, 22px); line-height: 1.45; max-width: 46ch; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.fine { grid-column: 1 / -1; margin: 0; color: var(--ink-2); }
+
+/* ticker */
+.ticker { background: var(--ink); color: var(--aqua); overflow: hidden; padding-block: 18px; border-block: 1px solid var(--ink); }
+.ticker-track { display: flex; width: max-content; animation: ticker 48s linear infinite; }
+.ticker ul { display: flex; margin: 0; padding: 0; list-style: none; }
+.ticker li { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 3vw, 40px); line-height: 1; text-transform: uppercase; white-space: nowrap; padding-right: 28px; }
+.ticker li::after { content: "✳"; display: inline-block; margin-left: 28px; color: #f4f2ed; font-size: 0.6em; vertical-align: 0.25em; }
+.ticker li em { font-family: var(--font-serif); font-style: italic; font-weight: 400; text-transform: none; color: #f4f2ed; }
+@keyframes ticker { to { transform: translateX(-50%); } }
+
+/* numbers */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
+.stats div { padding: clamp(24px, 3vw, 40px) clamp(14px, 2vw, 28px) clamp(24px, 3vw, 36px) 0; border-right: 1px solid var(--line); }
+.stats div + div { padding-left: clamp(14px, 2vw, 28px); }
+.stats div:last-child { border-right: 0; }
+.stats b { display: block; font-family: var(--font-display); font-weight: 700; font-size: clamp(72px, 9vw, 140px); line-height: 0.85; letter-spacing: -0.02em; }
+.stats span { display: block; margin-top: 12px; color: var(--ink-2); max-width: 22ch; }
 
 /* sections */
-section { padding-block: clamp(36px, 6vw, 80px); }
-.section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px 40px; margin-bottom: 24px; }
-h2 { font: 720 clamp(30px, 3.8vw, 46px)/1.04 var(--font-display); letter-spacing: -0.025em; margin: 0; text-wrap: balance; }
-.section-head p { color: var(--haze); max-width: 54ch; margin: 0; }
+section { padding-block: clamp(56px, 8vw, 120px); }
+.sec-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 28px; align-items: start; margin-bottom: clamp(28px, 4vw, 52px); }
+.sec-n { padding-top: 0.6em; }
+.sec-head h2 { margin: 0; font-size: clamp(52px, 8.4vw, 128px); }
+.sec-head h2 .serif { display: block; }
+.sec-head p { grid-column: 2; margin: 14px 0 0; color: var(--ink-2); max-width: 58ch; font-size: 18px; }
+.band { background: var(--aqua); }
+.band .sec-head p, .band .ink-2 { color: #34494b; }
 
-/* demo bench */
-#demo { padding-top: clamp(12px, 2vw, 24px); }
-.bench { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 14px; background: var(--dusk); border: 1px solid var(--rim); border-radius: 22px; padding: 14px; }
-.stage-wrap { position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #07050d; align-self: start; }
+/* demo bench: the dark device */
+.bench { --rim: #262c36; --haze: #9aa8aa; --mist: #eef3f3; --dusk: #141820; --dusk-2: #1c2230; --tip: #f8f4ff; --glow: #c6a3ff; --ok: #9be8b5; --warn: #ffd08a;
+  display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 16px; background: var(--night); color: var(--mist); border-radius: 30px; padding: 16px; box-shadow: 0 40px 80px -40px rgba(15, 23, 24, 0.55); }
+.bench .pill { border-color: var(--rim); color: var(--mist); }
+.bench .pill:hover { background: var(--mist); color: var(--night); border-color: var(--mist); }
+.bench .pill.solid { background: var(--aqua); border-color: var(--aqua); color: var(--ink); }
+.bench .pill.solid:hover { background: var(--mist); border-color: var(--mist); }
+.stage-col { display: grid; gap: 14px; align-content: start; align-self: start; min-width: 0; position: sticky; top: 16px; }
+.stage-wrap { position: relative; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; background: #07080c; }
 #stage { display: block; width: 100%; height: 100%; }
 .stage-hud { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; }
-.chip { font: 600 11px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 10px; border-radius: 999px; background: rgba(11, 8, 20, 0.76); border: 1px solid var(--rim); color: var(--haze); white-space: nowrap; }
-.chip.ok { color: var(--ok); border-color: rgba(143, 227, 192, 0.35); }
+.chip { font: 600 11px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 10px; border-radius: 999px; background: rgba(7, 8, 12, 0.78); border: 1px solid var(--rim); color: var(--haze); white-space: nowrap; }
+.chip.ok { color: var(--ok); border-color: rgba(155, 232, 181, 0.35); }
 .chip.off { color: var(--warn); border-color: rgba(255, 208, 138, 0.35); }
-.stage-col { display: grid; gap: 14px; align-content: start; min-width: 0; }
-.cover { position: absolute; left: 14px; bottom: 14px; display: grid; justify-items: start; gap: 10px; max-width: min(300px, calc(100% - 28px)); padding: 16px 18px; border-radius: 14px; background: rgba(11, 8, 20, 0.88); border: 1px solid var(--rim); }
-.cover-title { font: 700 18px/1.2 var(--font-display); margin: 0; }
+.cover { position: absolute; left: 14px; bottom: 14px; display: grid; justify-items: start; gap: 12px; max-width: min(320px, calc(100% - 28px)); padding: 18px 20px; border-radius: 18px; background: rgba(7, 8, 12, 0.9); border: 1px solid var(--rim); }
+.cover-title { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 0.95; text-transform: uppercase; }
 .cover-msg { color: var(--haze); font-size: 13px; margin: 0; }
+.cover-msg.err { color: var(--warn); }
 .legend { list-style: none; margin: 0; padding: 0 4px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; color: var(--haze); font-size: 13.5px; }
 .legend li { display: flex; align-items: center; gap: 10px; }
 .legend i { flex: none; width: 14px; height: 14px; border-radius: 50%; }
 .legend .lg-tip { background: var(--tip); box-shadow: 0 0 10px rgba(198, 163, 255, 0.9); }
 .legend .lg-ring { border: 2px solid var(--tip); }
 .legend .lg-pinch { height: 3px; border-radius: 2px; background: var(--ok); }
-.legend .lg-hold { border: 3px solid var(--ink); border-right-color: rgba(255, 255, 255, 0.15); border-bottom-color: rgba(255, 255, 255, 0.15); }
-.cover-msg.err { color: var(--warn); }
-.countdown { position: absolute; inset: 0; display: grid; place-items: center; font: 800 clamp(64px, 12vw, 140px)/1 var(--font-display); color: var(--tip); text-shadow: 0 0 40px rgba(198, 163, 255, 0.8); pointer-events: none; }
-.countdown.small { font-size: clamp(22px, 3vw, 30px); letter-spacing: -0.01em; }
-.toast { position: absolute; left: 50%; bottom: 16px; transform: translate(-50%, 8px); margin: 0; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 999px; background: rgba(11, 8, 20, 0.88); border: 1px solid var(--ink); font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
+.legend .lg-hold { border: 3px solid var(--aqua); border-right-color: rgba(255, 255, 255, 0.15); border-bottom-color: rgba(255, 255, 255, 0.15); }
+.countdown { position: absolute; inset: 0; display: grid; place-items: center; font: 700 clamp(64px, 12vw, 150px)/1 var(--font-display); color: var(--tip); text-shadow: 0 0 40px rgba(198, 163, 255, 0.8); pointer-events: none; }
+.countdown.small { font-size: clamp(26px, 3.4vw, 38px); text-transform: uppercase; }
+.toast { position: absolute; left: 50%; bottom: 16px; transform: translate(-50%, 8px); margin: 0; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 999px; background: rgba(7, 8, 12, 0.9); border: 1px solid var(--aqua); font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
 .panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 4px; }
-.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--night); border: 1px solid var(--rim); border-radius: 12px; }
-.tabs button { font: 700 14px/1.15 var(--font-body); color: var(--haze); background: transparent; border: 0; border-radius: 9px; padding: 10px 6px; cursor: pointer; }
+.tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; background: #07080c; border: 1px solid var(--rim); border-radius: 999px; }
+.tabs button { font: 600 11px/1.15 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--haze); background: transparent; border: 0; border-radius: 999px; padding: 11px 4px; cursor: pointer; }
 .tabs button:hover { color: var(--mist); }
-.tabs button[aria-selected="true"] { background: var(--dusk-2); color: var(--mist); box-shadow: inset 0 0 0 1px var(--rim); }
+.tabs button[aria-selected="true"] { background: var(--aqua); color: var(--ink); }
 [role="tabpanel"] { display: flex; flex-direction: column; gap: 12px; }
-[role="tabpanel"][hidden] { display: none; }
 .how { color: var(--haze); margin: 0; font-size: 15px; }
 .how b { color: var(--mist); font-weight: 700; }
 
-.pad { position: relative; aspect-ratio: 16 / 10; border-radius: 12px; border: 1px solid var(--rim); background: radial-gradient(120% 90% at 50% 0%, #1a1430, var(--night) 70%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 10px; padding: 36px 14px 14px; overflow: hidden; }
+.pad { position: relative; aspect-ratio: 16 / 10; border-radius: 14px; border: 1px solid var(--rim); background: radial-gradient(120% 90% at 50% 0%, #19202b, #07080c 70%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 10px; padding: 36px 14px 14px; overflow: hidden; }
 .pad-label { position: absolute; top: 12px; left: 14px; font: 600 10px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--haze); }
-.target { display: grid; justify-items: center; gap: 8px; padding: 18px 6px; border-radius: 12px; border: 1px solid var(--rim); background: var(--dusk); color: var(--mist); font: 700 14px/1.2 var(--font-body); cursor: pointer; transition: border-color 0.15s, background 0.15s; }
-.target svg { width: 26px; height: 26px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.target[aria-pressed="true"] svg.fill { fill: var(--ink); }
-.target.hot, .target:hover { border-color: var(--ink); background: var(--dusk-2); }
+.target { display: grid; justify-items: center; gap: 8px; padding: 18px 6px; border-radius: 14px; border: 1px solid var(--rim); background: var(--dusk); color: var(--mist); font: 700 14px/1.2 var(--font-body); cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.target svg { width: 26px; height: 26px; fill: none; stroke: var(--aqua); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.target[aria-pressed="true"] svg.fill { fill: var(--aqua); }
+.target.hot, .target:hover { border-color: var(--aqua); background: var(--dusk-2); }
 .target.hit { animation: hit 0.35s ease-out; }
-@keyframes hit { 35% { transform: scale(0.93); background: #2a2046; } }
+@keyframes hit { 35% { transform: scale(0.93); background: #23303a; } }
 #ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .cursor { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: var(--tip); box-shadow: 0 0 0 6px rgba(198, 163, 255, 0.22), 0 0 24px rgba(198, 163, 255, 0.85); pointer-events: none; }
-.cursor.frozen { background: var(--ok); box-shadow: 0 0 0 6px rgba(143, 227, 192, 0.22), 0 0 24px rgba(143, 227, 192, 0.8); }
+.cursor.frozen { background: var(--ok); box-shadow: 0 0 0 6px rgba(155, 232, 181, 0.22), 0 0 24px rgba(155, 232, 181, 0.8); }
 
-.meter { display: grid; grid-template-columns: 64px minmax(0, 1fr) 56px; align-items: center; gap: 10px; font: 600 12px/1 var(--font-mono); color: var(--haze); }
+.meter { display: grid; grid-template-columns: 82px minmax(0, 1fr) 56px; align-items: center; gap: 10px; font: 600 12px/1 var(--font-mono); color: var(--haze); }
 .meter .val { text-align: right; color: var(--mist); font-variant-numeric: tabular-nums; }
-.bar { position: relative; height: 8px; border-radius: 999px; background: var(--night); border: 1px solid var(--rim); }
-.bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 999px; background: var(--ink); }
+.bar { position: relative; height: 8px; border-radius: 999px; background: #07080c; border: 1px solid var(--rim); }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 999px; background: var(--aqua); transition: width 0.12s; }
 .bar i.ok { background: var(--ok); }
 .bar .tick { position: absolute; top: -5px; bottom: -5px; width: 2px; border-radius: 2px; background: var(--mist); opacity: 0.55; }
-.small { font-size: 13px; }
 .status-line { margin: 0; color: var(--haze); font: 400 12.5px/1.5 var(--font-mono); font-variant-numeric: tabular-nums; }
 
 .apps { display: flex; flex-wrap: wrap; gap: 6px; }
-.app-chip { font: 700 13px/1 var(--font-body); padding: 9px 12px; border-radius: 999px; border: 1px solid var(--rim); background: transparent; color: var(--haze); cursor: pointer; }
+.app-chip { font: 600 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 13px; border-radius: 999px; border: 1px solid var(--rim); background: transparent; color: var(--haze); cursor: pointer; }
 .app-chip[aria-pressed="true"] { background: var(--mist); border-color: var(--mist); color: var(--night); }
-.app-view { position: relative; min-height: 132px; border-radius: 12px; border: 1px solid var(--rim); background: var(--night); padding: 14px 16px; overflow: hidden; }
+.app-view { position: relative; min-height: 132px; border-radius: 14px; border: 1px solid var(--rim); background: #07080c; padding: 14px 16px; overflow: hidden; }
 .app-kicker { font: 600 10px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--haze); margin: 0 0 10px; }
-.slide-title { font: 760 clamp(22px, 2.6vw, 30px)/1.05 var(--font-display); letter-spacing: -0.02em; margin: 0; }
+.slide-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 3vw, 38px); line-height: 0.95; text-transform: uppercase; margin: 0; }
 .slide-n { margin: 10px 0 0; color: var(--haze); font: 400 12px/1 var(--font-mono); }
 .dots { display: flex; gap: 6px; margin-top: 12px; }
 .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--rim); }
-.dots i.on { background: var(--ink); }
+.dots i.on { background: var(--aqua); }
 .track { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; }
-.cover-art { width: 44px; height: 44px; border-radius: 8px; background: conic-gradient(from 210deg, #7a58f0, #c6a3ff, #3b2c66, #7a58f0); }
+.cover-art { width: 44px; height: 44px; border-radius: 8px; background: conic-gradient(from 210deg, #5b3fe0, #bfe5e6, #23303a, #5b3fe0); }
 .track b { display: block; font-size: 16px; }
 .track span { color: var(--haze); font-size: 13px; }
 .play-state { font: 600 11px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ok); }
 .play-state.paused { color: var(--haze); }
 .tabstrip { display: flex; gap: 4px; }
 .tabstrip span { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px 8px 0 0; background: var(--dusk); color: var(--haze); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tabstrip span.on { background: var(--dusk-2); color: var(--mist); box-shadow: inset 0 2px 0 var(--ink); }
-.urlbar { margin-top: 0; padding: 9px 12px; border-radius: 0 8px 8px 8px; background: var(--dusk-2); color: var(--haze); font: 400 12px/1 var(--font-mono); }
+.tabstrip span.on { background: var(--dusk-2); color: var(--mist); box-shadow: inset 0 2px 0 var(--aqua); }
+.urlbar { padding: 9px 12px; border-radius: 0 8px 8px 8px; background: var(--dusk-2); color: var(--haze); font: 400 12px/1 var(--font-mono); }
 .desks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .desks span { display: grid; place-items: center; aspect-ratio: 16 / 10; border-radius: 8px; border: 1px solid var(--rim); color: var(--haze); font: 600 12px/1 var(--font-mono); }
-.desks span.on { border-color: var(--ink); color: var(--mist); background: var(--dusk-2); }
+.desks span.on { border-color: var(--aqua); color: var(--mist); background: var(--dusk-2); }
 .searchbar { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 10px 14px; border-radius: 10px; background: var(--mist); color: var(--night); font-weight: 700; font-size: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
-.searchbar small { display: block; font-weight: 400; color: #4a4060; }
+.searchbar small { display: block; font-weight: 400; color: #4a5759; }
 .gmap { width: 100%; border-collapse: collapse; font-size: 14px; }
 .gmap th { font: 600 10px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--haze); text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--rim); }
 .gmap td { padding: 7px 6px; border-bottom: 1px solid var(--rim); transition: background 0.3s; }
 .gmap td.none { color: var(--haze); }
-.gmap tr.fired td { background: rgba(198, 163, 255, 0.16); }
+.gmap td:last-child, .gmap th:last-child { text-align: right; }
+.gmap tr.fired td { background: rgba(191, 229, 230, 0.16); }
+
+/* the TV in the TV tab */
+.tv { position: relative; aspect-ratio: 16 / 9; border-radius: 10px; border: 7px solid #030405; background: radial-gradient(140% 120% at 20% 0%, #2a1748, #0d0a18 60%); overflow: hidden; box-shadow: 0 0 0 1px var(--rim); font-family: var(--font-body); }
+.tv-top { position: absolute; left: 4%; right: 4%; top: 5%; display: flex; justify-content: space-between; font: 600 10px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+.tv-grid { position: absolute; left: 4%; right: 4%; top: 20%; bottom: 17%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 4%; }
+.tv-tile { display: grid; place-items: end start; padding: 6px 8px; border-radius: 6px; color: #fff; font-weight: 700; font-size: clamp(9px, 1vw, 12px); transition: transform 0.15s, box-shadow 0.15s; min-width: 0; overflow: hidden; }
+.tv-tile.focus { transform: scale(1.08); box-shadow: 0 0 0 3px #fff, 0 8px 18px rgba(0, 0, 0, 0.5); }
+.tv-player { position: absolute; inset: 0; display: grid; align-content: end; gap: 8px; padding: 6% 6% 18%; background: linear-gradient(transparent 40%, rgba(0, 0, 0, 0.7)); }
+.tv-player b { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 3vw, 34px); line-height: 0.95; text-transform: uppercase; color: #fff; }
+.tv-player span { font: 600 10px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.75); }
+.tv-progress { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+.tv-progress i { display: block; height: 100%; background: #fff; }
+.tv-search { position: absolute; inset: 0; display: grid; align-content: center; justify-items: start; gap: 8px; padding: 0 8%; background: rgba(13, 10, 24, 0.94); color: #fff; }
+.tv-search b { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 3vw, 34px); text-transform: uppercase; }
+.tv-search span { width: 100%; padding: 8px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.1); font-size: 13px; color: rgba(255, 255, 255, 0.7); }
+.tv-vol { position: absolute; right: 4%; top: 18%; bottom: 22%; width: 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.2); display: flex; align-items: flex-end; }
+.tv-vol i { display: block; width: 100%; border-radius: 8px; background: #fff; }
+.tv-vol span { position: absolute; top: -18px; right: -6px; font: 600 10px/1 var(--font-mono); color: #fff; }
+.tv-ecp { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 10px; background: rgba(0, 0, 0, 0.6); font: 400 10.5px/1.2 var(--font-mono); color: #bfe5e6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .rec-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .result { margin: 0; color: var(--mist); }
 .result.err { color: var(--warn); }
-.matched { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--rim); background: var(--night); }
-.matched b { font: 760 28px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.matched { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--rim); background: #07080c; }
+.matched b { font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
 .matched.flash { border-color: var(--ok); animation: flash 0.6s ease-out; }
-@keyframes flash { 30% { background: rgba(143, 227, 192, 0.14); } }
+@keyframes flash { 30% { background: rgba(155, 232, 181, 0.14); } }
 
-.panel-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 6px; border-top: 1px solid var(--rim); }
+.panel-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--rim); }
 .switch { display: inline-flex; align-items: center; gap: 8px; color: var(--haze); font-size: 14px; cursor: pointer; }
-.switch input { accent-color: var(--ink); width: 16px; height: 16px; }
+.switch input { accent-color: var(--aqua); width: 16px; height: 16px; }
 
-/* features */
-.fgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px 34px; }
-.fgrid article { border-top: 1px solid var(--rim); padding-top: 18px; }
-.trigger { font: 600 11px/1.3 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin: 0 0 12px; }
-h3 { font: 720 23px/1.15 var(--font-display); letter-spacing: -0.012em; margin: 0 0 8px; }
-.fgrid p:last-child { color: var(--haze); margin: 0; max-width: 40ch; }
+/* gesture index: an editorial list */
+.glist { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); counter-reset: g; }
+.glist li { display: grid; grid-template-columns: 64px minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 28px; align-items: baseline; padding: 20px 0 22px; border-bottom: 1px solid var(--line); transition: background 0.2s, padding 0.2s; }
+.glist li::before { counter-increment: g; content: counter(g, decimal-leading-zero); font: 600 12px/1 var(--font-mono); letter-spacing: 0.1em; color: var(--ink-2); }
+.glist li:hover { background: var(--aqua); padding-inline: 14px; }
+.glist h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 3.6vw, 52px); line-height: 0.9; text-transform: uppercase; }
+.glist .do { margin: 0; color: var(--ink-2); }
+.glist .does { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: clamp(20px, 1.8vw, 25px); line-height: 1.2; }
+
+/* the TV section */
+.tv-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 72px); align-items: start; }
+.keys { width: 100%; border-collapse: collapse; }
+.keys th { text-align: left; padding: 0 0 12px; border-bottom: 1px solid var(--ink); }
+.keys th:last-child, .keys td:last-child { text-align: right; }
+.keys td { padding: 14px 0; border-bottom: 1px solid rgba(15, 23, 24, 0.2); font-size: 16px; }
+.keys td:last-child { font: 600 13px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.setup { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 16px; }
+.setup li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; }
+.setup li::before { counter-increment: s; content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--ink); font: 600 13px/1 var(--font-mono); }
+.setup b { display: block; }
+.setup span { color: #34494b; }
+.note { margin: 24px 0 0; color: #34494b; font-size: 15px; max-width: 56ch; }
+
+/* what the Mac app adds */
+.fgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--ink); }
+.fgrid article { padding: 26px 28px 34px 0; border-bottom: 1px solid var(--line); }
+.fgrid article:not(:nth-child(3n + 1)) { padding-left: 28px; border-left: 1px solid var(--line); }
+.fgrid .label { color: var(--violet); margin: 0 0 18px; }
+.fgrid h3 { margin: 0 0 12px; font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 2.8vw, 40px); line-height: 0.92; text-transform: uppercase; }
+.fgrid p:last-child { margin: 0; color: var(--ink-2); max-width: 38ch; }
 
 /* how it works */
-.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; counter-reset: step; }
-.steps li { position: relative; padding: 20px 20px 22px; border-radius: 16px; background: var(--dusk); border: 1px solid var(--rim); }
-.steps li::before { counter-increment: step; content: "0" counter(step); display: block; font: 600 12px/1 var(--font-mono); color: var(--ink); margin-bottom: 14px; }
-.steps p { margin: 6px 0 0; color: var(--haze); }
-.privacy { margin: 18px 0 0; color: var(--haze); max-width: 70ch; }
-.privacy b { color: var(--mist); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); counter-reset: step; }
+.steps li::before { counter-increment: step; content: "0" counter(step); display: block; font-family: var(--font-display); font-weight: 700; font-size: clamp(90px, 10vw, 150px); line-height: 0.8; color: transparent; -webkit-text-stroke: 1.5px var(--ink); margin-bottom: 18px; }
+.steps h3 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 700; font-size: 32px; line-height: 0.95; text-transform: uppercase; }
+.steps p { margin: 0; color: var(--ink-2); }
+.privacy { margin: clamp(32px, 4vw, 48px) 0 0; padding-top: 24px; border-top: 1px solid var(--line); font-family: var(--font-serif); font-style: italic; font-size: clamp(22px, 2.4vw, 32px); line-height: 1.2; max-width: 34ch; }
 
 /* install */
-.install { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: clamp(24px, 5vw, 64px); align-items: start; }
-.install ol { margin: 0; padding: 0; list-style: none; counter-reset: inst; display: grid; gap: 18px; }
-.install ol li { position: relative; padding-left: 52px; }
-.install ol li::before { counter-increment: inst; content: counter(inst); position: absolute; left: 0; top: -2px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--rim); font: 700 15px/1 var(--font-display); color: var(--ink); }
-.install ol b { display: block; color: var(--mist); }
-.install ol span { color: var(--haze); }
-.get { padding: 26px; border-radius: 20px; background: var(--dusk); border: 1px solid var(--rim); display: grid; gap: 14px; justify-items: start; }
-.get p { margin: 0; color: var(--haze); }
+.install { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: clamp(28px, 5vw, 72px); align-items: start; }
+.install ol { margin: 0; padding: 0; list-style: none; counter-reset: inst; border-top: 1px solid var(--ink); }
+.install ol li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 16px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.install ol li::before { counter-increment: inst; content: "0" counter(inst); font-family: var(--font-display); font-weight: 700; font-size: 48px; line-height: 0.85; }
+.install ol b { display: block; font-size: 18px; }
+.install ol span { color: var(--ink-2); }
+.get { padding: clamp(24px, 3vw, 36px); border-radius: 30px; background: var(--ink); color: var(--paper); display: grid; gap: 16px; justify-items: start; }
+.get h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(44px, 5vw, 72px); line-height: 0.86; text-transform: uppercase; }
+.get h3 .serif { color: var(--aqua); }
+.get p { margin: 0; color: #b9c4c5; }
+.get a:not(.pill) { color: var(--aqua); }
+.get .pill { background: var(--aqua); border-color: var(--aqua); color: var(--ink); }
+.get .pill:hover { background: var(--paper); border-color: var(--paper); }
 
-footer { border-top: 1px solid var(--rim); margin-top: clamp(24px, 4vw, 48px); padding-block: 28px 40px; color: var(--haze); font-size: 14px; }
-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; }
-footer a { color: var(--mist); }
+footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow: hidden; }
+.foot-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.foot-row a { text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.wordmark { margin: 0; font-family: var(--font-display); font-weight: 700; text-transform: uppercase; font-size: 31vw; line-height: 0.8; letter-spacing: -0.02em; text-align: center; padding-top: 0.06em; }
 
-@media (max-width: 980px) {
-  .hero { grid-template-columns: 1fr; }
-  .hero-mark svg { max-width: 220px; margin: 0; }
+@media (max-width: 1080px) {
   .bench { grid-template-columns: 1fr; }
-  .fgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stage-col { position: static; }
+  .glist li { grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1fr); }
+  .glist .do { grid-column: 2; }
+  .glist .does { grid-column: 3; grid-row: 1 / span 2; }
+}
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-mark { display: none; }
+  .hero-foot { grid-template-columns: 1fr; }
+  .cta { justify-content: flex-start; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats div:nth-child(2) { border-right: 0; }
+  .stats div:nth-child(3) { padding-left: 0; border-top: 1px solid var(--line); }
+  .stats div:nth-child(4) { border-top: 1px solid var(--line); }
+  .tv-cols, .install { grid-template-columns: 1fr; }
+  .fgrid { grid-template-columns: 1fr 1fr; }
+  .fgrid article, .fgrid article:not(:nth-child(3n + 1)) { padding: 24px 20px 28px 0; border-left: 0; }
+  .fgrid article:nth-child(even) { padding-left: 20px; border-left: 1px solid var(--line); }
   .steps { grid-template-columns: 1fr; }
-  .install { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
   body { font-size: 16px; }
-  .fgrid { grid-template-columns: 1fr; }
+  .sec-head { grid-template-columns: 1fr; }
+  .sec-head p { grid-column: 1; }
+  .sec-n { padding-top: 0; }
   .legend { grid-template-columns: 1fr; }
-  .tabs button { font-size: 13px; padding-inline: 4px; }
+  .tabs { border-radius: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pad { padding: 34px 10px 10px; gap: 6px; }
   .target { padding: 12px 4px; font-size: 12px; }
   .toast { white-space: normal; }
+  .glist li { grid-template-columns: 1fr; gap: 6px; }
+  .glist li::before, .glist .do, .glist .does { grid-column: 1; grid-row: auto; }
+  .fgrid { grid-template-columns: 1fr; }
+  .fgrid article:nth-child(even) { padding-left: 0; border-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .mark-stroke, .mark-tip, .target.hit, .matched.flash { animation: none; }
-  .toast { transition: none; }
+  .mark-stroke, .mark-tip, .target.hit, .matched.flash, .ticker-track { animation: none; }
+  .toast, .glist li { transition: none; }
 }
 </style>
 </head>
 <body>
 <a class="skip" href="#demo">Skip to the demo</a>
 
-<header class="wrap top">
-  <a class="brand" href="#top" aria-label="Zephyr, top of page">
-    <svg viewBox="0 0 100 100" aria-hidden="true">
-      <rect x="4" y="4" width="92" height="92" rx="21" fill="#1c1430"/>
-      <path d="M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27" fill="none" stroke="#c6a3ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="77" cy="27" r="9" fill="#f8f4ff"/>
-    </svg>
-    <span>Zephyr</span>
-  </a>
-  <nav aria-label="Sections">
-    <a href="#demo">Demo</a>
-    <a href="#features">Features</a>
-    <a href="#install">Install</a>
-    <a href="https://github.com/Rohanb1836/Zephyr_SunHacks">GitHub</a>
-  </nav>
-</header>
+<div class="hero-band">
+  <header class="wrap top">
+    <a class="brand" href="#top" aria-label="Zephyr, top of page">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <rect x="4" y="4" width="92" height="92" rx="21" fill="#1c1430"/>
+        <path d="M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27" fill="none" stroke="#c6a3ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="77" cy="27" r="9" fill="#f8f4ff"/>
+      </svg>
+      <span>Zephyr</span>
+    </a>
+    <nav aria-label="Sections">
+      <a href="#demo">Demo</a>
+      <a href="#gestures">Gestures</a>
+      <a href="#tv">TV</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/Rohanb1836/Zephyr_SunHacks">GitHub</a>
+      <a class="pill solid" href="https://github.com/Rohanb1836/Zephyr_SunHacks/releases/latest/download/Zephyr.dmg">Download</a>
+    </nav>
+  </header>
 
-<main id="top">
-  <div class="wrap hero">
+  <div class="wrap hero" id="top">
     <div>
-      <p class="eyebrow">Hands-free control for your Mac</p>
-      <h1><span><em>Point</em> to move.</span><span><em>Pinch</em> to click.</span><span><em>Swipe</em> to switch.</span></h1>
-      <p class="lede">Zephyr turns the webcam you already have into a controller. Gestures change with the app in front, and you can teach it your own.</p>
-      <div class="cta">
-        <a class="btn primary" href="https://github.com/Rohanb1836/Zephyr_SunHacks/releases/latest/download/Zephyr.dmg">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
-          Download for Mac
-        </a>
-        <a class="btn ghost" href="#demo">Try it in your browser</a>
-      </div>
-      <p class="fine">Free · Apple silicon Macs · camera video stays on your Mac</p>
+      <p class="eyebrow label">(Hands-free control for your Mac)</p>
+      <h1 class="display"><span>Point.</span><span>Pinch.</span><span>Swipe.</span><span class="serif">and twist.</span></h1>
     </div>
     <div class="hero-mark" aria-hidden="true">
       <svg viewBox="0 0 100 100">
         <defs>
           <linearGradient id="markInk" gradientUnits="userSpaceOnUse" x1="17" y1="77" x2="77" y2="27">
-            <stop offset="0" stop-color="#7050f5" stop-opacity="0.55"/>
+            <stop offset="0" stop-color="#7050f5" stop-opacity="0.6"/>
             <stop offset="0.55" stop-color="#a27ef8"/>
             <stop offset="1" stop-color="#e2d0ff"/>
           </linearGradient>
@@ -285,46 +374,76 @@ footer a { color: var(--mist); }
             <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
+        <rect x="2" y="2" width="96" height="96" rx="22" fill="#1c1430"/>
         <path class="mark-stroke" pathLength="1" d="M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27"/>
-        <circle class="mark-tip" cx="77" cy="27" r="6.6"/>
+        <circle class="mark-tip" cx="77" cy="27" r="7"/>
       </svg>
     </div>
+    <div class="hero-foot">
+      <p class="lede">Zephyr turns the webcam you already have into a controller for your Mac, and for the Roku TV across the room. Gestures change with the app in front, and you can teach it your own.</p>
+      <div class="cta">
+        <a class="pill solid" href="https://github.com/Rohanb1836/Zephyr_SunHacks/releases/latest/download/Zephyr.dmg">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+          Download for Mac
+        </a>
+        <a class="pill" href="#demo">Try it in your browser</a>
+      </div>
+      <p class="fine label">Free · Apple silicon Macs · camera video stays on your Mac</p>
+    </div>
+  </div>
+</div>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <ul><li>Point <em>to move</em></li><li>Pinch <em>to click</em></li><li>Swipe <em>to switch</em></li><li>Twist <em>to turn it up</em></li><li>Hold a palm <em>to search</em></li><li>Write <em>in the air</em></li><li>Drive <em>the TV</em></li></ul>
+    <ul><li>Point <em>to move</em></li><li>Pinch <em>to click</em></li><li>Swipe <em>to switch</em></li><li>Twist <em>to turn it up</em></li><li>Hold a palm <em>to search</em></li><li>Write <em>in the air</em></li><li>Drive <em>the TV</em></li></ul>
+  </div>
+</div>
+
+<main>
+  <div class="wrap stats" role="list">
+    <div role="listitem"><b>21</b><span>points tracked on each hand, every frame</span></div>
+    <div role="listitem"><b>10</b><span>gestures built in, plus any you record</span></div>
+    <div role="listitem"><b>0</b><span>frames of camera video leave your Mac</span></div>
+    <div role="listitem"><b>1</b><span>webcam. Nothing else to buy or wear.</span></div>
   </div>
 
   <section id="demo" class="wrap" aria-labelledby="demo-title">
-    <div class="section-head">
-      <h2 id="demo-title">Try it in your browser</h2>
+    <div class="sec-head">
+      <span class="sec-n label">(01)</span>
+      <h2 id="demo-title" class="display">Try it in your browser</h2>
       <p>The same hand tracking and gesture rules as the Mac app, running in this tab. Your video never leaves your device.</p>
     </div>
 
     <div class="bench">
       <div class="stage-col">
-      <div class="stage-wrap" id="stage-wrap">
-        <canvas id="stage" role="img" aria-label="Camera view with the tracked points of your hands"></canvas>
-        <div class="stage-hud">
-          <span id="arm-chip" class="chip" hidden>Armed</span>
-          <span id="stats" class="chip">Sample hand</span>
+        <div class="stage-wrap" id="stage-wrap">
+          <canvas id="stage" role="img" aria-label="Camera view with the tracked points of your hands"></canvas>
+          <div class="stage-hud">
+            <span id="arm-chip" class="chip" hidden>Armed</span>
+            <span id="stats" class="chip">Sample hand</span>
+          </div>
+          <div class="cover" id="cover">
+            <p class="cover-title">See your hands the way Zephyr does</p>
+            <button id="start" class="pill solid" type="button">Start camera</button>
+            <p id="cam-msg" class="cover-msg" role="status">Runs in this tab. Nothing is uploaded.</p>
+          </div>
+          <div id="countdown" class="countdown" hidden></div>
+          <p id="toast" class="toast" role="status" aria-live="polite"></p>
         </div>
-        <div class="cover" id="cover">
-          <p class="cover-title">See your hands the way Zephyr does</p>
-          <button id="start" class="btn primary" type="button">Start camera</button>
-          <p id="cam-msg" class="cover-msg" role="status">Runs in this tab. Nothing is uploaded.</p>
-        </div>
-        <div id="countdown" class="countdown" hidden></div>
-        <p id="toast" class="toast" role="status" aria-live="polite"></p>
-      </div>
-      <ul class="legend" aria-label="What the drawing shows">
-        <li><i class="lg-tip"></i>21 points per hand, found in this tab</li>
-        <li><i class="lg-ring"></i>The knuckle that steers the pointer</li>
-        <li><i class="lg-pinch"></i>Your pinch closing; green means click</li>
-        <li><i class="lg-hold"></i>A hold filling up: palm, both palms, your gesture</li>
-      </ul>
+        <ul class="legend" aria-label="What the drawing shows">
+          <li><i class="lg-tip"></i>21 points per hand, found in this tab</li>
+          <li><i class="lg-ring"></i>The knuckle that steers the pointer</li>
+          <li><i class="lg-pinch"></i>Your pinch closing; green means click</li>
+          <li><i class="lg-hold"></i>A ring filling up: palm, fist knob, both palms</li>
+        </ul>
       </div>
 
       <div class="panel">
         <div class="tabs" role="tablist" aria-label="Demo modes">
-          <button role="tab" id="tab-point" aria-selected="true" aria-controls="pane-point" type="button">Point &amp; pinch</button>
-          <button role="tab" id="tab-apps" aria-selected="false" aria-controls="pane-apps" type="button" tabindex="-1">App gestures</button>
+          <button role="tab" id="tab-point" aria-selected="true" aria-controls="pane-point" type="button">Pointer</button>
+          <button role="tab" id="tab-apps" aria-selected="false" aria-controls="pane-apps" type="button" tabindex="-1">Mac apps</button>
+          <button role="tab" id="tab-tv" aria-selected="false" aria-controls="pane-tv" type="button" tabindex="-1">Roku TV</button>
           <button role="tab" id="tab-custom" aria-selected="false" aria-controls="pane-custom" type="button" tabindex="-1">Your gesture</button>
         </div>
 
@@ -356,7 +475,7 @@ footer a { color: var(--mist); }
         </div>
 
         <div id="pane-apps" role="tabpanel" aria-labelledby="tab-apps" hidden>
-          <p class="how">Pick the app in front, then <b>swipe two fingers</b>, <b>swipe an open hand</b>, make a <b>quick fist</b> or <b>hold a palm still</b>.</p>
+          <p class="how">Pick the app in front, then <b>swipe</b> two fingers or an open hand, make a <b>quick fist</b>, <b>hold a palm</b> still, or hold a fist and <b>twist</b> it like a knob.</p>
           <div class="apps" role="group" aria-label="App in front">
             <button class="app-chip" type="button" data-app="default" aria-pressed="false">Desktop</button>
             <button class="app-chip" type="button" data-app="powerpoint" aria-pressed="true">PowerPoint</button>
@@ -364,17 +483,28 @@ footer a { color: var(--mist); }
             <button class="app-chip" type="button" data-app="chrome" aria-pressed="false">Chrome</button>
           </div>
           <div class="app-view" id="app-view" aria-live="polite"></div>
+          <div class="meter"><span>Volume</span><div class="bar"><i id="vol-fill"></i></div><span class="val" id="vol-val">50%</span></div>
+          <div class="meter"><span>Brightness</span><div class="bar"><i id="bri-fill"></i></div><span class="val" id="bri-val">70%</span></div>
           <table class="gmap">
             <thead><tr><th scope="col">Gesture</th><th scope="col" id="gmap-app">In PowerPoint</th></tr></thead>
             <tbody id="gmap-body"></tbody>
           </table>
         </div>
 
+        <div id="pane-tv" role="tabpanel" aria-labelledby="tab-tv" hidden>
+          <p class="how"><b>Point and move</b> to walk the focus, <b>pinch</b> for OK, <b>open-hand swipe</b> left for Back and right for Home, <b>twist a fist</b> for volume.</p>
+          <div class="tv" id="tv" aria-live="polite"></div>
+          <table class="gmap">
+            <thead><tr><th scope="col">Gesture</th><th scope="col">Roku key</th></tr></thead>
+            <tbody id="tvmap-body"></tbody>
+          </table>
+        </div>
+
         <div id="pane-custom" role="tabpanel" aria-labelledby="tab-custom" hidden>
           <p class="how">Make any hand shape except an open palm, fist, point or two fingers (those are built in). Zephyr learns it from <b>30 frames</b>.</p>
           <div class="rec-row">
-            <button id="rec" class="btn primary small" type="button">Record a gesture</button>
-            <button id="rec-clear" class="btn small" type="button" hidden>Delete it</button>
+            <button id="rec" class="pill solid small" type="button">Record a gesture</button>
+            <button id="rec-clear" class="pill small" type="button" hidden>Delete it</button>
           </div>
           <div class="meter">
             <span>Frames</span>
@@ -392,45 +522,99 @@ footer a { color: var(--mist); }
 
         <div class="panel-foot">
           <label class="switch"><input type="checkbox" id="show-video" checked> Show video</label>
-          <button id="stop" class="btn small" type="button" hidden>Stop camera</button>
+          <button id="stop" class="pill small" type="button" hidden>Stop camera</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="gestures" class="wrap" aria-labelledby="gestures-title">
+    <div class="sec-head">
+      <span class="sec-n label">(02)</span>
+      <h2 id="gestures-title" class="display">The gestures</h2>
+      <p>Ten built in. Each one is a shape and a movement the camera can't mistake for your hand at rest.</p>
+    </div>
+    <ol class="glist">
+      <li><h3>Point</h3><p class="do">Index finger up, the others curled.</p><p class="does">The pointer appears and follows your index knuckle.</p></li>
+      <li><h3>Pinch</h3><p class="do">Tap thumb and index together.</p><p class="does">A click, right where the pointer froze.</p></li>
+      <li><h3>Pinch &amp; hold</h3><p class="do">Keep them together and move.</p><p class="does">Writes in the air. AI reads it as text.</p></li>
+      <li><h3>Two-finger swipe</h3><p class="do">Index and middle up, a quick move sideways.</p><p class="does">Next or previous: slide, track, tab.</p></li>
+      <li><h3>Open-hand swipe</h3><p class="do">The whole hand, a quick move sideways.</p><p class="does">Switches desktops.</p></li>
+      <li><h3>Quick fist</h3><p class="do">Close your hand and open it, under a third of a second.</p><p class="does">Play or pause.</p></li>
+      <li><h3>Fist knob</h3><p class="do">Hold a fist for 0.4 seconds, then twist it.</p><p class="does">Right hand turns the volume, left hand the brightness.</p></li>
+      <li><h3>Palm held</h3><p class="do">An open palm to the camera, still, for 0.8 seconds.</p><p class="does">Opens search. Write what you're looking for.</p></li>
+      <li><h3>Both palms</h3><p class="do">Both hands up for a second.</p><p class="does">Arms or pauses Zephyr, and locks it to you.</p></li>
+      <li><h3>Handshake</h3><p class="do">Shake hands with someone in view.</p><p class="does">Lets them drive until you raise both palms.</p></li>
+    </ol>
+  </section>
+
+  <section id="tv" class="band" aria-labelledby="tv-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-n label">(03)</span>
+        <h2 id="tv-title" class="display">And the TV <span class="serif">across the room</span></h2>
+        <p>Turn on TV mode from the menu bar and the same gestures drive a Roku TV over your Wi-Fi: the home screen, apps, playback, volume, even typing into search. It talks to the TV the way Roku's own phone app does.</p>
+      </div>
+      <div class="tv-cols">
+        <table class="keys">
+          <thead><tr><th class="label" scope="col">Gesture</th><th class="label" scope="col">On the TV</th></tr></thead>
+          <tbody>
+            <tr><td>Point and move your hand</td><td>Arrow keys</td></tr>
+            <tr><td>Pinch</td><td>OK</td></tr>
+            <tr><td>Quick fist</td><td>Play / Pause</td></tr>
+            <tr><td>Two-finger swipe left / right</td><td>Forward / Rewind</td></tr>
+            <tr><td>Open-hand swipe left / right</td><td>Back / Home</td></tr>
+            <tr><td>Fist knob</td><td>Volume</td></tr>
+            <tr><td>Palm held, then write in the air</td><td>Typed into search</td></tr>
+            <tr><td>Your own gesture</td><td>Any key or app</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <ol class="setup">
+            <li><div><b>Put the TV and the Mac on the same Wi-Fi.</b><span>Guest and campus Wi-Fi keep devices apart, so a phone hotspot works best there.</span></div></li>
+            <li><div><b>Let apps control the TV.</b><span>On the TV: Settings › System › Advanced system settings › Control by mobile apps › Network access: Enabled.</span></div></li>
+            <li><div><b>Find it from the menu bar.</b><span>Roku TV › Find TV on this Wi-Fi, then Control the TV.</span></div></li>
+          </ol>
+          <p class="note">Works with Roku TVs, like the Hisense R6 we demo on. No TV handy? The menu bar can start a TV simulator in your browser that answers the same way.</p>
         </div>
       </div>
     </div>
   </section>
 
   <section id="features" class="wrap" aria-labelledby="features-title">
-    <div class="section-head">
-      <h2 id="features-title">What the Mac app adds</h2>
+    <div class="sec-head">
+      <span class="sec-n label">(04)</span>
+      <h2 id="features-title" class="display">What the Mac app adds</h2>
       <p>The browser can show the hand tracking. On your Mac, Zephyr also runs the actions, knows who is in front of the camera and reads what you write.</p>
     </div>
     <div class="fgrid">
       <article>
-        <p class="trigger">Both palms · 1 second</p>
+        <p class="label">Both palms · 1 second</p>
         <h3>Owner lock</h3>
-        <p>Raise both palms to arm Zephyr. It follows the person who armed it and ignores other people's hands in view.</p>
+        <p>Raise both palms to arm Zephyr. It follows the person who armed it and ignores hands reaching in from anyone else.</p>
       </article>
       <article>
-        <p class="trigger">Handshake</p>
+        <p class="label">Handshake</p>
         <h3>Share control</h3>
         <p>Shake hands with someone to let them drive for a while. Both palms takes control back.</p>
       </article>
       <article>
-        <p class="trigger">Two-finger swipe</p>
+        <p class="label">Two-finger swipe</p>
         <h3>Gestures that fit the app</h3>
         <p>The same swipe is the next slide in PowerPoint, the next track in Spotify and the next tab in Chrome.</p>
       </article>
       <article>
-        <p class="trigger">Any hand shape · 3 seconds</p>
+        <p class="label">Any hand shape · 3 seconds</p>
         <h3>Your own gestures</h3>
-        <p>Record a shape and bind it to a website, an app, a shortcut or text. Optional cloud sync brings them to your other Macs.</p>
+        <p>Record a shape and bind it to a website, an app, a shortcut, text or a TV action. Optional cloud sync brings them to your other Macs.</p>
       </article>
       <article>
-        <p class="trigger">Palm held · pinch and hold</p>
+        <p class="label">Palm held · pinch and hold</p>
         <h3>Air writing</h3>
         <p>Hold up a palm to search, then write the words in the air. AI reads your handwriting.</p>
       </article>
       <article>
-        <p class="trigger">Point and pinch</p>
+        <p class="label">Point and pinch</p>
         <h3>A pointer that holds still</h3>
         <p>The pointer follows your index knuckle and freezes as your fingers close, so the click lands where you aimed.</p>
       </article>
@@ -438,30 +622,33 @@ footer a { color: var(--mist); }
   </section>
 
   <section class="wrap" aria-labelledby="how-title">
-    <div class="section-head">
-      <h2 id="how-title">How it works</h2>
+    <div class="sec-head">
+      <span class="sec-n label">(05)</span>
+      <h2 id="how-title" class="display">How it works</h2>
     </div>
     <ol class="steps">
       <li><h3>Your webcam</h3><p>MediaPipe finds 21 points on each hand, on your Mac, every frame.</p></li>
-      <li><h3>Points become a gesture</h3><p>Finger angles decide the pose: open palm, fist, point or two fingers. Movement over time makes swipes, holds and pinches.</p></li>
-      <li><h3>The app in front decides</h3><p>Zephyr checks which app is in front and runs that app's action, or the one you recorded.</p></li>
+      <li><h3>Points become a gesture</h3><p>Finger angles decide the pose: open palm, fist, point or two fingers. The palm's path over time makes swipes, holds and the knob.</p></li>
+      <li><h3>The app in front decides</h3><p>Zephyr checks which app is in front, or the TV, and runs that action, or the one you recorded.</p></li>
     </ol>
-    <p class="privacy"><b>Camera video never leaves your Mac.</b> Air writing sends only the strokes you draw, so they can be read as text.</p>
+    <p class="privacy">Camera video never leaves your Mac. Air writing sends only the strokes you draw, so they can be read as text.</p>
   </section>
 
   <section id="install" class="wrap" aria-labelledby="install-title">
-    <div class="section-head">
-      <h2 id="install-title">Install</h2>
+    <div class="sec-head">
+      <span class="sec-n label">(06)</span>
+      <h2 id="install-title" class="display">Install</h2>
     </div>
     <div class="install">
       <ol>
-        <li><b>Download Zephyr.dmg and open it.</b><span>Drag Zephyr into Applications, then open it from there.</span></li>
-        <li><b>Allow it the first time.</b><span>Zephyr isn't notarized yet, so macOS blocks the first launch. Open System Settings › Privacy &amp; Security, click Open Anyway next to Zephyr and enter your password.</span></li>
-        <li><b>Grant the camera and Accessibility.</b><span>Allow the camera, then turn on Zephyr under Accessibility so it can move the pointer and press keys.</span></li>
-        <li><b>Raise both palms.</b><span>Zephyr lives in the menu bar. Arm it with both palms and start pointing.</span></li>
+        <li><div><b>Download Zephyr.dmg and open it.</b><span>Drag Zephyr into Applications, then open it from there.</span></div></li>
+        <li><div><b>Allow it the first time.</b><span>Zephyr isn't notarized yet, so macOS blocks the first launch. Open System Settings › Privacy &amp; Security, click Open Anyway next to Zephyr and enter your password.</span></div></li>
+        <li><div><b>Grant the camera and Accessibility.</b><span>Allow the camera, then turn on Zephyr under Accessibility so it can move the pointer and press keys.</span></div></li>
+        <li><div><b>Raise both palms.</b><span>Zephyr lives in the menu bar. Arm it with both palms and start pointing.</span></div></li>
       </ol>
       <div class="get">
-        <a class="btn primary" href="https://github.com/Rohanb1836/Zephyr_SunHacks/releases/latest/download/Zephyr.dmg">Download for Mac</a>
+        <h3>Get <span class="serif">Zephyr</span></h3>
+        <a class="pill solid" href="https://github.com/Rohanb1836/Zephyr_SunHacks/releases/latest/download/Zephyr.dmg">Download for Mac</a>
         <p>For Apple silicon Macs (M1 or later) with a webcam.</p>
         <p>Prefer to build it yourself? The source and build steps are <a href="https://github.com/Rohanb1836/Zephyr_SunHacks">on GitHub</a>.</p>
       </div>
@@ -470,25 +657,31 @@ footer a { color: var(--mist); }
 </main>
 
 <footer>
-  <div class="wrap">
+  <div class="wrap foot-row">
     <span>Built at SunHacks 2026, Arizona State University, by Aadharsh, Rohan, Ryan and Swayam.</span>
-    <span><a href="https://github.com/Rohanb1836/Zephyr_SunHacks">Source on GitHub</a></span>
+    <a href="https://github.com/Rohanb1836/Zephyr_SunHacks">Source on GitHub</a>
   </div>
+  <p class="wordmark" aria-hidden="true">Zephyr</p>
 </footer>
 
 <script type="module">
-// ---- core: begin. A port of zephyr/core (poses, pointer, pinch, swipes, holds) and zephyr/custom/templates.py,
-// with the numbers from config.yaml, so the demo behaves like the Mac app. ----
+// ---- core: begin. A port of zephyr/core (tracker, poses, pointer, pinch, swipes, holds, the fist knob) and
+// zephyr/custom/templates.py, with the numbers from config.yaml, so the demo behaves like the Mac app. ----
 const CFG = {
-  poses: { extendDeg: 155, curlDeg: 125, debounceFrames: 3, window: 5, thumbDeg: 150, thumbTipScales: 0.6, unknownMinScore: 0.6 },
-  tracker: { dropoutMs: 150 },
+  poses: { extendDeg: 155, curlDeg: 125, pinkyExtendDeg: 135, pinkyCurlDeg: 125, openNeedsThumb: false, debounceFrames: 3, window: 5, thumbDeg: 150, thumbTipScales: 0.6, unknownMinScore: 0.6 },
+  hands: { scaleEma: 0.3 },
+  tracker: { maxJumpScales: 4.0, dropoutMs: 250 },
   pointer: { box: [0.25, 0.20, 0.75, 0.65], minCutoff: 1.0, beta: 0.02, hideAfterMs: 300, showFrames: 3 },
   pinch: { down: 0.25, up: 0.40, prefreeze: 0.50, tapMaxMs: 300, postFreezeMs: 80 },
   pen: { minCutoff: 1.5, beta: 0.02 },
-  swipe: { minTravelScales: 2.0, maxMs: 450, minPeakSpeed: 6.0, maxSlope: 0.5, refractoryMs: 600, oppositeBlockMs: 700 },
-  holds: { palmMs: 500, palmMaxSpeed: 0.5, bothPalmsMs: 1000, fistTapMinMs: 80, fistTapMaxMs: 350, fistTapMaxTravel: 0.3, customMs: 500, customAgree: 0.8 },
+  swipe: { minTravelScales: 1.5, maxMs: 600, minPeakSpeed: 5.0, maxSlope: 0.7, openRatio: 0.5, settleSpeed: 2.0, busySpeed: 3.0, refractoryMs: 500, oppositeBlockMs: 900 },
+  level: { engageMs: 400, tickMs: 100, releaseMs: 250, knobGain: 1.0, knobDeadDeg: 8, knobMinStep: 1.0, knobMinCutoff: 1.0, knobBeta: 0.05 },
+  holds: { palmMs: 800, palmMaxSpeed: 0.8, stillWindowMs: 300, graceMs: 150, afterSwipeMs: 1200, bothPalmsMs: 1000, fistTapMinMs: 80, fistTapMaxMs: 350, fistTapMaxTravel: 0.3, customMs: 500, customAgree: 0.8 },
   custom: { samples: 30, defaultThreshold: 0.16, maxThreshold: 0.30, countdownMs: 3000, timeoutMs: 5000 },
 };
+const HIST_KEEP_MS = 800;
+const RELEASE_WAIT_MS = 250;     // after a fist opens, how long in-between poses may last before OPEN
+const SIDE_FLIP_FRAMES = 3;      // MediaPipe's left/right label must disagree this many frames to flip
 const POSE = { NONE: "none", OPEN: "open", FIST: "fist", POINT: "point", TWO: "two", UNKNOWN: "unknown" };
 const BUILT_IN = new Set([POSE.OPEN, POSE.FIST, POSE.POINT, POSE.TWO]);
 const FINGERS = [[5, 6, 8], [9, 10, 12], [13, 14, 16], [17, 18, 20]];
@@ -527,27 +720,29 @@ function palmFacing(lm, isLeft) {
   return z > 0;
 }
 
-function classify(fingers, thumb, score) {
+function classify(fingers, thumbOk, score) {
   const [i, m, r, k] = fingers.map(Boolean);
-  if (i && m && r && k && thumb) return POSE.OPEN;
+  if (i && m && r && k && thumbOk) return POSE.OPEN;
   if (!(i || m || r || k)) return POSE.FIST;
   if (i && !(m || r || k)) return POSE.POINT;
   if (i && m && !(r || k)) return POSE.TWO;
   return score > CFG.poses.unknownMinScore ? POSE.UNKNOWN : POSE.NONE;
 }
 
-// finger hysteresis, then the published pose changes only when one wins debounceFrames of the last window
+// finger hysteresis (the pinky has its own looser pair, a relaxed pinky is rarely straight), then the
+// published pose changes only when one wins debounceFrames of the last window
 class PoseState {
   constructor() { this.fingers = [null, null, null, null]; this.thumb = false; this.raw = POSE.NONE; this.history = []; this.frames = 0; this.pose = POSE.NONE; }
   update(lm, world, scale, score, aspect) {
     const p = CFG.poses;
     fingerAngles(world).forEach((ang, i) => {
-      if (ang > p.extendDeg) this.fingers[i] = true;
-      else if (ang < p.curlDeg) this.fingers[i] = false;
-      else if (this.fingers[i] === null) this.fingers[i] = ang > (p.extendDeg + p.curlDeg) / 2;
+      const [ext, curl] = i === 3 ? [p.pinkyExtendDeg, p.pinkyCurlDeg] : [p.extendDeg, p.curlDeg];
+      if (ang > ext) this.fingers[i] = true;
+      else if (ang < curl) this.fingers[i] = false;
+      else if (this.fingers[i] === null) this.fingers[i] = ang > (ext + curl) / 2;
     });
     this.thumb = thumbExtended(lm, world, scale, aspect);
-    this.raw = classify(this.fingers, this.thumb, score);
+    this.raw = classify(this.fingers, this.thumb || !p.openNeedsThumb, score);
     this.history.push(this.raw);
     if (this.history.length > p.window) this.history.shift();
     this.frames += 1;
@@ -559,6 +754,14 @@ class PoseState {
     if (best !== this.pose && count >= p.debounceFrames) this.pose = best;
     return this.pose;
   }
+}
+
+// swipes vote on index, middle and ring only: 5 = open-hand swipe, 2 = two-finger swipe, 0 = neither
+function fingerClass(fingers) {
+  const [i, m, r] = fingers.map(Boolean);
+  if (i && m && r) return 5;
+  if (i && m && !r) return 2;
+  return 0;
 }
 
 // custom gesture templates: wrist at origin, palm size 1, left hands mirrored, no rotation
@@ -631,97 +834,140 @@ function boxMap(x, y, box) {
 }
 
 // palm speed in palm sizes per second over about windowMs
-function speedOf(hist, aspect, windowMs = 100) {
+function speedOf(hist, scale, aspect, windowMs) {
   if (hist.length < 2) return 0;
   const last = hist[hist.length - 1];
   let first = last;
   for (let i = hist.length - 1; i >= 0; i--) { first = hist[i]; if (last.ts - hist[i].ts >= windowMs) break; }
   const dt = (last.ts - first.ts) / 1000;
   if (dt <= 0) return 0;
-  return Math.hypot((last.cx - first.cx) * aspect, last.cy - first.cy) / Math.max(last.scale, 1e-4) / dt;
+  return Math.hypot((last.cx - first.cx) * aspect, last.cy - first.cy) / Math.max(scale, 1e-4) / dt;
+}
+
+// stable hand ids: each detection goes to the nearest previous wrist (same side preferred) within
+// maxJumpScales; a hand missing for under dropoutMs keeps its id and all its state
+class Tracker {
+  constructor() { this.tracks = new Map(); this.nextId = 1; }
+  update(obs, ts, aspect) {
+    const cands = [];
+    obs.forEach((o, di) => {
+      for (const [id, t] of this.tracks) {
+        const d = dist2d(o.lm[0], t.lm[0], aspect) / Math.max(t.scale, 1e-4);
+        if (d > CFG.tracker.maxJumpScales) continue;
+        cands.push([d + (o.side === t.side ? 0 : 0.75), di, id]);
+      }
+    });
+    cands.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]);
+    const usedD = new Set(), usedT = new Set(), assign = new Map();
+    for (const [, di, id] of cands) {
+      if (usedD.has(di) || usedT.has(id)) continue;
+      assign.set(di, id); usedD.add(di); usedT.add(id);
+    }
+    const visible = obs.map((o, di) => {
+      let t = this.tracks.get(assign.get(di));
+      if (t) {
+        t.lm = o.lm; t.world = o.world; t.score = o.score;
+        t.scale += CFG.hands.scaleEma * (rawScale(o.lm, aspect) - t.scale);
+        if (o.side !== t.side) { t.votes += 1; if (t.votes >= SIDE_FLIP_FRAMES) { t.side = o.side; t.votes = 0; } } else t.votes = 0;
+      } else {
+        t = { id: this.nextId++, side: o.side, votes: 0, lm: o.lm, world: o.world, score: o.score, scale: rawScale(o.lm, aspect), poses: new PoseState() };
+        this.tracks.set(t.id, t);
+      }
+      t.lastMs = ts;
+      return t;
+    });
+    const seen = new Set(visible.map((t) => t.id));
+    for (const [id, t] of this.tracks) if (!seen.has(id) && ts - t.lastMs > CFG.tracker.dropoutMs) this.tracks.delete(id);
+    return visible;
+  }
 }
 
 class HandCtx {
-  constructor(side) {
-    this.side = side;
-    this.poseState = new PoseState();
-    this.pose = POSE.NONE;
+  constructor(id) {
+    this.id = id;
     this.hist = [];
     this.state = "idle";
     this.ptFilter = new OneEuro2D(CFG.pointer.minCutoff, CFG.pointer.beta);
     this.penFilter = new OneEuro2D(CFG.pen.minCutoff, CFG.pen.beta);
     this.ptFrames = 0; this.ptX = 0; this.ptY = 0; this.frozen = false; this.unfreezeAt = null; this.lastPoint = null;
     this.pinchStart = null; this.pinchPos = null; this.pinchFromPointer = false;
-    this.palmStart = null; this.palmFired = false;
+    this.palmStart = null; this.palmFired = false; this.palmBadSince = null; this.palmBlockUntil = 0;
+    this.swipeSettle = false; this.swipeCut = -1;
     this.cuStart = null; this.cuVotes = []; this.customFired = false;
+    this.lvlKind = null; this.knobTwist = 0;
   }
-  observe(o, ts, aspect) {
-    this.lm = o.lm; this.world = o.world; this.score = o.score; this.lastSeen = ts;
-    this.scale = rawScale(o.lm, aspect);
-    this.pose = this.poseState.update(o.lm, o.world, this.scale, o.score, aspect);
-    this.pinch = pinchRatio(o.lm, this.scale, aspect);
-    const c = palmCentre(o.lm);
+  observe(t, ts, aspect) {
+    this.side = t.side; this.lm = t.lm; this.world = t.world; this.score = t.score; this.ts = ts;
+    this.scale = t.scale;
+    this.pose = t.poses.update(t.lm, t.world, t.scale, t.score, aspect);
+    this.fingers = t.poses.fingers.slice();
+    this.pinch = pinchRatio(t.lm, t.scale, aspect);
+    const c = palmCentre(t.lm);
     this.cx = c.x; this.cy = c.y;
-    this.facing = palmFacing(o.lm, this.side === "Left");
-    this.hist.push({ ts, cx: this.cx, cy: this.cy, pose: this.pose, scale: this.scale });
-    while (this.hist.length && ts - this.hist[0].ts > 1000) this.hist.shift();
-    this.speed = speedOf(this.hist, aspect);
-    if (this.pose !== POSE.UNKNOWN) this.customFired = false;   // the pose must change before it fires again
+    this.facing = palmFacing(t.lm, t.side === "Left");
+    this.hist.push({ ts, cx: this.cx, cy: this.cy, cls: fingerClass(this.fingers), scale: this.scale });
+    while (this.hist.length && ts - this.hist[0].ts > HIST_KEEP_MS) this.hist.shift();
+    // movement made while pointing, writing or turning the knob is never a swipe
+    if (!["idle", "palm", "custom"].includes(this.state)) this.swipeCut = ts;
+    this.speed = speedOf(this.hist, this.scale, aspect, 100);
+    this.stillSpeed = speedOf(this.hist, this.scale, aspect, CFG.holds.stillWindowMs);
     if (this.pose !== POSE.OPEN) this.palmFired = false;
+    if (this.pose !== POSE.UNKNOWN) this.customFired = false;   // the pose must change before it fires again
   }
 }
+
+// the knob: the angle from the wrist to the middle of the knuckles, 0 straight up, positive leaning
+// right in the mirrored picture (clockwise as you see it)
+function knobAngle(lm, aspect) {
+  const kx = (lm[5].x + lm[9].x + lm[13].x + lm[17].x) / 4;
+  const ky = (lm[5].y + lm[9].y + lm[13].y + lm[17].y) / 4;
+  return (Math.atan2((kx - lm[0].x) * aspect, lm[0].y - ky) * 180) / Math.PI;
+}
+const coreFist = (c) => !!c.fingers && !(c.fingers[0] || c.fingers[1] || c.fingers[2]);
 
 // The gesture engine: one acting hand at a time, and the same priority order as zephyr/core/engine.py
 class Engine {
   constructor() {
-    this.ctxs = new Map(); this.acting = null; this.armed = true; this.both = null;
+    this.tracker = new Tracker();
+    this.ctxs = new Map(); this.acting = null; this.armed = true;
+    this.both = { start: null, needRelease: false, active: false, lastOk: -1e9 };
     this.inkEnabled = true; this.matcher = null;
     this.swipeLast = -1e9; this.swipeDir = null;
+    this.lastIds = [];
   }
 
   step(obs, ts, aspect) {
     const ev = [];
-    const visible = new Set();
-    for (const o of obs) {
-      let c = this.ctxs.get(o.side);
-      if (!c) { c = new HandCtx(o.side); this.ctxs.set(o.side, c); }
-      visible.add(o.side);
-      c.observe(o, ts, aspect);
-    }
-    for (const [side, c] of this.ctxs) {
-      if (visible.has(side) || ts - c.lastSeen <= CFG.tracker.dropoutMs) continue;
+    const tracks = this.tracker.update(obs, ts, aspect);
+    this.lastIds = tracks.map((t) => t.id);
+    const present = tracks.map((t) => {
+      let c = this.ctxs.get(t.id);
+      if (!c) { c = new HandCtx(t.id); this.ctxs.set(t.id, c); }
+      c.observe(t, ts, aspect);
+      return c;
+    });
+    for (const [id, c] of this.ctxs) {     // hands past their dropout grace: cancel and forget
+      if (this.tracker.tracks.has(id)) continue;
       this.cancel(c, ev);
-      this.ctxs.delete(side);
-      if (this.acting === side) this.acting = null;
+      this.ctxs.delete(id);
+      if (this.acting === id) this.acting = null;
     }
-    const present = [...visible].map((s) => this.ctxs.get(s));
 
     // both palms held: arm or pause, the one gesture that works while paused
-    const palms = present.filter((c) => c.pose === POSE.OPEN && c.facing);
-    if (palms.length >= 2) {
-      if (!this.both) this.both = { start: ts, fired: false };
-      const p = Math.min(1, (ts - this.both.start) / CFG.holds.bothPalmsMs);
-      if (!this.both.fired) ev.push({ type: "hold", kind: "both", progress: p, x: (palms[0].cx + palms[1].cx) / 2, y: (palms[0].cy + palms[1].cy) / 2 });
-      if (p >= 1 && !this.both.fired) {
-        this.both.fired = true;
-        this.armed = !this.armed;
-        for (const c of this.ctxs.values()) this.cancel(c, ev);
-        this.acting = null;
-        ev.push({ type: "hold", kind: "both", progress: 0 });
-        ev.push({ type: "arm", armed: this.armed });
-      }
-    } else if (this.both) {
-      if (!this.both.fired) ev.push({ type: "hold", kind: "both", progress: 0 });
-      this.both = null;
+    if (this.bothStep(present, ts, ev)) {
+      this.armed = !this.armed;
+      if (!this.armed) { for (const c of this.ctxs.values()) this.cancel(c, ev); this.acting = null; }
+      ev.push({ type: "arm", armed: this.armed });
+      return ev;
     }
     if (!this.armed) return ev;
 
-    const bothActive = this.both !== null;
+    const bothActive = this.both.active;
     const nOpen = present.filter((c) => c.pose === POSE.OPEN).length;
     if (this.acting !== null) {
       const c = this.ctxs.get(this.acting);
       if (!c) this.acting = null;
-      else if (visible.has(this.acting)) {
+      else if (present.includes(c)) {
         this.runHand(c, ts, aspect, ev, nOpen, bothActive);
         if (c.state === "idle") this.acting = null;
         return ev;
@@ -731,33 +977,63 @@ class Engine {
     const prio = (c) => (c.pose === POSE.FIST ? 0 : c.pinch < CFG.pinch.down ? 1 : c.pose === POSE.POINT ? 2 : 3);
     for (const c of [...present].sort((a, b) => prio(a) - prio(b))) {
       this.runHand(c, ts, aspect, ev, nOpen, bothActive);
-      if (c.state !== "idle") { this.acting = c.side; break; }
+      if (c.state !== "idle") { this.acting = c.id; break; }
     }
     return ev;
+  }
+
+  // two open palms facing the camera for bothPalmsMs. Facing is also judged by position (the hand on
+  // the left of the picture is the left hand), because two hands up sometimes get the same label.
+  bothStep(present, ts, ev) {
+    const b = this.both;
+    const opens = present.filter((c) => c.pose === POSE.OPEN).sort((x, y) => y.scale - x.scale).slice(0, 2).sort((x, y) => x.cx - y.cx);
+    const facing = opens.length === 2 ? opens.filter((c, i) => c.facing || palmFacing(c.lm, i === 0)) : [];
+    if (opens.length === 2) for (const c of opens) c.palmFired = true;   // no single palm hold until the pose changes
+    if (facing.length >= 2) b.lastOk = ts;
+    else if (ts - b.lastOk <= CFG.holds.graceMs && (b.start !== null || b.needRelease)) return false;
+    b.active = facing.length >= 2;
+    if (!b.active) {
+      if (b.start !== null) ev.push({ type: "hold", kind: "both", progress: 0 });
+      b.start = null; b.needRelease = false;
+      return false;
+    }
+    if (b.needRelease) return false;
+    if (b.start === null) b.start = ts;
+    const p = (ts - b.start) / CFG.holds.bothPalmsMs;
+    ev.push({ type: "hold", kind: "both", progress: Math.min(1, p), x: (facing[0].cx + facing[1].cx) / 2, y: (facing[0].cy + facing[1].cy) / 2 });
+    if (p >= 1) {
+      ev.push({ type: "hold", kind: "both", progress: 0 });
+      b.start = null; b.needRelease = true;
+      return true;
+    }
+    return false;
   }
 
   runHand(c, ts, aspect, ev, nOpen, bothActive) {
     switch (c.state) {
       case "pen": this.penStep(c, ts, ev); return;
-      case "fist": if (this.fistStep(c, ts, aspect, ev)) return; break;
+      case "fist": case "level": if (this.levelStep(c, ts, aspect, ev)) return; break;
       case "pinching": this.pinchStep(c, ts, ev); return;
       case "pointer": if (this.pointerStep(c, ts, ev)) return; break;
       case "palm": {
-        const sw = this.checkSwipe(c, ts, aspect);
-        if (sw) { this.palmCancel(c, ev); this.fireSwipe(c, sw, ev); return; }
+        const sw = this.checkSwipe(c, aspect);
+        if (sw) { this.palmCancel(c, ev); this.swiped(c, sw, ts, ev); return; }
         if (this.palmStep(c, ts, ev, nOpen, bothActive)) return;
         break;
       }
       case "custom": if (this.customStep(c, ts, ev)) return; break;
     }
-    // idle: try to start something, in priority order
-    if (c.pose === POSE.FIST) { c.ptFrames = 0; this.fistBegin(c, ts); return; }
-    if (c.pinch < CFG.pinch.down) { this.startPinch(c, ts, false, ev); return; }
+    // idle: try to start something, in priority order. A hand flying sideways is swiping, so its
+    // blurred frames must not start a fist or a pinch.
+    const fast = c.speed > CFG.swipe.busySpeed;
+    if (c.pose === POSE.FIST && !fast) { c.ptFrames = 0; this.fistBegin(c, ts); this.levelStep(c, ts, aspect, ev); return; }
+    if (!fast && this.pinchIsDown(c)) { this.startPinch(c, ts, false, ev); return; }
     if (this.idlePoint(c, ts, ev)) return;
-    const sw = this.checkSwipe(c, ts, aspect);
-    if (sw) { this.fireSwipe(c, sw, ev); return; }
-    if (!c.palmFired && this.palmOk(c, nOpen, bothActive)) {
-      c.state = "palm"; c.palmStart = ts;
+    const sw = this.checkSwipe(c, aspect);
+    if (sw) { this.swiped(c, sw, ts, ev); return; }
+    if (this.palmCanStart(c, ts, nOpen, bothActive)) {
+      c.state = "palm"; c.palmStart = ts; c.palmBadSince = null;
+      ev.push({ type: "hold", kind: "palm", side: c.side, progress: 0 });
       this.palmStep(c, ts, ev, nOpen, bothActive);
       return;
     }
@@ -767,8 +1043,11 @@ class Engine {
   cancel(c, ev) {
     if (c.state === "pointer" || (c.state === "pinching" && c.pinchFromPointer)) this.hide(c, ev);
     if (c.state === "pen") ev.push({ type: "ink", phase: "end", side: c.side });
-    if (c.state === "palm" || c.state === "custom") ev.push({ type: "hold", kind: c.state, side: c.side, progress: 0 });
-    c.state = "idle"; c.pinchStart = null; c.palmStart = null; c.cuStart = null; c.cuVotes = [];
+    if (c.state === "level") ev.push({ type: "level", kind: c.lvlKind, delta: 0, active: false, side: c.side });
+    if (c.state === "palm" || c.state === "custom" || c.state === "fist" || c.state === "level") {
+      ev.push({ type: "hold", kind: c.state === "level" ? "fist" : c.state, side: c.side, progress: 0 });
+    }
+    c.state = "idle"; c.pinchStart = null; c.palmStart = null; c.cuStart = null; c.cuVotes = []; c.fistT0 = null;
   }
 
   // pointer: the index knuckle (landmark 5) through the pointer box, smoothed; freezes while pinching
@@ -781,6 +1060,7 @@ class Engine {
     const [x, y] = boxMap(c.lm[5].x, c.lm[5].y, CFG.pointer.box);
     return c.ptFilter.step(x, y, ts / 1000);
   }
+  pinchIsDown(c) { return c.pinch < CFG.pinch.down && c.pose !== POSE.FIST; }
   idlePoint(c, ts, ev) {
     if (c.pose !== POSE.POINT) { c.ptFrames = 0; return false; }
     c.ptFrames += 1;
@@ -803,15 +1083,16 @@ class Engine {
     c.ptX = x; c.ptY = y;
   }
   pointerStep(c, ts, ev) {
-    if (c.pinch < CFG.pinch.down && c.pose !== POSE.FIST) { this.startPinch(c, ts, true, ev); return true; }
-    if (c.pose === POSE.OPEN || c.pose === POSE.TWO || c.pose === POSE.FIST) { this.hide(c, ev); c.state = "idle"; return false; }
+    if (this.pinchIsDown(c)) { this.startPinch(c, ts, true, ev); return true; }
+    // a fist is not a clear switch: the index dipping for a click often reads as one for a few frames
+    if (c.pose === POSE.OPEN || c.pose === POSE.TWO) { this.hide(c, ev); c.state = "idle"; return false; }
     if (c.pose === POSE.POINT) { c.lastPoint = ts; this.updatePos(c, ts); ev.push(this.ptr(c)); return true; }
     if (ts - (c.lastPoint ?? ts) >= CFG.pointer.hideAfterMs) { this.hide(c, ev); c.state = "idle"; return false; }
     ev.push(this.ptr(c));    // a glitch frame: keep the pointer where it is
     return true;
   }
 
-  // pinch: a quick one clicks where the pointer froze; held longer it writes
+  // pinch: a quick one clicks (where the pointer froze, when it was showing); held longer it writes
   penPoint(c, ts) {
     const [u, v] = boxMap((c.lm[4].x + c.lm[8].x) / 2, (c.lm[4].y + c.lm[8].y) / 2, CFG.pointer.box);
     return c.penFilter.step(u, v, ts / 1000);
@@ -826,7 +1107,7 @@ class Engine {
   pinchStep(c, ts, ev) {
     const held = ts - c.pinchStart;
     if (c.pinch > CFG.pinch.up) {
-      if (held <= CFG.pinch.tapMaxMs && c.pinchPos) ev.push({ type: "tap", side: c.side, x: c.pinchPos[0], y: c.pinchPos[1] });
+      if (held <= CFG.pinch.tapMaxMs) ev.push({ type: "gesture", key: "pinch_tap", side: c.side, pos: c.pinchPos });
       this.afterRelease(c, ts, ev);
       return;
     }
@@ -858,57 +1139,151 @@ class Engine {
     }
   }
 
-  // quick fist: a fist lasting fistTapMinMs..fistTapMaxMs that opens to a palm without travelling
+  // fist: opened again within fistTapMinMs..fistTapMaxMs without travelling, it is a quick fist.
+  // Held for engageMs it becomes a knob: twist it like a dial. Left hand brightness, right hand volume.
   fistBegin(c, ts) { c.state = "fist"; c.fistT0 = ts; c.fistX = c.cx; c.fistY = c.cy; c.fistTravel = 0; c.fistEnd = null; }
-  fistStep(c, ts, aspect, ev) {
-    const h = CFG.holds;
+  levelStep(c, ts, aspect, ev) {
+    if (c.state === "fist") return this.fistPending(c, ts, aspect, ev);
+    if (c.state === "level") return this.knobStep(c, ts, aspect, ev);
+    return false;
+  }
+  fistEnd(c, ev) {
+    ev.push({ type: "hold", kind: "fist", side: c.side, progress: 0 });
+    c.state = "idle"; c.fistT0 = null; c.fistEnd = null;
+  }
+  fistPending(c, ts, aspect, ev) {
+    const h = CFG.holds, lv = CFG.level;
+    c.fistTravel = Math.max(c.fistTravel, Math.hypot((c.cx - c.fistX) * aspect, c.cy - c.fistY) / Math.max(c.scale, 1e-4));
     if (c.pose === POSE.FIST) {
       c.fistEnd = null;
-      c.fistTravel = Math.max(c.fistTravel, Math.hypot((c.cx - c.fistX) * aspect, c.cy - c.fistY) / Math.max(c.scale, 1e-4));
+      const held = ts - c.fistT0;
+      ev.push({ type: "hold", kind: "fist", side: c.side, progress: Math.min(1, held / lv.engageMs), x: c.cx, y: c.cy });
+      if (held >= lv.engageMs) {
+        c.state = "level";
+        c.lvlKind = c.side === "Left" ? "brightness" : "volume";
+        c.lvlTick = ts; c.lvlOpenSince = null;
+        c.knobFilter = new OneEuro(lv.knobMinCutoff, lv.knobBeta);
+        c.knobLast = knobAngle(c.lm, aspect);
+        c.knobUnwrapped = c.knobLast;
+        c.knobA0 = c.knobFilter.step(c.knobUnwrapped, ts / 1000);
+        c.knobSent = 0; c.knobTwist = 0;
+        ev.push({ type: "knob", phase: "start", kind: c.lvlKind, side: c.side, twist: 0, x: c.cx, y: c.cy });
+      }
       return true;
     }
     if (c.fistEnd === null) c.fistEnd = ts;
     if (c.pose === POSE.OPEN) {
       const dur = c.fistEnd - c.fistT0;
       if (dur >= h.fistTapMinMs && dur <= h.fistTapMaxMs && c.fistTravel < h.fistTapMaxTravel) ev.push({ type: "gesture", key: "fist_tap", side: c.side });
-      c.state = "idle";
+      this.fistEnd(c, ev);
       return true;
     }
-    if (ts - c.fistEnd > h.fistTapMaxMs) { c.state = "idle"; return false; }
+    if (c.pose === POSE.POINT || c.pose === POSE.TWO || ts - c.fistEnd > RELEASE_WAIT_MS || c.fistEnd - c.fistT0 > h.fistTapMaxMs) {
+      this.fistEnd(c, ev);
+      return false;        // let the new pose be handled this frame
+    }
+    return true;
+  }
+  knobStep(c, ts, aspect, ev) {
+    const lv = CFG.level;
+    if (!(c.pose === POSE.FIST || (coreFist(c) && c.pose !== POSE.OPEN))) {
+      if (c.lvlOpenSince === null) c.lvlOpenSince = ts;
+      // a clear open hand lets go at once; an unclear frame gets releaseMs before the knob drops
+      if (c.pose === POSE.OPEN || ts - c.lvlOpenSince >= lv.releaseMs) {
+        ev.push({ type: "level", kind: c.lvlKind, delta: 0, active: false, side: c.side });
+        ev.push({ type: "knob", phase: "end", kind: c.lvlKind, side: c.side });
+        this.fistEnd(c, ev);
+        return false;
+      }
+      return true;
+    }
+    c.lvlOpenSince = null;
+    if (!coreFist(c)) return true;     // the fist is opening: hold the level, do not read the moving hand
+    const a = knobAngle(c.lm, aspect);
+    const d = ((((a - c.knobLast + 180) % 360) + 360) % 360) - 180;
+    c.knobLast = a;
+    c.knobUnwrapped += d;
+    const twist = c.knobFilter.step(c.knobUnwrapped, ts / 1000) - c.knobA0;
+    c.knobTwist = twist;
+    ev.push({ type: "knob", phase: "turn", kind: c.lvlKind, side: c.side, twist, x: c.cx, y: c.cy });
+    const target = Math.sign(twist) * Math.max(0, Math.abs(twist) - lv.knobDeadDeg) * lv.knobGain;
+    if (ts - c.lvlTick < lv.tickMs) return true;
+    c.lvlTick = ts;
+    const delta = target - c.knobSent;
+    if (Math.abs(delta) >= lv.knobMinStep) {
+      ev.push({ type: "level", kind: c.lvlKind, delta, active: true, side: c.side });
+      c.knobSent = target;
+    }
     return true;
   }
 
-  // swipes: an open hand (5) or two fingers (2) travelling sideways fast, for the whole movement
-  checkSwipe(c, ts, aspect) {
-    const s = CFG.swipe;
-    if (c.pose !== POSE.OPEN && c.pose !== POSE.TWO) return null;
-    const hist = c.hist;
-    let j = hist.length - 1;
-    while (j > 0 && hist[j - 1].pose === c.pose && ts - hist[j - 1].ts <= s.maxMs) j--;
-    const a = hist[j], b = hist[hist.length - 1];
-    const dx = ((b.cx - a.cx) * aspect) / b.scale, dy = (b.cy - a.cy) / b.scale;
-    if (Math.abs(dx) < s.minTravelScales || Math.abs(dy) >= s.maxSlope * Math.abs(dx)) return null;
+  // swipes follow the PALM, not the pose: the furthest sideways sample in the last maxMs, a mostly
+  // sideways move of minTravelScales that was already under way a frame ago, a vote on the fingers
+  // (index, middle, ring) over the move, then the hand must slow down before it can swipe again
+  checkSwipe(c, aspect) {
+    const s = CFG.swipe, h = c.hist, n = h.length;
+    if (c.swipeSettle) {
+      if (c.speed < s.settleSpeed) { c.swipeSettle = false; c.swipeCut = c.ts; }
+      return null;
+    }
+    if (n < 3) return null;
+    const now = h[n - 1].ts, since = now - this.swipeLast;
+    if (since < s.refractoryMs) return null;
+    const scale = Math.max(c.scale, 1e-4), need = s.minTravelScales, k = aspect / scale;
+    let bestI = -1, bestDx = 0;
+    for (let i = n - 2; i >= 0; i--) {
+      if (now - h[i].ts > s.maxMs || h[i].ts <= c.swipeCut) break;
+      if (i > 0) {                    // skip a one-frame spike: far from both neighbours, which agree
+        const a = (h[i].cx - h[i - 1].cx) * k, b = (h[i].cx - h[i + 1].cx) * k;
+        if (a * b > 0 && Math.min(Math.abs(a), Math.abs(b)) > 0.6 * need && Math.abs(a - b) < 0.3 * need) continue;
+      }
+      const dx = (h[n - 1].cx - h[i].cx) * k;
+      if (Math.abs(dx) > Math.abs(bestDx)) { bestI = i; bestDx = dx; }
+    }
+    if (bestI < 0 || Math.abs(bestDx) < need) return null;
+    const dy = (h[n - 1].cy - h[bestI].cy) / scale;
+    if (Math.abs(dy) >= s.maxSlope * Math.abs(bestDx)) return null;
+    const prevDx = (h[n - 2].cx - h[bestI].cx) * k;
+    if (prevDx * bestDx <= 0 || Math.abs(prevDx) < 0.4 * need) return null;   // all in one frame: a glitch
+    const sign = bestDx > 0 ? 1 : -1;
     let peak = 0;
-    for (let i = j + 1; i < hist.length; i++) {
-      const p = hist[i - 1], q = hist[i], dt = (q.ts - p.ts) / 1000;
-      if (dt > 0) peak = Math.max(peak, Math.hypot((q.cx - p.cx) * aspect, q.cy - p.cy) / q.scale / dt);
+    for (let j = bestI + 1; j < n; j++) {
+      const dt = (h[j].ts - h[j - 1].ts) / 1000;
+      if (dt > 0) peak = Math.max(peak, (sign * (h[j].cx - h[j - 1].cx) * k) / dt);
     }
     if (peak < s.minPeakSpeed) return null;
-    const dir = dx < 0 ? "left" : "right";
-    if (ts - this.swipeLast < s.refractoryMs) return null;
-    if (this.swipeDir && dir !== this.swipeDir && ts - this.swipeLast < s.oppositeBlockMs) return null;
-    this.swipeLast = ts; this.swipeDir = dir;
-    c.hist = [b];          // a fresh start, so one movement fires once
-    return { dir, fingers: c.pose === POSE.OPEN ? 5 : 2 };
+    if (c.speed < s.settleSpeed) return null;     // the hand already stopped: an old move never fires late
+    let n5 = 0, n2 = 0;
+    for (let j = bestI; j < n; j++) { if (h[j].cls === 5) n5++; else if (h[j].cls === 2) n2++; }
+    if (Math.max(n5, n2) / (n - bestI) < s.openRatio) return null;
+    const fingers = n5 >= n2 ? 5 : 2, dir = bestDx > 0 ? "right" : "left";
+    c.swipeCut = now; c.swipeSettle = true;       // one movement, one swipe
+    if (this.swipeDir && dir !== this.swipeDir && since < s.oppositeBlockMs) return null;   // the return move
+    this.swipeLast = now; this.swipeDir = dir;
+    return { dir, fingers };
   }
-  fireSwipe(c, sw, ev) { ev.push({ type: "gesture", key: `swipe${sw.fingers}.${sw.dir}`, side: c.side }); }
+  swiped(c, sw, ts, ev) {
+    ev.push({ type: "gesture", key: `swipe${sw.fingers}.${sw.dir}`, side: c.side });
+    c.palmFired = true;                           // a hand left hanging after a swipe must not open Search
+    c.palmBlockUntil = ts + CFG.holds.afterSwipeMs;
+  }
 
   // palm held still and facing the camera, with only one palm up: search
-  palmOk(c, nOpen, bothActive) {
-    return c.pose === POSE.OPEN && c.facing && nOpen === 1 && !bothActive && c.speed < CFG.holds.palmMaxSpeed;
+  palmCanStart(c, ts, nOpen, bothActive) {
+    if (c.palmFired || ts < c.palmBlockUntil) return false;
+    return c.pose === POSE.OPEN && c.facing && nOpen === 1 && !bothActive && c.pinch > CFG.pinch.up && c.stillSpeed < CFG.holds.palmMaxSpeed;
   }
   palmStep(c, ts, ev, nOpen, bothActive) {
-    if (!this.palmOk(c, nOpen, bothActive)) { this.palmCancel(c, ev); return false; }
+    if (c.pinch < CFG.pinch.down) { this.palmCancel(c, ev); return false; }   // a pinch: hand it over
+    const ok = c.pose === POSE.OPEN && c.facing && nOpen === 1 && !bothActive && c.stillSpeed < CFG.holds.palmMaxSpeed;
+    if (!ok) {
+      // a clear new pose or a second palm ends the hold at once; a shaky frame gets a short grace
+      if (c.pose === POSE.FIST || c.pose === POSE.POINT || c.pose === POSE.TWO || bothActive) { this.palmCancel(c, ev); return false; }
+      if (c.palmBadSince === null) c.palmBadSince = ts;
+      if (ts - c.palmBadSince > CFG.holds.graceMs) { this.palmCancel(c, ev); return false; }
+      return true;
+    }
+    c.palmBadSince = null;
     const p = (ts - c.palmStart) / CFG.holds.palmMs;
     ev.push({ type: "hold", kind: "palm", side: c.side, progress: Math.min(1, p), x: c.cx, y: c.cy });
     if (p >= 1) {
@@ -978,10 +1353,18 @@ const PROFILES = {
   chrome: { label: "Chrome", map: { "swipe2.left": { type: "hotkey", value: "ctrl+tab", label: "Next tab" }, "swipe2.right": { type: "hotkey", value: "ctrl+shift+tab", label: "Previous tab" }, palm_hold: { type: "system", value: "search", label: "Search Chrome" } } },
 };
 const GESTURES = [["swipe2.left", "Two-finger swipe left"], ["swipe2.right", "Two-finger swipe right"], ["swipe5.left", "Open-hand swipe left"], ["swipe5.right", "Open-hand swipe right"], ["fist_tap", "Quick fist"], ["palm_hold", "Palm held still"]];
-const GESTURE_NAME = Object.fromEntries(GESTURES);
+const KNOB_ROWS = [["knob.volume", "Fist knob, right hand", "Volume"], ["knob.brightness", "Fist knob, left hand", "Brightness"]];
+const GESTURE_NAME = { ...Object.fromEntries(GESTURES), pinch_tap: "Pinch" };
 const SLIDES = ["Zephyr", "The problem", "How it works", "Owner lock", "Your own gestures", "Thank you"];
 const TRACKS = [["West Wind", "Low Pressure"], ["Tailwind", "The Gusts"], ["Calm Air", "Barometer"], ["Crosswind", "Isobar"]];
 const TABS = [["Devpost", "devpost.com/software/zephyr"], ["GitHub", "github.com/Rohanb1836/Zephyr_SunHacks"], ["MediaPipe", "developers.google.com/mediapipe"], ["ASU", "asu.edu"]];
+
+// TV mode, as zephyr/tv/remote.py maps it
+const TV_KEYS = { pinch_tap: ["Select", "OK"], fist_tap: ["Play", "Play / Pause"], "swipe2.left": ["Fwd", "Forward"], "swipe2.right": ["Rev", "Rewind"], "swipe5.left": ["Back", "Back"], "swipe5.right": ["Home", "Home"], palm_hold: ["Search", "Search"] };
+const TV_ROWS = [["move", "Point and move", "Arrow keys"], ["pinch_tap", "Pinch", "OK"], ["fist_tap", "Quick fist", "Play / Pause"], ["swipe2.left", "Two-finger swipe left", "Forward"], ["swipe2.right", "Two-finger swipe right", "Rewind"], ["swipe5.left", "Open-hand swipe left", "Back"], ["swipe5.right", "Open-hand swipe right", "Home"], ["knob", "Fist knob", "Volume"], ["palm_hold", "Palm held", "Search"]];
+const TV_APPS = [["YouTube", "#7d2a33"], ["Netflix", "#5a1820"], ["Prime Video", "#1d4f72"], ["Disney+", "#1e2c6b"], ["Spotify", "#1d5a3a"], ["PBS Kids", "#2b5d8a"], ["The Roku Channel", "#4b2a7a"], ["Settings", "#3a3f4a"]];
+const TV_STEP = 0.12;            // pointer travel for one arrow press
+const TV_MAX_PRESSES = 3;        // volume presses per knob tick
 
 const engine = new Engine();
 const stage = $("stage"), sctx = stage.getContext("2d");
@@ -992,6 +1375,8 @@ let landmarker = null, stream = null, running = false, lastVideoTime = -1, mode 
 let shown = [];                       // hands drawn on the stage this frame
 let fps = 0, fpsT = 0, fpsN = 0;
 const holds = new Map();               // "kind:side" -> { progress, x, y, t }
+const knobs = new Map();               // side -> { kind, twist, x, y, t }
+const levels = { volume: 50, brightness: 70 };
 
 function fit(canvas) {
   const r = canvas.getBoundingClientRect();
@@ -1008,40 +1393,80 @@ function pill(ctx, x, y, w, h, r) {
   if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
 }
 
+function label(text, cx, y, w, h) {
+  sctx.font = "600 11px 'JetBrains Mono', ui-monospace, monospace";
+  const t = text.toUpperCase();
+  const tw = sctx.measureText(t).width + 20;
+  const x = Math.max(8, Math.min(w - tw - 8, cx - tw / 2));
+  const yy = Math.max(8, Math.min(h - 32, y));
+  sctx.fillStyle = "rgba(7, 8, 12, 0.84)";
+  pill(sctx, x, yy, tw, 24, 12); sctx.fill();
+  sctx.strokeStyle = "rgba(191, 229, 230, 0.45)"; sctx.lineWidth = 1; sctx.stroke();
+  sctx.fillStyle = "#eef3f3";
+  sctx.fillText(t, x + 10, yy + 16);
+}
+
 // ---------- stage drawing ----------
 function drawStage(now) {
   const { w, h } = fit(stage);
-  sctx.fillStyle = "#07050d";
+  sctx.fillStyle = "#07080c";
   sctx.fillRect(0, 0, w, h);
   if (running && $("show-video").checked && frame.width) {
     sctx.globalAlpha = 0.5;
     sctx.drawImage(frame, 0, 0, w, h);
     sctx.globalAlpha = 1;
   } else {
-    sctx.fillStyle = "rgba(169, 158, 194, 0.16)";
+    sctx.fillStyle = "rgba(154, 168, 170, 0.16)";
     for (let x = 18; x < w; x += 28) for (let y = 18; y < h; y += 28) sctx.fillRect(x, y, 1.5, 1.5);
   }
-  if (mode === "point") {
+  if (mode === "point" || mode === "tv") {
     const [x0, y0, x1, y1] = CFG.pointer.box;
     sctx.setLineDash([6, 6]);
-    sctx.strokeStyle = "rgba(198, 163, 255, 0.45)";
+    sctx.strokeStyle = "rgba(191, 229, 230, 0.45)";
     sctx.lineWidth = 1.5;
     sctx.strokeRect(x0 * w, y0 * h, (x1 - x0) * w, (y1 - y0) * h);
     sctx.setLineDash([]);
     sctx.font = "600 10px 'JetBrains Mono', ui-monospace, monospace";
-    sctx.fillStyle = "rgba(198, 163, 255, 0.75)";
-    sctx.fillText("POINTER AREA = YOUR SCREEN", x0 * w + 6, y0 * h - 7);
+    sctx.fillStyle = "rgba(191, 229, 230, 0.8)";
+    sctx.fillText(mode === "tv" ? "POINTER AREA = THE TV'S ARROW KEYS" : "POINTER AREA = YOUR SCREEN", x0 * w + 6, y0 * h - 7);
   }
   for (const hand of shown) drawHand(hand, w, h);
   for (const [key, hold] of holds) {
-    if (now - hold.t > 250 || hold.progress <= 0) { holds.delete(key); continue; }
-    const color = key.startsWith("both") ? "#8fe3c0" : key.startsWith("custom") ? "#f8f4ff" : "#c6a3ff";
+    if (now - hold.t > 250 || hold.progress <= 0 || hold.x === undefined) { holds.delete(key); continue; }
+    const color = key.startsWith("both") ? "#9be8b5" : key.startsWith("custom") ? "#f8f4ff" : key.startsWith("fist") ? "#bfe5e6" : "#c6a3ff";
     sctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
     sctx.lineWidth = 5;
     sctx.beginPath(); sctx.arc(hold.x * w, hold.y * h, 30, 0, Math.PI * 2); sctx.stroke();
     sctx.strokeStyle = color;
     sctx.beginPath(); sctx.arc(hold.x * w, hold.y * h, 30, -Math.PI / 2, -Math.PI / 2 + hold.progress * Math.PI * 2); sctx.stroke();
   }
+  for (const [side, k] of knobs) {
+    if (now - k.t > 300) { knobs.delete(side); continue; }
+    drawKnob(k, w, h);
+  }
+}
+
+// the fist knob: a dial around the fist, the arc is how far you've turned it
+function drawKnob(k, w, h) {
+  const x = k.x * w, y = k.y * h, r = 40;
+  const turn = Math.max(-180, Math.min(180, k.twist)) * Math.PI / 180;
+  const dead = CFG.level.knobDeadDeg * Math.PI / 180;
+  sctx.lineCap = "round";
+  sctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
+  sctx.lineWidth = 6;
+  sctx.beginPath(); sctx.arc(x, y, r, 0, Math.PI * 2); sctx.stroke();
+  sctx.strokeStyle = "rgba(255, 255, 255, 0.35)";          // the dead zone around the start
+  sctx.beginPath(); sctx.arc(x, y, r, -Math.PI / 2 - dead, -Math.PI / 2 + dead); sctx.stroke();
+  sctx.strokeStyle = "#bfe5e6";
+  sctx.beginPath();
+  if (turn >= 0) sctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + turn); else sctx.arc(x, y, r, -Math.PI / 2 + turn, -Math.PI / 2);
+  sctx.stroke();
+  const a = -Math.PI / 2 + turn;
+  sctx.fillStyle = "#f8f4ff";
+  sctx.beginPath(); sctx.arc(x + Math.cos(a) * r, y + Math.sin(a) * r, 6, 0, Math.PI * 2); sctx.fill();
+  const name = mode === "tv" ? "TV volume" : k.kind === "brightness" ? "Brightness" : "Volume";
+  const value = mode === "tv" ? tv.volume : Math.round(levels[k.kind]);
+  label(`${name} ${value}${mode === "tv" ? "" : "%"}`, x, y - r - 34, w, h);
 }
 
 function drawHand(hand, w, h) {
@@ -1053,7 +1478,7 @@ function drawHand(hand, w, h) {
   sctx.beginPath();
   for (const [a, b] of BONES) { const [ax, ay] = P(a), [bx, by] = P(b); sctx.moveTo(ax, ay); sctx.lineTo(bx, by); }
   sctx.stroke();
-  sctx.fillStyle = "#efe9fa";
+  sctx.fillStyle = "#eef3f3";
   for (let i = 0; i < 21; i++) {
     if (TIPS.has(i)) continue;
     const [x, y] = P(i);
@@ -1069,29 +1494,20 @@ function drawHand(hand, w, h) {
     if (c.pinch < CFG.pinch.prefreeze) {             // thumb to index: the pinch closing
       const down = c.pinch < CFG.pinch.down;
       const [tx, ty] = P(4), [ix, iy] = P(8);
-      sctx.strokeStyle = down ? "#8fe3c0" : "rgba(143, 227, 192, 0.55)";
+      sctx.strokeStyle = down ? "#9be8b5" : "rgba(155, 232, 181, 0.55)";
       sctx.lineWidth = down ? 3.5 : 1.5;
       sctx.beginPath(); sctx.moveTo(tx, ty); sctx.lineTo(ix, iy); sctx.stroke();
     }
     if (c.state === "pointer" || (c.state === "pinching" && c.pinchFromPointer)) {   // the knuckle that steers
       const [x, y] = P(5);
-      sctx.strokeStyle = c.frozen ? "#8fe3c0" : "#f8f4ff";
+      sctx.strokeStyle = c.frozen ? "#9be8b5" : "#f8f4ff";
       sctx.lineWidth = 2;
       sctx.beginPath(); sctx.arc(x, y, 10, 0, Math.PI * 2); sctx.stroke();
     }
   }
-  const label = hand.sample ? "Open palm · sample" : POSE_LABEL[c ? c.pose : "none"];
+  const text = hand.sample ? "Open palm · sample" : c && c.state === "level" ? "Fist · knob" : POSE_LABEL[c ? c.pose : "none"];
   const [wx, wy] = P(0);
-  sctx.font = "600 11px 'JetBrains Mono', ui-monospace, monospace";
-  const text = label.toUpperCase();
-  const tw = sctx.measureText(text).width + 20;
-  const x = Math.max(8, Math.min(w - tw - 8, wx - tw / 2));
-  const y = Math.min(h - 32, wy + 16);
-  sctx.fillStyle = "rgba(11, 8, 20, 0.82)";
-  pill(sctx, x, y, tw, 24, 12); sctx.fill();
-  sctx.strokeStyle = "rgba(198, 163, 255, 0.45)"; sctx.lineWidth = 1; sctx.stroke();
-  sctx.fillStyle = "#efe9fa";
-  sctx.fillText(text, x + 10, y + 16);
+  label(text, wx, wy + 16, w, h);
 }
 
 function drawRest() {
@@ -1186,8 +1602,9 @@ function stop() {
   stopStream();
   rec.phase = rec.model ? "ready" : "idle";
   $("countdown").hidden = true;
-  holds.clear();
+  holds.clear(); knobs.clear();
   onPointer({ visible: false });
+  tv.anchor = null;
   $("cover").hidden = false;
   $("stop").hidden = true;
   $("arm-chip").hidden = true;
@@ -1231,24 +1648,29 @@ function onResult(result, ts, aspect) {
     weaker.side = weaker.side === "Left" ? "Right" : "Left";
   }
   const events = engine.step(obs, ts, aspect);
-  shown = obs.map((o) => ({ lm: o.lm, ctx: engine.ctxs.get(o.side) }));
+  shown = obs.map((o, i) => ({ lm: o.lm, ctx: engine.ctxs.get(engine.lastIds[i]) }));
   for (const e of events) handle(e, ts);
-  recorderStep(ts, obs);
+  recorderStep(ts);
   updateReadouts();
   $("stats").textContent = `${obs.length} hand${obs.length === 1 ? "" : "s"} · ${Math.round(fps)} fps`;
 }
 
 // ---------- events ----------
 function handle(e, ts) {
-  if (e.type === "pointer") onPointer(e);
-  else if (e.type === "tap") onTap(e);
+  if (e.type === "pointer") { onPointer(e); if (mode === "tv") tvPointer(e); }
   else if (e.type === "ink") onInk(e, ts);
   else if (e.type === "hold") {
     const key = `${e.kind}:${e.side || ""}`;
-    if (e.progress > 0) holds.set(key, { progress: e.progress, x: e.x, y: e.y, t: ts });
+    if (e.progress > 0 && e.progress < 1) holds.set(key, { progress: e.progress, x: e.x, y: e.y, t: ts });
     else holds.delete(key);
+  } else if (e.type === "knob") {
+    if (e.phase === "end") knobs.delete(e.side);
+    else knobs.set(e.side, { kind: e.kind, twist: e.twist, x: e.x, y: e.y, t: ts });
+  } else if (e.type === "level") {
+    if (e.active && e.delta) onLevel(e.kind, e.delta);
   } else if (e.type === "arm") {
     setArmChip(e.armed);
+    knobs.clear();
     toast(e.armed ? "Both palms · armed" : "Both palms · paused. Hold both palms again to resume.");
   } else if (e.type === "gesture") onGesture(e);
 }
@@ -1309,9 +1731,8 @@ function activate(t) {
 }
 targets.forEach((t) => t.addEventListener("click", () => activate(t)));
 
-function onTap(e) {
-  if (mode !== "point") return;
-  const t = targetAt(e.x, e.y);
+function onTap(pos) {
+  const t = targetAt(pos[0], pos[1]);
   if (t) activate(t);
   else clicks += 1;
 }
@@ -1339,13 +1760,28 @@ function drawInk(now) {
 }
 
 function updateReadouts() {
-  const hand = [...engine.ctxs.values()].find((c) => c.state !== "idle") || [...engine.ctxs.values()][0];
+  const all = [...engine.ctxs.values()];
+  const hand = all.find((c) => c.state !== "idle") || all[0];
   const pinch = hand ? hand.pinch : null;
   $("pinch-fill").style.width = pinch === null ? "0%" : `${Math.min(100, pinch * 100)}%`;
   $("pinch-fill").className = pinch !== null && pinch < CFG.pinch.down ? "ok" : "";
   $("pinch-val").textContent = pinch === null ? "–" : pinch.toFixed(2);
   const state = !pointerShown ? "Pointer hidden" : pointerFrozen ? "Pointer frozen for the click" : "Pointer moving";
   $("pt-state").textContent = `${state} · clicks ${clicks}`;
+}
+
+// ---------- the fist knob ----------
+function onLevel(kind, delta) {
+  if (mode === "tv") { tvLevel(kind, delta); return; }
+  levels[kind] = Math.max(0, Math.min(100, levels[kind] + delta));
+  renderLevels();
+  flashRow(`knob.${kind}`);
+}
+function renderLevels() {
+  $("vol-fill").style.width = `${levels.volume}%`;
+  $("vol-val").textContent = `${Math.round(levels.volume)}%`;
+  $("bri-fill").style.width = `${levels.brightness}%`;
+  $("bri-val").textContent = `${Math.round(levels.brightness)}%`;
 }
 
 // ---------- app gestures ----------
@@ -1379,10 +1815,19 @@ function renderApp() {
 
 function renderMap(firedKey) {
   $("gmap-app").textContent = `In ${PROFILES[app].label}`;
-  $("gmap-body").innerHTML = GESTURES.map(([key, name]) => {
+  const rows = GESTURES.map(([key, name]) => {
     const a = resolve(key);
     return `<tr class="${key === firedKey ? "fired" : ""}"><td>${name}</td><td class="${a ? "" : "none"}">${a ? a.label : "Nothing"}</td></tr>`;
-  }).join("");
+  });
+  for (const [key, name, does] of KNOB_ROWS) rows.push(`<tr class="${key === firedKey ? "fired" : ""}"><td>${name}</td><td>${does}</td></tr>`);
+  $("gmap-body").innerHTML = rows.join("");
+}
+
+let firedTimer = 0, firedKey = null;
+function flashRow(key) {
+  if (key !== firedKey) { firedKey = key; renderMap(key); renderTvMap(key); }
+  clearTimeout(firedTimer);
+  firedTimer = setTimeout(() => { firedKey = null; renderMap(null); renderTvMap(null); }, 1400);
 }
 
 function runAction(a) {
@@ -1400,16 +1845,15 @@ function runAction(a) {
   renderApp();
 }
 
-let firedTimer = 0;
 function onGesture(e) {
   if (e.key === "custom") { onCustomMatch(); return; }
+  if (mode === "tv") { tvGesture(e); return; }
+  if (e.key === "pinch_tap") { if (mode === "point" && e.pos) onTap(e.pos); return; }
   const name = GESTURE_NAME[e.key] || e.key;
   const a = resolve(e.key);
   if (a) runAction(a);
   toast(a ? `${name} → ${a.label}` : `${name} → nothing in ${PROFILES[app].label}`);
-  renderMap(e.key);
-  clearTimeout(firedTimer);
-  firedTimer = setTimeout(() => renderMap(null), 1400);
+  flashRow(e.key);
 }
 
 document.querySelectorAll(".app-chip").forEach((chip) => chip.addEventListener("click", () => {
@@ -1419,12 +1863,112 @@ document.querySelectorAll(".app-chip").forEach((chip) => chip.addEventListener("
   renderMap(null);
 }));
 
+// ---------- the Roku TV ----------
+const tv = { screen: "home", focus: 0, app: 0, playing: true, pos: 0.18, volume: 18, volUntil: 0, volRest: 0, last: "Waiting for a gesture", anchor: null };
+
+function renderTv() {
+  const el = $("tv");
+  const time = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  let html = `<div class="tv-top"><span>${tv.screen === "home" ? "Home" : TV_APPS[tv.app][0]}</span><span>${time}</span></div>`;
+  if (tv.screen === "home") {
+    html += `<div class="tv-grid">${TV_APPS.map(([name, color], i) => `<div class="tv-tile${i === tv.focus ? " focus" : ""}" style="background:${color}">${name}</div>`).join("")}</div>`;
+  } else if (tv.screen === "player") {
+    const [name, color] = TV_APPS[tv.app];
+    html = `<div style="position:absolute;inset:0;background:radial-gradient(120% 100% at 70% 20%, ${color}, #050608 75%)"></div>` + html +
+      `<div class="tv-player"><span>${tv.playing ? "▶ Playing" : "❚❚ Paused"}</span><b>${name}</b><div class="tv-progress"><i style="width:${(tv.pos * 100).toFixed(1)}%"></i></div></div>`;
+  } else {
+    html += `<div class="tv-search"><b>Search</b><span>With the Mac app, write the words in the air. They're typed here.</span></div>`;
+  }
+  if (performance.now() < tv.volUntil) html += `<div class="tv-vol"><i style="height:${tv.volume}%"></i><span>${tv.volume}</span></div>`;
+  html += `<div class="tv-ecp">${tv.last}</div>`;
+  el.innerHTML = html;
+}
+
+function renderTvMap(fired) {
+  $("tvmap-body").innerHTML = TV_ROWS.map(([key, name, does]) =>
+    `<tr class="${key === fired ? "fired" : ""}"><td>${name}</td><td>${does}</td></tr>`).join("");
+}
+
+// one Roku key, applied to the pretend TV the way the Roku OS would
+function tvKey(key, row) {
+  tv.last = `POST /keypress/${key}`;
+  if (["Left", "Right", "Up", "Down"].includes(key)) {
+    if (tv.screen === "home") {
+      const col = tv.focus % 4, rowN = Math.floor(tv.focus / 4);
+      if (key === "Left" && col > 0) tv.focus -= 1;
+      if (key === "Right" && col < 3) tv.focus += 1;
+      if (key === "Up" && rowN > 0) tv.focus -= 4;
+      if (key === "Down" && rowN < 1) tv.focus += 4;
+    } else if (tv.screen === "player") {
+      tv.pos = Math.max(0, Math.min(1, tv.pos + (key === "Right" ? 0.05 : key === "Left" ? -0.05 : 0)));
+    }
+  } else if (key === "Select") {
+    if (tv.screen === "home") { tv.app = tv.focus; tv.screen = "player"; tv.playing = true; tv.pos = 0.02; }
+    else if (tv.screen === "player") tv.playing = !tv.playing;
+  } else if (key === "Play") {
+    if (tv.screen === "player") tv.playing = !tv.playing;
+  } else if (key === "Fwd" || key === "Rev") {
+    const d = key === "Fwd" ? 1 : -1;
+    if (tv.screen === "player") tv.pos = Math.max(0, Math.min(1, tv.pos + 0.1 * d));
+    else if (tv.screen === "home") tv.focus = Math.max(0, Math.min(TV_APPS.length - 1, tv.focus + 4 * d));
+  } else if (key === "Back") {
+    if (tv.screen !== "home") tv.screen = "home";
+  } else if (key === "Home") {
+    tv.screen = "home";
+  } else if (key === "Search") {
+    tv.screen = "search";
+  } else if (key === "VolumeUp" || key === "VolumeDown") {
+    tv.volume = Math.max(0, Math.min(100, tv.volume + (key === "VolumeUp" ? 1 : -1)));
+    tv.volUntil = performance.now() + 1500;
+  }
+  if (row) flashRow(row);
+  renderTv();
+}
+
+function tvGesture(e) {
+  const k = TV_KEYS[e.key];
+  if (!k) return;
+  tvKey(k[0], e.key);
+  toast(`${GESTURE_NAME[e.key] || e.key} → ${k[1]}`);
+}
+
+// the air D-pad: each TV_STEP of pointer travel presses one arrow key
+function tvPointer(e) {
+  if (!e.visible) { tv.anchor = null; return; }
+  if (e.frozen) return;                 // a pinch is closing: hold still so OK lands where you aimed
+  if (!tv.anchor) { tv.anchor = [e.x, e.y]; return; }
+  const dx = e.x - tv.anchor[0], dy = e.y - tv.anchor[1];
+  if (Math.abs(dx) >= TV_STEP && Math.abs(dx) >= Math.abs(dy)) {
+    tv.anchor = [tv.anchor[0] + (dx > 0 ? TV_STEP : -TV_STEP), e.y];
+    tvKey(dx > 0 ? "Right" : "Left", "move");
+  } else if (Math.abs(dy) >= TV_STEP) {
+    tv.anchor = [e.x, tv.anchor[1] + (dy > 0 ? TV_STEP : -TV_STEP)];
+    tvKey(dy > 0 ? "Down" : "Up", "move");
+  }
+}
+
+// the knob turns the TV's volume, one press per percent, at most a few per tick
+function tvLevel(kind, delta) {
+  if (kind !== "volume") { toast("Brightness has no TV key. Use your right hand for volume."); return; }
+  tv.volRest += delta;
+  let presses = Math.trunc(tv.volRest);
+  tv.volRest -= presses;
+  presses = Math.max(-TV_MAX_PRESSES, Math.min(TV_MAX_PRESSES, presses));
+  for (let i = 0; i < Math.abs(presses); i++) tvKey(presses > 0 ? "VolumeUp" : "VolumeDown", "knob");
+}
+
+setInterval(() => {
+  if (mode !== "tv") return;
+  if (tv.screen === "player" && tv.playing) tv.pos = Math.min(1, tv.pos + 0.004);
+  renderTv();
+}, 500);
+
 // ---------- your gesture ----------
 const rec = { phase: "idle", t0: 0, samples: [], misses: 0, builtIn: new Map(), model: null, matches: 0 };
 
-function biggest(obs) {
+function biggest() {
   let best = null, size = 0;
-  for (const o of obs) { const c = engine.ctxs.get(o.side); if (c && c.scale > size) { best = c; size = c.scale; } }
+  for (const s of shown) { const c = s.ctx; if (c && c.scale > size) { best = c; size = c.scale; } }
   return best;
 }
 
@@ -1440,7 +1984,7 @@ function setRecProgress(n) {
 }
 
 $("rec").addEventListener("click", () => {
-  if (!running) { recMsg("Start the camera first, with the button on the left.", true); return; }
+  if (!running) { recMsg("Start the camera first, with the button on the camera view.", true); return; }
   rec.phase = "countdown"; rec.t0 = performance.now();
   rec.samples = []; rec.misses = 0; rec.builtIn = new Map();
   setRecProgress(0);
@@ -1481,7 +2025,7 @@ function finishRecording() {
   recMsg(`Saved from 30 frames, threshold ${rec.model.threshold.toFixed(2)}. Relax your hand, then make the shape again and hold it for half a second.`);
 }
 
-function recorderStep(ts, obs) {
+function recorderStep(ts) {
   const cd = $("countdown");
   if (rec.phase === "countdown") {
     const left = Math.ceil((CFG.custom.countdownMs - (ts - rec.t0)) / 1000);
@@ -1490,7 +2034,7 @@ function recorderStep(ts, obs) {
     cd.className = "countdown small"; cd.textContent = "Hold it…";
   }
   if (rec.phase === "capturing") {
-    const c = biggest(obs);
+    const c = biggest();
     if (!c) rec.misses += 1;
     else {
       rec.samples.push(normalize(c.world, c.side === "Left"));
@@ -1502,7 +2046,7 @@ function recorderStep(ts, obs) {
     return;
   }
   if (rec.phase === "ready") {
-    const c = biggest(obs);
+    const c = biggest();
     if (!c) { $("dist-fill").style.width = "0%"; $("dist-val").textContent = "–"; return; }
     const d = distance(normalize(c.world, c.side === "Left"), rec.model.template);
     $("dist-fill").style.width = `${Math.min(100, (d / 0.6) * 100)}%`;
@@ -1524,6 +2068,7 @@ const tabs = [...document.querySelectorAll('[role="tab"]')];
 function setMode(next, focus = false) {
   mode = next;
   engine.inkEnabled = mode === "point";
+  tv.anchor = null;
   for (const tab of tabs) {
     const on = tab.id === `tab-${mode}`;
     tab.setAttribute("aria-selected", String(on));
@@ -1532,6 +2077,7 @@ function setMode(next, focus = false) {
     if (on && focus) tab.focus();
   }
   if (mode !== "point") cursor.hidden = true;
+  if (mode === "tv") renderTv();
   if (!running) drawRest();
 }
 tabs.forEach((tab, i) => {
@@ -1547,6 +2093,9 @@ $("start").addEventListener("click", start);
 $("stop").addEventListener("click", stop);
 renderApp();
 renderMap(null);
+renderLevels();
+renderTv();
+renderTvMap(null);
 drawRest();
 </script>
 </body>
