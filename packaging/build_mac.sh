@@ -39,6 +39,9 @@ rm -rf "$WORK" "$OUT/Zephyr" "$OUT/Zephyr.app" "$OUT/Zephyr.dmg"
 "$PY" -m PyInstaller --noconfirm --clean --distpath "$OUT" --workpath "$WORK" packaging/Zephyr.spec
 
 echo "==> signing"
+# Qt skips plugin files with the macOS hidden flag (see _unhide_qt_plugins in run.py), and the
+# build copies that flag from the venv, so clear it here; the app cannot fix itself once signed
+chflags -R nohidden "$OUT/Zephyr.app"
 xattr -cr "$OUT/Zephyr.app"
 codesign --force --deep --sign "${ZEPHYR_SIGN_ID:--}" "$OUT/Zephyr.app"
 if codesign --verify --deep --strict "$OUT/Zephyr.app"; then
