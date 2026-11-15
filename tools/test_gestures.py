@@ -89,7 +89,8 @@ class Rig:
 
 
 RIG = [None]
-for _topic in (T.GESTURE, T.LEVEL, T.STROKE):
+RIGHT = "win.right_click"
+for _topic in (T.GESTURE, T.LEVEL, T.STROKE, RIGHT):
     bus.subscribe(_topic, lambda m, _topic=_topic: RIG[0] and RIG[0].events.append((_topic, m)))
 
 
@@ -111,10 +112,41 @@ class PinchTests(unittest.TestCase):
         r = rig()
         r.run(n(10, lambda i: [hand("point")]))
         r.run(n(18, lambda i: [hand("ppinch")]))          # about 600 ms
-        r.run(n(5, lambda i: [hand("point")]))
+        r.run(n(20, lambda i: [hand("point")]))           # past the double-pinch window
         taps = [m for m in r.of(T.GESTURE) if m.key == "pinch_tap"]
         self.assertEqual(len(taps), 1)
         self.assertIsNotNone(taps[0].pos)
+
+    def test_pinch_once_left_clicks_after_the_double_window(self):
+        r = rig()
+        r.run(n(10, lambda i: [hand("point")]))
+        r.run(n(8, lambda i: [hand("ppinch")]))
+        r.run(n(3, lambda i: [hand("point")]))
+        self.assertNotIn("pinch_tap", r.keys())                 # still waiting for a second pinch
+        r.run(n(15, lambda i: [hand("point")]))
+        self.assertEqual(r.keys().count("pinch_tap"), 1)
+        self.assertEqual(r.of(RIGHT), [])
+
+    def test_pinch_twice_right_clicks_and_never_left_clicks(self):
+        r = rig()
+        r.run(n(10, lambda i: [hand("point")]))
+        r.run(n(8, lambda i: [hand("ppinch")]))
+        r.run(n(4, lambda i: [hand("point")]))                  # 130 ms apart
+        r.run(n(8, lambda i: [hand("ppinch")]))
+        r.run(n(20, lambda i: [hand("point")]))
+        self.assertEqual(len(r.of(RIGHT)), 1)
+        self.assertIsNotNone(r.of(RIGHT)[0])
+        self.assertNotIn("pinch_tap", r.keys())
+
+    def test_two_pinches_far_apart_are_two_left_clicks(self):
+        r = rig()
+        r.run(n(10, lambda i: [hand("point")]))
+        r.run(n(8, lambda i: [hand("ppinch")]))
+        r.run(n(20, lambda i: [hand("point")]))                 # 660 ms: past the window
+        r.run(n(8, lambda i: [hand("ppinch")]))
+        r.run(n(20, lambda i: [hand("point")]))
+        self.assertEqual(r.keys().count("pinch_tap"), 2)
+        self.assertEqual(r.of(RIGHT), [])
 
     def test_a_long_hold_is_not_a_click(self):
         r = rig()
@@ -147,7 +179,7 @@ class PinchTests(unittest.TestCase):
         r = rig(ink=True)
         r.run(n(10, lambda i: [hand("point")]))
         r.run(n(15, lambda i: [hand("ppinch")]))
-        r.run(n(5, lambda i: [hand("point")]))
+        r.run(n(20, lambda i: [hand("point")]))
         self.assertEqual(r.keys().count("pinch_tap"), 1)
         self.assertEqual(r.of(T.STROKE), [])
         r = rig(ink=True)

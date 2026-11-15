@@ -41,6 +41,7 @@ ROUNDS = [
      None, None, 60),
     ("arm", "Both palms up, held until the ring fills. Drop both hands. 5 times.", "arm_toggle", 5, 30),
     ("knob", "Right fist, hold, twist RIGHT then back LEFT, open. 5 times.", None, None, 35),
+    ("double_pinch", "Point, then pinch TWICE quickly (right click). Pause. 10 times.", "right_click", 10, 35),
 ]
 GESTURE_SECONDS = {r[0]: r[4] for r in ROUNDS}
 
@@ -106,6 +107,8 @@ def run(name: str, only: list[str], screen_w: int, screen_h: int) -> int:
                 pointer.append((int(time.monotonic() * 1000), p.x, p.y))
 
     bus.subscribe(T.GESTURE, on_gesture)
+    # Windows engine: pinch twice = right click, published on its own topic
+    bus.subscribe("win.right_click", lambda pos: on_gesture(type("E", (), {"key": "right_click"})()))
     bus.subscribe(T.POINTER, on_pointer)
     levels: list[tuple[int, str, float]] = []
     bus.subscribe(T.LEVEL, lambda e: e.delta and levels.append((int(time.monotonic() * 1000), e.kind, e.delta)))

@@ -42,6 +42,8 @@ class HandCtx:
         self.open_span = 0          # length of the latest clearly-apart run, ms
         self.pinch_end_at = -10**9  # when the last pinch let go
         self.pinch_cx0 = self.pinch_cy0 = 0.0   # palm centre when the pinch closed
+        self.tap_pending = None     # (pos, released_at): a click waiting to see if a second pinch follows
+        self.pinch_second = False   # this pinch started inside the double-pinch window
         self.reset()
 
     def reset(self) -> None:

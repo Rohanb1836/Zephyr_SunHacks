@@ -340,6 +340,7 @@ class Engine:
                 break
 
     def _run_hand(self, ctx: HandCtx, n_open: int, both_active: bool) -> None:
+        pointer.flush_tap(self, ctx)      # a single pinch becomes its left click after pinch.double_ms
         st = ctx.state
         # active states first; each returns True when it consumed the frame
         if st == PEN:

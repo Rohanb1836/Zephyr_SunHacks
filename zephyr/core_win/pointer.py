@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from zephyr.bus import bus
 from zephyr.config import cfg
-from zephyr.contracts import GestureKind, PointerEvent, Pose, T
+from zephyr.contracts import GestureKind, PointerEvent, Pose, Role, T
 from zephyr.core_win import strokes
 from zephyr.core_win.filters import OneEuro2D
 from zephyr.core_win.handctx import IDLE, PINCHING, POINTER, HandCtx, box_map
@@ -71,6 +71,8 @@ def pinch_is_down(ctx: HandCtx, eng=None, from_pointer: bool = False) -> bool:
         return False
     writing = eng is not None and eng.ink_enabled()
     need = int(cfg.pinch.get("pen_open_before_ms", 60) if writing else cfg.pinch.get("open_before_ms", 150))
+    if ctx.tap_pending is not None:
+        need = int(cfg.pinch.get("pen_open_before_ms", 60))   # the second pinch of a double comes quickly
     return ctx.open_span >= need
 
 
@@ -156,11 +158,40 @@ def _deadband(ox: float, oy: float, x: float, y: float) -> tuple[float, float]:
     return ox + (x - ox) * k, oy + (y - oy) * k
 
 
+RIGHT_CLICK = "win.right_click"     # Windows-only bus topic; actions/windows.py does the click
+
+
+def _double_ms() -> int:
+    return int(cfg.pinch.get("double_ms", 0))
+
+
+def flush_tap(eng, ctx: HandCtx) -> None:
+    """A single pinch waits double_ms after letting go: if no second pinch starts, it is a left click."""
+    if ctx.tap_pending is None or ctx.state == PINCHING:
+        return
+    pos, released = ctx.tap_pending
+    if ctx.ts - released >= _double_ms():
+        ctx.tap_pending = None
+        eng.gesture(GestureKind.PINCH_TAP, ctx, pos=pos)
+
+
+def drop_tap(ctx: HandCtx) -> None:
+    ctx.tap_pending = None
+    ctx.pinch_second = False
+
+
 def start_pinch(eng, ctx: HandCtx, from_pointer: bool) -> None:
     ctx.state = PINCHING
     ctx.pinch_start = ctx.ts
+    # the second pinch of a double: it may start after the pointer hid, and it clicks where the first did
+    ctx.pinch_second = ctx.tap_pending is not None
+    if ctx.pinch_second and not from_pointer:
+        from_pointer = True
+        ctx.pt_x, ctx.pt_y = ctx.tap_pending[0]
     ctx.pinch_from_pointer = from_pointer
     ctx.pinch_pos = (ctx.pt_x, ctx.pt_y) if from_pointer else None
+    if ctx.pinch_second:
+        ctx.pinch_pos = ctx.tap_pending[0]
     if from_pointer:
         ctx.pt_frozen = True
         ctx.pt_unfreeze_at = None
@@ -190,7 +221,21 @@ def pinch_step(eng, ctx: HandCtx) -> bool:
         # A tap with no pointer showing only has a job while the writing preview is up (accept).
         # Anywhere else it was noise, and in TV mode it would press Select on the TV.
         if held <= click_max and (ctx.pinch_from_pointer or preview):
-            eng.gesture(GestureKind.PINCH_TAP, ctx, pos=ctx.pinch_pos)
+            if ctx.pinch_second:
+                # pinch twice = right click (the first pinch's left click is never sent)
+                ctx.tap_pending = None
+                if ctx.hand.role is not Role.STRANGER:
+                    eng.pub(RIGHT_CLICK, ctx.pinch_pos)
+            elif ctx.pinch_from_pointer and not preview and _double_ms() > 0:
+                ctx.tap_pending = (ctx.pinch_pos, ctx.ts)   # left click once double_ms passes alone
+            else:
+                eng.gesture(GestureKind.PINCH_TAP, ctx, pos=ctx.pinch_pos)
+        elif ctx.pinch_second and ctx.tap_pending is not None:
+            # the second pinch was not a click (held too long): the first one still clicks
+            pos, _ = ctx.tap_pending
+            ctx.tap_pending = None
+            eng.gesture(GestureKind.PINCH_TAP, ctx, pos=pos)
+        ctx.pinch_second = False
         _after_release(eng, ctx)
         return True
     strokes.buffer_point(ctx)
@@ -204,6 +249,11 @@ def pinch_step(eng, ctx: HandCtx) -> bool:
                 or _pinch_travel(ctx) > float(pc.get("pen_start_travel_scales", 0.25))):
             if ctx.pinch_from_pointer:
                 hide(eng, ctx)
+            if ctx.tap_pending is not None:
+                pos, _ = ctx.tap_pending
+                ctx.tap_pending = None
+                eng.gesture(GestureKind.PINCH_TAP, ctx, pos=pos)
+            ctx.pinch_second = False
             strokes.begin(eng, ctx)
     return True
 
@@ -224,6 +274,7 @@ def _after_release(eng, ctx: HandCtx) -> None:
 
 
 def cancel(eng, ctx: HandCtx) -> None:
+    drop_tap(ctx)       # paused, lost or handed to another gesture: a waiting click is dropped
     if ctx.state in (POINTER, PINCHING) and (ctx.state == POINTER or ctx.pinch_from_pointer):
         hide(eng, ctx)
     ctx.pinch_start = None

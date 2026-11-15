@@ -25,6 +25,8 @@ VK = {'ctrl': 0x11, 'shift': 0x10, 'alt': 0x12, 'win': 0x5B, 'left': 0x25, 'righ
 KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP = 0x0001, 0x0002
 EXTENDED = {0x25, 0x27, 0x5B, 0xAD, 0xAE, 0xAF, 0xB0, 0xB1, 0xB3}
 MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP = 0x0002, 0x0004
+MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP = 0x0008, 0x0010
+RIGHT_CLICK_TOPIC = 'win.right_click'   # published by zephyr/core_win/pointer.py (pinch twice)
 SW_RESTORE = 9
 VOLUME_KEY_STEP = 2.0            # Windows moves the volume 2 points per volume key press
 BRIGHTNESS_CACHE_S = 2.0         # WMI brightness reads are slow; trust our own last write this long
@@ -74,6 +76,7 @@ class WindowsBackend(ActionBackend):
         self._volume_estimate = 50.0
         self._brightness = None           # (value, monotonic time) of our last write
         self._brightness_ok = True
+        self._start_right_click()
 
     # ---- pointer -------------------------------------------------------------------------
     # Coordinates come from the router already in the same units this returns. Both calls use the
@@ -88,6 +91,47 @@ class WindowsBackend(ActionBackend):
         self.move_cursor(x, y)
         self.user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
         self.user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+
+    def right_click(self, x, y):
+        self.move_cursor(x, y)
+        self.user32.mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
+        self.user32.mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
+
+    # Pinch twice while pointing = right click (Windows only). The Windows engine publishes the
+    # screen-normalized position on RIGHT_CLICK_TOPIC; the click runs here on its own thread, so the
+    # vision thread never makes an OS call and the shared action router stays unchanged.
+    def _start_right_click(self):
+        import queue
+        from zephyr.bus import bus
+        self._right_clicks = queue.Queue(maxsize=4)
+
+        def on_event(pos):
+            try:
+                self._right_clicks.put_nowait(pos)
+            except queue.Full:
+                pass
+
+        bus.subscribe(RIGHT_CLICK_TOPIC, on_event)
+        threading.Thread(target=self._right_click_loop, name='zephyr-right-click', daemon=True).start()
+
+    def _right_click_loop(self):
+        from zephyr.bus import bus
+        from zephyr.contracts import ActionFired, SystemMode, T
+        while True:
+            pos = self._right_clicks.get()
+            state = bus.latest(T.SYSTEM)
+            if pos is None or state is None or state.mode is not SystemMode.ARMED:
+                continue
+            ok = True
+            try:
+                w, h = self.screen_size_points()
+                self.right_click(max(0.0, min(1.0, pos[0])) * w, max(0.0, min(1.0, pos[1])) * h)
+            except Exception:
+                LOG.exception('Right click failed')
+                ok = False
+            context = bus.latest(T.CONTEXT)
+            bus.publish(T.ACTION, ActionFired('Right click', getattr(context, 'app_label', ''), ok,
+                                              int(time.monotonic() * 1000)))
 
     # ---- keys ----------------------------------------------------------------------------
     def _key(self, vk, up=False):
