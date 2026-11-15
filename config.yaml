@@ -4,8 +4,9 @@
 
 # ---------- [Aadharsh] core ----------
 camera:   {index: 0, width: 640, height: 480, fps: 30, mirror: true, reopen_after_fails: 30}
+# rest_tilt_deg: a hand hanging with its fingers toward the floor is resting: it starts no fist, swipe or Search.
 hands:    {max_hands: 3, det_conf: 0.5, track_conf: 0.5, presence_conf: 0.5, swap_sides: true,
-           model: models/hand_landmarker.task, scale_ema: 0.3, infer_width: 640}
+           model: models/hand_landmarker.task, scale_ema: 0.3, infer_width: 640, rest_tilt_deg: 120, rest_ms: 150}
 poses:    {extend_deg: 155, curl_deg: 125, debounce_frames: 3, window: 5,
            thumb_deg: 150, thumb_tip_scales: 0.6, unknown_min_score: 0.6, palm_sign: 1,
            pinky_extend_deg: 135, pinky_curl_deg: 125, open_needs_thumb: false}
@@ -24,7 +25,7 @@ swipe:    {natural: true, min_travel_scales: 1.4, max_ms: 800, min_peak_speed: 4
            open_ratio: 0.5, settle_speed: 2.0, busy_speed: 3.0, refractory_ms: 800, opposite_block_ms: 1300,
            two_min_travel_scales: 1.2, two_min_peak_speed: 3.0, bridge_min_ms: 120, bridge_max_ms: 450}
 level:    {mode: knob, knob_gain: 1.0, knob_dead_deg: 10, knob_min_step: 1.0, knob_invert: false,
-           knob_max_step_deg: 60,
+           knob_max_step_deg: 60, idle_park_ms: 2500,   # idle_park_ms: a grabbed, unturned knob stops locking out the other hand
            knob_min_cutoff: 1.0, knob_beta: 0.05, engage_ms: 400, tick_ms: 100, release_ms: 350,
            dead_zone_scales: 0.4, min_rate: 10, max_rate: 60, gain: 40}   # mode: vertical = old up/down
 # fist_tap_slow_max_ms: a fist held this long without turning the knob, then opened, is still play/pause.
@@ -32,6 +33,7 @@ level:    {mode: knob, knob_gain: 1.0, knob_dead_deg: 10, knob_min_step: 1.0, kn
 holds:    {palm_ms: 800, palm_max_speed: 1.0, still_window_ms: 300, grace_ms: 250, after_swipe_ms: 1200,
            both_palms_ms: 1000, palm_min_width: 0.45, fist_tap_min_ms: 80,
            fist_tap_max_ms: 400, fist_tap_max_travel: 0.4, fist_tap_slow_max_ms: 2500, after_pinch_ms: 400,
+           palm_max_tilt_deg: 75, after_release_ms: 1500,   # Search: palm held up; not from the hand that just let go of a fist or pinch
            custom_ms: 500, custom_agree: 0.7}
 
 # ---------- [Ryan] presence and access ----------

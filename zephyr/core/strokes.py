@@ -68,4 +68,5 @@ def end(eng, ctx: HandCtx, x: float | None = None, y: float | None = None) -> No
     ctx.stroke_id = None
     ctx.pinch_start = None
     ctx.pinch_end_at = ctx.ts   # a writing hand reads as a fist: no fist tap as it lets go
+    ctx.palm_block_until = max(ctx.palm_block_until, ctx.ts + int(cfg.holds.get("after_release_ms", 0)))
     ctx.state = IDLE

@@ -49,6 +49,16 @@ def palm_width(lm: np.ndarray, scale: float) -> float:
     return dist2d(lm[5], lm[17]) / max(scale, 1e-4)
 
 
+def tilt_deg(lm: np.ndarray) -> float:
+    """How far the hand leans from upright in the picture, in degrees: 0 when the middle knuckle is
+    straight above the wrist (fingers up), 90 when the hand lies sideways, 180 when it hangs with
+    the fingers toward the floor."""
+    from zephyr import contracts
+    dx = (float(lm[9, 0]) - float(lm[0, 0])) * contracts.ASPECT
+    dy = float(lm[0, 1]) - float(lm[9, 1])
+    return abs(float(np.degrees(np.arctan2(dx, dy))))
+
+
 def thumb_extended(lm: np.ndarray, world: np.ndarray, scale: float, thumb_deg: float, tip_scales: float) -> bool:
     return joint_angle(world, 2, 3, 4) > thumb_deg and dist2d(lm[4], lm[5]) / max(scale, 1e-4) > tip_scales
 

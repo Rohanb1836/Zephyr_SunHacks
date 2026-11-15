@@ -262,7 +262,12 @@ def _after_release(eng, ctx: HandCtx) -> None:
     ctx.pinch_start = None
     ctx.pinch_end_at = ctx.ts     # a pinching hand reads as a fist: no fist tap straight after
     ctx.pen_buf = []
-    if ctx.pinch_from_pointer and ctx.hand.pose is Pose.POINT:
+    ctx.palm_block_until = max(ctx.palm_block_until, ctx.ts + int(cfg.holds.get("after_release_ms", 0)))
+    # Back to the pointer unless the hand clearly became something else. As a click lets go the
+    # index is still bent and the hand reads as a fist for a few frames; hiding the pointer for
+    # that made it blink off and back on after a click. pointer_step hides it after
+    # pointer.hide_after_ms if the pointing hand does not come back.
+    if ctx.pinch_from_pointer and ctx.hand.pose not in SWITCH_POSES:
         ctx.state = POINTER
         ctx.pt_last_point = ctx.ts
         ctx.pt_unfreeze_at = ctx.ts + int(cfg.pinch.post_freeze_ms)

@@ -198,6 +198,7 @@ def _end(eng, ctx: HandCtx) -> None:
     ctx.state = IDLE
     ctx.fist_start = None
     ctx.fist_end = None
+    holds.release_block(ctx)    # the hand that just let go of a fist must not open Search
 
 
 def cancel(eng, ctx: HandCtx) -> None:

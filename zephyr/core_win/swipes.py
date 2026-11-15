@@ -40,6 +40,22 @@ def finger_class(fingers) -> int:
     return 0
 
 
+def _vx(ctx: HandCtx, window_ms: int = 100) -> float:
+    """Sideways palm velocity over about window_ms, in scales per second (right is positive)."""
+    h = ctx.hist
+    if len(h) < 2:
+        return 0.0
+    last = first = h[-1]
+    for e in reversed(h):
+        first = e
+        if last[0] - e[0] >= window_ms:
+            break
+    dt = (last[0] - first[0]) / 1000.0
+    if dt <= 0:
+        return 0.0
+    return (last[1] - first[1]) * contracts.ASPECT / max(ctx.scale, 1e-4) / dt
+
+
 class SwipeDetector:
     def __init__(self) -> None:
         self.last_fire_ms = -10**9
@@ -49,7 +65,10 @@ class SwipeDetector:
         """Returns (direction, fingers) when a swipe fires on this frame, else None."""
         s = cfg.swipe
         if ctx.swipe_settle:
-            if ctx.speed < float(s.get("settle_speed", 2.0)):
+            # The swipe is over when the hand slows down, or when it turns back: a quick return
+            # with no pause never drops under settle_speed, and used to leave every following
+            # swipe waiting.
+            if ctx.speed < float(s.get("settle_speed", 2.0)) or _vx(ctx) * ctx.swipe_sign < 0:
                 ctx.swipe_settle = False
                 ctx.swipe_cut = ctx.ts     # the rest of that movement is used up too
             return None
@@ -135,6 +154,7 @@ class SwipeDetector:
         # 4. one movement, one swipe
         ctx.swipe_cut = now                # samples up to here are used up (history stays for speed)
         ctx.swipe_settle = True
+        ctx.swipe_sign = sign
         if self.last_dir and direction != self.last_dir and since < int(s.opposite_block_ms):
             return None                    # the return movement: swallowed
         self.last_fire_ms = now
