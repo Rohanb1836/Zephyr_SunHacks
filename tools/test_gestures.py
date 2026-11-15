@@ -22,7 +22,8 @@ from zephyr.core_win.engine import Engine  # noqa: E402
 from zephyr.core_win.hands import RawHand  # noqa: E402
 
 FINGERS = {"open": (1, 1, 1, 1), "fist": (0, 0, 0, 0), "point": (1, 0, 0, 0), "ppinch": (1, 0, 0, 0),
-           "two": (1, 1, 0, 0), "tpinch": (1, 1, 0, 0)}
+           "two": (1, 1, 0, 0), "tpinch": (1, 1, 0, 0), "fpinch": (0, 0, 0, 0),
+           "relax": (0, 0, 1, 1)}
 
 
 def hand(kind="open", ox=0.5, oy=0.6, s=0.1, side=Side.RIGHT, width=1.0):
@@ -45,13 +46,13 @@ def hand(kind="open", ox=0.5, oy=0.6, s=0.1, side=Side.RIGHT, width=1.0):
             lm[k + 3] = [x, y - 0.05 * s, 0]
     lm[1] = [ox - mir * 0.3 * s, oy - 0.3 * s, 0]
     lm[2] = [ox - mir * 0.55 * s, oy - 0.5 * s, 0]
-    if kind == "open":
+    if kind in ("open", "relax"):
         lm[3] = [ox - mir * 0.8 * s, oy - 0.7 * s, 0]
         lm[4] = [ox - mir * 1.05 * s, oy - 0.9 * s, 0]
     else:
         lm[3] = [ox - mir * 0.5 * s, oy - 0.75 * s, 0]
         lm[4] = [ox - mir * 0.3 * s, oy - 0.8 * s, 0]
-    if kind in ("ppinch", "tpinch"):
+    if kind in ("ppinch", "tpinch", "fpinch"):
         lm[4] = lm[8] + np.array([0.01 * s, 0, 0], np.float32)
         lm[3] = (lm[2] + lm[4]) / 2
     return RawHand(lm, lm.copy(), side, 0.95)
@@ -200,6 +201,19 @@ class FistTests(unittest.TestCase):
         r.run(n(6, lambda i: [hand("open", ox=0.3)]))
         r.run(n(30, lambda i: [hand("fist", ox=0.3)]))
         r.run(n(6, lambda i: [hand("open", ox=0.3 + 0.05 * (i + 1))]))
+        self.assertNotIn("fist_tap", r.keys())
+
+    def test_no_fist_tap_when_a_pen_stroke_ends(self):
+        """Live on Windows: a writing hand reads as a fist, and letting go fired play/pause."""
+        r = rig(ink=True)
+        r.run(n(10, lambda i: [hand("open")]))
+        r.run(n(12, lambda i: [hand("ppinch", ox=0.5 + 0.004 * i)]))   # the stroke starts
+        r.run(n(12, lambda i: [hand("fpinch", ox=0.548 + 0.004 * i)]))  # still writing, reads as a fist
+        # lets go as measured live: the hand relaxes to index and middle bent, ring and pinky
+        # straight, and the fist reading flickers for a few frames on the way
+        r.run([[hand(k, ox=0.6)] for k in ("relax", "fist", "relax", "fist", "relax", "fist")])
+        r.run(n(12, lambda i: [hand("relax", ox=0.6)]))
+        self.assertTrue(r.of(T.STROKE))
         self.assertNotIn("fist_tap", r.keys())
 
     def test_no_fist_tap_right_after_a_pinch(self):

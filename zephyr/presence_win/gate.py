@@ -127,7 +127,9 @@ class Gate:
             self.guest_id = None
             self.cache.clear()
             self.enrolment += 1
-            self.attentive = False
+            # they just showed both palms to the camera: they are looking. Starting at False showed
+            # "Paused: looking away" for about 0.4 s after every arm.
+            self.attentive = True
             return True
 
     def on_disarm(self):
@@ -144,7 +146,7 @@ class Gate:
         with self.lock:
             self.guest_id = None
             self.cache.clear()
-            self.attentive = False
+            self.attentive = True   # the owner just took control back with both palms, facing the camera
 
     def grant(self, person_id, now):
         with self.lock:

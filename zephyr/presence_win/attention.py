@@ -14,10 +14,10 @@ def yaw_pitch_degrees(matrix):
 
 
 class Attention:
-    def __init__(self):
+    def __init__(self, initial=False):
         self.samples = []
         self.baseline = None
-        self.state = False
+        self.state = initial    # True for an owner who just armed: they were facing the camera
         self.changed_at = None
         self.face_seen = None      # last time a face was found for this person
 

@@ -87,6 +87,27 @@ class PresenceReplayTests(unittest.TestCase):
             att.update(hidden, now, True)
         self.assertFalse(att.state)
 
+    def test_arming_does_not_flash_looking_away(self):
+        """Live on Windows: every arm showed "Paused: looking away" for about 0.4 s."""
+        import numpy as np
+        point = lambda x, y: SimpleNamespace(x=x, y=y, visibility=1.0)
+        body = [point(0.3, 0.3) for _ in range(17)]
+        body[11], body[12] = point(0.2, 0.5), point(0.4, 0.5)
+        face = [point(0.3, 0.3), point(0.3, 0.3)]
+        models = SimpleNamespace(detect=lambda frame, ts: (
+            SimpleNamespace(pose_landmarks=[body]),
+            SimpleNamespace(face_landmarks=[face], facial_transformation_matrixes=[np.eye(4)])))
+        clock = [1000]
+        gate = Gate(clock=lambda: clock[0])
+        processor = PresenceProcessor(gate, models)
+        processor.process(None, clock[0], clock[0])
+        self.assertTrue(gate.on_arm(()))
+        self.assertEqual(gate.can_act(), (True, "ok"))
+        clock[0] += 100
+        state = processor.process(None, clock[0], clock[0])     # first presence frame after arming
+        self.assertTrue(state.controller_attentive)
+        self.assertEqual(gate.can_act(), (True, "ok"))
+
     def test_one_missed_body_frame_does_not_pause(self):
         clock = [1000]
         gate = Gate(clock=lambda: clock[0])
