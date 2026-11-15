@@ -53,13 +53,19 @@ def hide(eng, ctx: HandCtx) -> None:
     ctx.pt_last_point = None
 
 
-def pinch_is_down(ctx: HandCtx, eng=None) -> bool:
+def pinch_is_down(ctx: HandCtx, eng=None, from_pointer: bool = False) -> bool:
     """A new pinch: thumb and index closed, not a fist, and clearly apart for pinch.open_before_ms
     just before. Measured: a hand resting or holding a cup flickers across the pinch thresholds and
     gave 64 taps in a minute of normal movement; a real click (point, then pinch) always starts open.
     While writing, the gap between two strokes of a letter is short, so the pen uses
-    pinch.pen_open_before_ms instead."""
-    if ctx.hand.pinch >= float(cfg.pinch.down) or ctx.hand.pose is Pose.FIST:
+    pinch.pen_open_before_ms instead.
+    From the pointer a pinch may read as a fist: the other three fingers are already curled, so the
+    index bending to the thumb curls the last one (measured: 2 of 10 clicks were thrown away as
+    fists). It still counts when the hand was pointing within pinch.fist_grace_ms."""
+    if ctx.hand.pinch >= float(cfg.pinch.down):
+        return False
+    if ctx.hand.pose is Pose.FIST and not (
+            from_pointer and ctx.ts - (ctx.pt_last_point or -10**9) <= int(cfg.pinch.get("fist_grace_ms", 250))):
         return False
     writing = eng is not None and eng.ink_enabled()
     need = int(cfg.pinch.get("pen_open_before_ms", 60) if writing else cfg.pinch.get("open_before_ms", 150))
@@ -93,7 +99,7 @@ def pointer_step(eng, ctx: HandCtx) -> bool:
     """POINTER state. Returns True when the frame was consumed."""
     # A click starts from a nearly still hand (measured: under 0.7 hand widths a second). A hand
     # flying sideways blurs, and one blurred frame looked like a pinch: accidental clicks mid-swipe.
-    if pinch_is_down(ctx, eng) and ctx.speed < float(cfg.pinch.get("max_start_speed", 2.0)):
+    if pinch_is_down(ctx, eng, from_pointer=True) and ctx.speed < float(cfg.pinch.get("max_start_speed", 2.0)):
         start_pinch(eng, ctx, from_pointer=True)
         return True
     pose = ctx.hand.pose

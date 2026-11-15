@@ -167,11 +167,27 @@ class FistTests(unittest.TestCase):
         self.assertEqual(r.keys().count("fist_tap"), 1)
         self.assertFalse([e for e in r.of(T.LEVEL) if e.delta])
 
-    def test_a_held_fist_is_not_a_tap(self):
+    def test_a_slow_fist_is_still_a_tap(self):
+        """Measured "quick" fists were held 1.2 to 2.1 s."""
         r = rig()
         r.run(n(6, lambda i: [hand("open")]))
-        r.run(n(36, lambda i: [hand("fist")]))            # 1.2 s
+        r.run(n(50, lambda i: [hand("fist")]))            # 1.65 s
         r.run(n(8, lambda i: [hand("open")]))
+        self.assertEqual(r.keys().count("fist_tap"), 1)
+
+    def test_a_long_held_fist_is_not_a_tap(self):
+        r = rig()
+        r.run(n(6, lambda i: [hand("open")]))
+        r.run(n(95, lambda i: [hand("fist")]))            # 3.1 s
+        r.run(n(8, lambda i: [hand("open")]))
+        self.assertNotIn("fist_tap", r.keys())
+
+    def test_a_fist_that_opens_into_a_swipe_is_not_a_tap(self):
+        """A fist resting between swipes opened straight into the next swipe and fired play/pause."""
+        r = rig()
+        r.run(n(6, lambda i: [hand("open", ox=0.3)]))
+        r.run(n(30, lambda i: [hand("fist", ox=0.3)]))
+        r.run(n(6, lambda i: [hand("open", ox=0.3 + 0.05 * (i + 1))]))
         self.assertNotIn("fist_tap", r.keys())
 
     def test_no_fist_tap_right_after_a_pinch(self):

@@ -71,9 +71,9 @@ def _pending(eng, ctx: HandCtx) -> bool:
     # the fist has opened (or is opening)
     if ctx.fist_end is None:
         ctx.fist_end = ctx.ts
-    if _opened(ctx):
+    if _opened(ctx) or (ctx.ts - ctx.fist_end > RELEASE_WAIT_MS and _let_go(ctx)):
         dur = ctx.fist_end - ctx.fist_start
-        if holds.fist_tap_ok(dur, ctx.fist_travel):
+        if holds.fist_tap_ok(dur, ctx.fist_travel) and ctx.speed < float(cfg.swipe.get("busy_speed", 3.0)):
             eng.gesture(GestureKind.FIST_TAP, ctx)
         _end(eng, ctx)
         return True
@@ -90,6 +90,14 @@ def _opened(ctx: HandCtx) -> bool:
     return ctx.hand.pose is Pose.OPEN or (ctx.fingers is not None and all(ctx.fingers[:3]))
 
 
+def _let_go(ctx: HandCtx) -> bool:
+    """The fist relaxed into some open hand, not into another gesture. Measured: fists opened into
+    hands that read index and middle bent, ring and pinky straight (fingers toward the camera), never
+    a clean OPEN. Pointing, two fingers or a pinch mean the user is starting something else."""
+    return (ctx.hand.pose not in (Pose.POINT, Pose.TWO, Pose.FIST)
+            and ctx.hand.pinch > float(cfg.pinch.up))
+
+
 def core_fist(ctx: HandCtx) -> bool:
     """Index, middle and ring are curled this frame. The pinky and thumb are ignored: they pop out
     while a real fist twists, and that must not drop the knob."""
@@ -104,12 +112,16 @@ def _level(eng, ctx: HandCtx) -> bool:
             ctx.lvl_open_since = ctx.ts
         # a clear open hand lets go at once; an unclear frame gets release_ms before the knob drops
         if _opened(ctx) or ctx.ts - ctx.lvl_open_since >= int(lv.get("release_ms", 250)):
-            # A quick fist that grabbed the knob but never turned it is a tap. People close and open
-            # a "quick" fist in about half a second, longer than the 400 ms it takes to grab the knob,
-            # so without this most taps became an empty knob grab and play/pause never fired.
+            # A fist that grabbed the knob but never turned it is a tap. Measured: people hold a
+            # "quick" fist for 1.2 to 2.1 s, far past the 400 ms it takes to grab the knob, so
+            # without this every tap became an empty knob grab and play/pause never fired.
             held = (ctx.lvl_open_since or ctx.ts) - ctx.fist_start
-            if (_opened(ctx) and not ctx.lvl_moved and ctx.fist_travel < float(cfg.holds.fist_tap_max_travel)
-                    and held <= int(cfg.holds.get("fist_tap_slow_max_ms", 800))):
+            # ...but not when the hand flies off as it opens: a fist resting between swipes that
+            # opens straight into the next swipe is not play/pause (measured in a swipe session).
+            if ((_opened(ctx) or _let_go(ctx)) and not ctx.lvl_moved
+                    and ctx.speed < float(cfg.swipe.get("busy_speed", 3.0))
+                    and ctx.fist_travel < float(cfg.holds.fist_tap_max_travel)
+                    and held <= int(cfg.holds.get("fist_tap_slow_max_ms", 2500))):
                 eng.gesture(GestureKind.FIST_TAP, ctx)
             cancel(eng, ctx)
             return False
@@ -151,8 +163,11 @@ def knob_twist(ctx: HandCtx) -> float:
     a = knob_angle(ctx)
     d = (a - ctx.knob_last + 180.0) % 360.0 - 180.0
     ctx.knob_last = a
-    ctx.knob_unwrapped += d
     lv = cfg.level
+    # A wrist cannot turn this far in one frame: it is a landmark glitch on the fist (measured: the
+    # angle jumped 50 degrees in 0.2 s while the hand rested, and set the volume 31 points lower).
+    if abs(d) <= float(lv.get("knob_max_step_deg", 60)):
+        ctx.knob_unwrapped += d
     ctx.knob_filter.min_cutoff = float(lv.get("knob_min_cutoff", 1.0))
     ctx.knob_filter.beta = float(lv.get("knob_beta", 0.05))
     twist = ctx.knob_filter(ctx.knob_unwrapped, ctx.ts / 1000.0) - ctx.knob_a0

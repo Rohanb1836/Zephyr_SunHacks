@@ -50,7 +50,7 @@ No permission prompts are needed on Windows. Allow camera access for desktop app
 | --- | --- |
 | Both palms up, held 1 second | Turn Zephyr on, or pause it |
 | Open-hand swipe left / right | Next / previous desktop |
-| Quick fist, then open (up to about 0.8 s) | Play / pause |
+| Fist, then open (held up to about 2 seconds, without twisting) | Play / pause |
 | Right fist held, then twisted | Volume (twist right raises, left lowers) |
 | Left fist held, then twisted | Brightness (same directions) |
 | One finger up | Pointer appears and follows your hand |

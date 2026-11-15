@@ -34,12 +34,14 @@ CACHE = CLIPS / ".cache"
 POSITIVE = re.compile(r"^(swipe[25])_(left|right)_x(\d+)_")
 
 GRID = {
-    "min_peak_speed": [3.0, 4.0, 5.0],
-    "min_travel_scales": [1.0, 1.2, 1.5],
-    "max_ms": [600, 800],
+    "min_peak_speed": [4.0, 5.0],
+    "min_travel_scales": [1.2, 1.5],
+    "max_ms": [800],
     "open_ratio": [0.4, 0.5],
-    "max_slope": [0.7, 0.9],
-    "bridge_max_ms": [350, 450, 550],
+    "max_slope": [0.7],
+    "bridge_max_ms": [450, 600],
+    "opposite_block_ms": [900, 1300],
+    "refractory_ms": [500, 800],
 }
 
 
