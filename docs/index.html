@@ -242,6 +242,7 @@ section { padding-block: clamp(56px, 8vw, 120px); }
 .tips span { color: var(--ink-2); font-size: 15px; }
 @media (max-width: 860px) { .tips ol { grid-template-columns: 1fr 1fr; } .tips li:nth-child(3) { padding-left: 0; border-left: 0; } }
 @media (max-width: 600px) { .tips ol { grid-template-columns: 1fr; } .tips li + li { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); } }
+.tips.next { margin-top: clamp(32px, 4vw, 56px); padding-bottom: 0; }
 
 /* gesture index: an editorial list */
 .glist { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); counter-reset: g; }
@@ -618,6 +619,15 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
         <h3>Any webcam</h3>
         <p>Free, on the Mac or Windows computer people already have. Nothing to buy, wear or calibrate.</p>
       </article>
+    </div>
+    <div class="tips next">
+      <h2 class="label">Next: every screen that already has a camera</h2>
+      <ol>
+        <li><b>Smart displays</b><span>Echo Show and Nest Hub style screens, run from across the kitchen or living room.</span></li>
+        <li><b>Home hubs</b><span>Wall and counter home panels: lights, music and cameras without a tap.</span></li>
+        <li><b>Smart fridges</b><span>Screens like Samsung Family Hub: recipes, timers and lists with messy hands.</span></li>
+        <li><b>Office devices</b><span>Meeting-room video bars, kiosks and shared screens that already ship with a camera.</span></li>
+      </ol>
     </div>
   </section>
 
