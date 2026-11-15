@@ -42,9 +42,10 @@ Record a mirrored clip on the Mac, then press a key in the preview to stop:
 ```bash
 python tools/record_clip.py swipe5_left_x10_ryan.mp4
 python tools/replay.py --width 1920 --height 1080
+python tools/replay.py --presence clips/two_person_stranger_ryan.mp4
 ```
 
-Use the demo display's actual pixel dimensions. Clips go in `clips/` and are excluded from Git. The replay report is written to `tools/report.md`. The engine starts disarmed, so gesture clips must include the arm gesture before the repetitions; otherwise the gestures will not be evaluated. Presence-aware replay is not yet implemented, and timing measurements are unavailable where clip and publication timestamps use different clocks.
+Use the demo display's actual pixel dimensions. Clips go in `clips/` and are excluded from Git. The replay report is written to `tools/report.md`. The engine starts disarmed, so gesture clips must include the arm gesture before the repetitions; otherwise the gestures will not be evaluated. With `--presence`, replay runs the face and body models and the real gate in recorded time. The report lists guest grants, guest gestures, stranger observations, and suspensions; compare them with the clip's known actions, since an incorrect hand attribution cannot be detected from the reported role alone. Capture-to-event latency is unavailable during replay because video time and the computer's clock differ.
 
 ## Accuracy and speed
 

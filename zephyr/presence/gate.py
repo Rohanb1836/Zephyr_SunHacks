@@ -11,8 +11,9 @@ def now_ms():
 
 
 class Gate:
-    def __init__(self):
+    def __init__(self, clock=now_ms):
         self.lock = threading.RLock()
+        self.clock = clock
         self.people = ()
         self.owner_id = None
         self.guest_id = None
@@ -50,7 +51,7 @@ class Gate:
             controller = self.guest_id if self.guest_id is not None else self.owner_id
             if cfg.presence.mode == "lenient" and len(self.people) == 1 and self.people[0].person_id == controller:
                 role = Role.GUEST if self.guest_id is not None else Role.OWNER
-                self.cache[hand.hand_id] = (role, now_ms())
+                self.cache[hand.hand_id] = (role, self.clock())
                 return role
             candidates = [(dist2d(hand.wrist, wrist), p) for p in self.people for wrist in p.wrists]
             if candidates:
@@ -58,10 +59,10 @@ class Gate:
                 if distance < float(cfg.presence.attach_ratio) * person.shoulder_width:
                     role = (Role.OWNER if person.person_id == self.owner_id else
                             Role.GUEST if person.person_id == self.guest_id else Role.STRANGER)
-                    self.cache[hand.hand_id] = (role, now_ms())
+                    self.cache[hand.hand_id] = (role, self.clock())
                     return role
             role, stamp = self.cache.get(hand.hand_id, (Role.STRANGER, 0))
-            return role if now_ms() - stamp <= 500 else Role.STRANGER
+            return role if self.clock() - stamp <= 500 else Role.STRANGER
 
     def can_act(self):
         if cfg.presence.mode == "off":
@@ -69,7 +70,7 @@ class Gate:
         with self.lock:
             if self.owner_id is None:
                 return False, "no_owner"
-            if now_ms() - self.owner_seen >= int(cfg.presence.owner_lost_ms):
+            if self.clock() - self.owner_seen >= int(cfg.presence.owner_lost_ms):
                 self.on_disarm()
                 return False, "owner_left"
             controller = self.guest_id if self.guest_id is not None else self.owner_id
@@ -93,7 +94,7 @@ class Gate:
                 if distance >= float(cfg.presence.attach_ratio) * owner.shoulder_width:
                     return False
             self.owner_id = owner.person_id
-            self.owner_seen = now_ms()
+            self.owner_seen = self.clock()
             self.guest_id = None
             self.cache.clear()
             self.enrolment += 1
