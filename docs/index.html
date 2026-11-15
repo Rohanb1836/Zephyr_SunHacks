@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zephyr for Mac</title>
+<meta name="description" content="Zephyr turns your webcam into a hands-free controller for your Mac. Try the live hand tracking demo in your browser, then download the app.">
+<meta name="theme-color" content="#0b0814">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='21' fill='%231c1430'/%3E%3Cpath d='M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27' fill='none' stroke='%23c6a3ff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='77' cy='27' r='9' fill='%23f8f4ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* layout: a left-aligned hero beside the self-writing mark, then the demo bench (camera stage left,
+     controls right), then quiet reference sections on the same 1200px measure */
+  --night: #0b0814;
+  --dusk: #141020;
+  --dusk-2: #1d1630;
+  --rim: #2c2444;
+  --mist: #efe9fa;
+  --haze: #a99ec2;
+  --ink: #c6a3ff;
+  --tip: #f8f4ff;
+  --ok: #8fe3c0;
+  --warn: #ffd08a;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--mist);
+  font: 400 17px/1.55 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--ink); }
+img, svg, canvas { max-width: 100%; }
+.wrap { max-width: 1200px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
+.skip { position: absolute; left: -999px; top: 8px; background: var(--tip); color: var(--night); padding: 8px 12px; border-radius: 8px; z-index: 10; }
+.skip:focus { left: 8px; }
+:is(a, button, input):focus-visible { outline: 2px solid var(--tip); outline-offset: 3px; }
+.mono { font-family: var(--font-mono); }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; padding-block: 20px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--mist); text-decoration: none; font: 700 21px/1 var(--font-display); letter-spacing: -0.01em; }
+.brand svg { width: 30px; height: 30px; }
+.top nav { display: flex; gap: clamp(14px, 2.6vw, 30px); flex-wrap: wrap; }
+.top nav a { color: var(--haze); text-decoration: none; font-size: 15px; }
+.top nav a:hover { color: var(--mist); }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.45fr); gap: clamp(24px, 5vw, 64px); align-items: center; padding-block: clamp(28px, 6vw, 72px) clamp(28px, 4vw, 52px); }
+.eyebrow { font: 600 12px/1.2 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); margin: 0 0 20px; }
+h1 { font-family: var(--font-display); font-optical-sizing: auto; font-weight: 760; font-size: clamp(42px, 6.6vw, 86px); line-height: 0.93; letter-spacing: -0.04em; margin: 0; text-wrap: balance; }
+h1 span { display: block; }
+h1 em { font-style: normal; color: var(--ink); }
+.lede { font-size: clamp(17px, 1.6vw, 20px); color: var(--haze); max-width: 50ch; margin: 28px 0 0; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 700 16px/1 var(--font-body); padding: 15px 22px; border-radius: 999px; border: 1px solid var(--rim); color: var(--mist); background: transparent; text-decoration: none; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.btn svg { width: 18px; height: 18px; }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: #170f28; }
+.btn.primary:hover { background: var(--tip); border-color: var(--tip); }
+.btn.ghost:hover { border-color: var(--haze); }
+.btn.small { font-size: 14px; padding: 10px 16px; }
+.btn:disabled { opacity: 0.55; cursor: progress; }
+.fine { font: 400 13px/1.5 var(--font-mono); color: var(--haze); margin: 18px 0 0; }
+.hero-mark svg { display: block; width: 100%; max-width: 400px; margin-inline: auto; overflow: visible; }
+.mark-stroke { fill: none; stroke: url(#markInk); stroke-width: 7.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; animation: write 1.6s cubic-bezier(0.65, 0.05, 0.3, 1) 0.25s both; }
+.mark-tip { fill: var(--tip); filter: url(#tipGlow); transform-box: fill-box; transform-origin: center; animation: tip 0.5s ease-out 1.7s both, breathe 4s ease-in-out 2.4s infinite; }
+@keyframes write { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes tip { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
+@keyframes breathe { 50% { opacity: 0.78; } }
+
+/* sections */
+section { padding-block: clamp(36px, 6vw, 80px); }
+.section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px 40px; margin-bottom: 24px; }
+h2 { font: 720 clamp(30px, 3.8vw, 46px)/1.04 var(--font-display); letter-spacing: -0.025em; margin: 0; text-wrap: balance; }
+.section-head p { color: var(--haze); max-width: 54ch; margin: 0; }
+
+/* demo bench */
+#demo { padding-top: clamp(12px, 2vw, 24px); }
+.bench { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 14px; background: var(--dusk); border: 1px solid var(--rim); border-radius: 22px; padding: 14px; }
+.stage-wrap { position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #07050d; align-self: start; }
+#stage { display: block; width: 100%; height: 100%; }
+.stage-hud { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; }
+.chip { font: 600 11px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 10px; border-radius: 999px; background: rgba(11, 8, 20, 0.76); border: 1px solid var(--rim); color: var(--haze); white-space: nowrap; }
+.chip.ok { color: var(--ok); border-color: rgba(143, 227, 192, 0.35); }
+.chip.off { color: var(--warn); border-color: rgba(255, 208, 138, 0.35); }
+.stage-col { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.cover { position: absolute; left: 14px; bottom: 14px; display: grid; justify-items: start; gap: 10px; max-width: min(300px, calc(100% - 28px)); padding: 16px 18px; border-radius: 14px; background: rgba(11, 8, 20, 0.88); border: 1px solid var(--rim); }
+.cover-title { font: 700 18px/1.2 var(--font-display); margin: 0; }
+.cover-msg { color: var(--haze); font-size: 13px; margin: 0; }
+.legend { list-style: none; margin: 0; padding: 0 4px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; color: var(--haze); font-size: 13.5px; }
+.legend li { display: flex; align-items: center; gap: 10px; }
+.legend i { flex: none; width: 14px; height: 14px; border-radius: 50%; }
+.legend .lg-tip { background: var(--tip); box-shadow: 0 0 10px rgba(198, 163, 255, 0.9); }
+.legend .lg-ring { border: 2px solid var(--tip); }
+.legend .lg-pinch { height: 3px; border-radius: 2px; background: var(--ok); }
+.legend .lg-hold { border: 3px solid var(--ink); border-right-color: rgba(255, 255, 255, 0.15); border-bottom-color: rgba(255, 255, 255, 0.15); }
+.cover-msg.err { color: var(--warn); }
+.countdown { position: absolute; inset: 0; display: grid; place-items: center; font: 800 clamp(64px, 12vw, 140px)/1 var(--font-display); color: var(--tip); text-shadow: 0 0 40px rgba(198, 163, 255, 0.8); pointer-events: none; }
+.countdown.small { font-size: clamp(22px, 3vw, 30px); letter-spacing: -0.01em; }
+.toast { position: absolute; left: 50%; bottom: 16px; transform: translate(-50%, 8px); margin: 0; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 999px; background: rgba(11, 8, 20, 0.88); border: 1px solid var(--ink); font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+.panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 4px; }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--night); border: 1px solid var(--rim); border-radius: 12px; }
+.tabs button { font: 700 14px/1.15 var(--font-body); color: var(--haze); background: transparent; border: 0; border-radius: 9px; padding: 10px 6px; cursor: pointer; }
+.tabs button:hover { color: var(--mist); }
+.tabs button[aria-selected="true"] { background: var(--dusk-2); color: var(--mist); box-shadow: inset 0 0 0 1px var(--rim); }
+[role="tabpanel"] { display: flex; flex-direction: column; gap: 12px; }
+[role="tabpanel"][hidden] { display: none; }
+.how { color: var(--haze); margin: 0; font-size: 15px; }
+.how b { color: var(--mist); font-weight: 700; }
+
+.pad { position: relative; aspect-ratio: 16 / 10; border-radius: 12px; border: 1px solid var(--rim); background: radial-gradient(120% 90% at 50% 0%, #1a1430, var(--night) 70%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 10px; padding: 36px 14px 14px; overflow: hidden; }
+.pad-label { position: absolute; top: 12px; left: 14px; font: 600 10px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--haze); }
+.target { display: grid; justify-items: center; gap: 8px; padding: 18px 6px; border-radius: 12px; border: 1px solid var(--rim); background: var(--dusk); color: var(--mist); font: 700 14px/1.2 var(--font-body); cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.target svg { width: 26px; height: 26px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.target[aria-pressed="true"] svg.fill { fill: var(--ink); }
+.target.hot, .target:hover { border-color: var(--ink); background: var(--dusk-2); }
+.target.hit { animation: hit 0.35s ease-out; }
+@keyframes hit { 35% { transform: scale(0.93); background: #2a2046; } }
+#ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cursor { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: var(--tip); box-shadow: 0 0 0 6px rgba(198, 163, 255, 0.22), 0 0 24px rgba(198, 163, 255, 0.85); pointer-events: none; }
+.cursor.frozen { background: var(--ok); box-shadow: 0 0 0 6px rgba(143, 227, 192, 0.22), 0 0 24px rgba(143, 227, 192, 0.8); }
+
+.meter { display: grid; grid-template-columns: 64px minmax(0, 1fr) 56px; align-items: center; gap: 10px; font: 600 12px/1 var(--font-mono); color: var(--haze); }
+.meter .val { text-align: right; color: var(--mist); font-variant-numeric: tabular-nums; }
+.bar { position: relative; height: 8px; border-radius: 999px; background: var(--night); border: 1px solid var(--rim); }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 999px; background: var(--ink); }
+.bar i.ok { background: var(--ok); }
+.bar .tick { position: absolute; top: -5px; bottom: -5px; width: 2px; border-radius: 2px; background: var(--mist); opacity: 0.55; }
+.small { font-size: 13px; }
+.status-line { margin: 0; color: var(--haze); font: 400 12.5px/1.5 var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.apps { display: flex; flex-wrap: wrap; gap: 6px; }
+.app-chip { font: 700 13px/1 var(--font-body); padding: 9px 12px; border-radius: 999px; border: 1px solid var(--rim); background: transparent; color: var(--haze); cursor: pointer; }
+.app-chip[aria-pressed="true"] { background: var(--mist); border-color: var(--mist); color: var(--night); }
+.app-view { position: relative; min-height: 132px; border-radius: 12px; border: 1px solid var(--rim); background: var(--night); padding: 14px 16px; overflow: hidden; }
+.app-kicker { font: 600 10px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--haze); margin: 0 0 10px; }
+.slide-title { font: 760 clamp(22px, 2.6vw, 30px)/1.05 var(--font-display); letter-spacing: -0.02em; margin: 0; }
+.slide-n { margin: 10px 0 0; color: var(--haze); font: 400 12px/1 var(--font-mono); }
+.dots { display: flex; gap: 6px; margin-top: 12px; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--rim); }
+.dots i.on { background: var(--ink); }
+.track { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; }
+.cover-art { width: 44px; height: 44px; border-radius: 8px; background: conic-gradient(from 210deg, #7a58f0, #c6a3ff, #3b2c66, #7a58f0); }
+.track b { display: block; font-size: 16px; }
+.track span { color: var(--haze); font-size: 13px; }
+.play-state { font: 600 11px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ok); }
+.play-state.paused { color: var(--haze); }
+.tabstrip { display: flex; gap: 4px; }
+.tabstrip span { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px 8px 0 0; background: var(--dusk); color: var(--haze); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tabstrip span.on { background: var(--dusk-2); color: var(--mist); box-shadow: inset 0 2px 0 var(--ink); }
+.urlbar { margin-top: 0; padding: 9px 12px; border-radius: 0 8px 8px 8px; background: var(--dusk-2); color: var(--haze); font: 400 12px/1 var(--font-mono); }
+.desks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.desks span { display: grid; place-items: center; aspect-ratio: 16 / 10; border-radius: 8px; border: 1px solid var(--rim); color: var(--haze); font: 600 12px/1 var(--font-mono); }
+.desks span.on { border-color: var(--ink); color: var(--mist); background: var(--dusk-2); }
+.searchbar { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 10px 14px; border-radius: 10px; background: var(--mist); color: var(--night); font-weight: 700; font-size: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.searchbar small { display: block; font-weight: 400; color: #4a4060; }
+.gmap { width: 100%; border-collapse: collapse; font-size: 14px; }
+.gmap th { font: 600 10px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--haze); text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--rim); }
+.gmap td { padding: 7px 6px; border-bottom: 1px solid var(--rim); transition: background 0.3s; }
+.gmap td.none { color: var(--haze); }
+.gmap tr.fired td { background: rgba(198, 163, 255, 0.16); }
+
+.rec-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.result { margin: 0; color: var(--mist); }
+.result.err { color: var(--warn); }
+.matched { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--rim); background: var(--night); }
+.matched b { font: 760 28px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.matched.flash { border-color: var(--ok); animation: flash 0.6s ease-out; }
+@keyframes flash { 30% { background: rgba(143, 227, 192, 0.14); } }
+
+.panel-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 6px; border-top: 1px solid var(--rim); }
+.switch { display: inline-flex; align-items: center; gap: 8px; color: var(--haze); font-size: 14px; cursor: pointer; }
+.switch input { accent-color: var(--ink); width: 16px; height: 16px; }
+
+/* features */
+.fgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px 34px; }
+.fgrid article { border-top: 1px solid var(--rim); padding-top: 18px; }
+.trigger { font: 600 11px/1.3 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin: 0 0 12px; }
+h3 { font: 720 23px/1.15 var(--font-display); letter-spacing: -0.012em; margin: 0 0 8px; }
+.fgrid p:last-child { color: var(--haze); margin: 0; max-width: 40ch; }
+
+/* how it works */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; counter-reset: step; }
+.steps li { position: relative; padding: 20px 20px 22px; border-radius: 16px; background: var(--dusk); border: 1px solid var(--rim); }
+.steps li::before { counter-increment: step; content: "0" counter(step); display: block; font: 600 12px/1 var(--font-mono); color: var(--ink); margin-bottom: 14px; }
+.steps p { margin: 6px 0 0; color: var(--haze); }
+.privacy { margin: 18px 0 0; color: var(--haze); max-width: 70ch; }
+.privacy b { color: var(--mist); }
+
+/* install */
+.install { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: clamp(24px, 5vw, 64px); align-items: start; }
+.install ol { margin: 0; padding: 0; list-style: none; counter-reset: inst; display: grid; gap: 18px; }
+.install ol li { position: relative; padding-left: 52px; }
+.install ol li::before { counter-increment: inst; content: counter(inst); position: absolute; left: 0; top: -2px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--rim); font: 700 15px/1 var(--font-display); color: var(--ink); }
+.install ol b { display: block; color: var(--mist); }
+.install ol span { color: var(--haze); }
+.get { padding: 26px; border-radius: 20px; background: var(--dusk); border: 1px solid var(--rim); display: grid; gap: 14px; justify-items: start; }
+.get p { margin: 0; color: var(--haze); }
+
+footer { border-top: 1px solid var(--rim); margin-top: clamp(24px, 4vw, 48px); padding-block: 28px 40px; color: var(--haze); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; }
+footer a { color: var(--mist); }
+
+@media (max-width: 980px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-mark svg { max-width: 220px; margin: 0; }
+  .bench { grid-template-columns: 1fr; }
+  .fgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .steps { grid-template-columns: 1fr; }
+  .install { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  body { font-size: 16px; }
+  .fgrid { grid-template-columns: 1fr; }
+  .legend { grid-template-columns: 1fr; }
+  .tabs button { font-size: 13px; padding-inline: 4px; }
+  .pad { padding: 34px 10px 10px; gap: 6px; }
+  .target { padding: 12px 4px; font-size: 12px; }
+  .toast { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .mark-stroke, .mark-tip, .target.hit, .matched.flash { animation: none; }
+  .toast { transition: none; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#demo">Skip to the demo</a>
+
+<header class="wrap top">
+  <a class="brand" href="#top" aria-label="Zephyr, top of page">
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <rect x="4" y="4" width="92" height="92" rx="21" fill="#1c1430"/>
+      <path d="M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27" fill="none" stroke="#c6a3ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="77" cy="27" r="9" fill="#f8f4ff"/>
+    </svg>
+    <span>Zephyr</span>
+  </a>
+  <nav aria-label="Sections">
+    <a href="#demo">Demo</a>
+    <a href="#features">Features</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/Rohanb1836/Zephyr_SunHacks">GitHub</a>
+  </nav>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <p class="eyebrow">Hands-free control for your Mac</p>
+      <h1><span><em>Point</em> to move.</span><span><em>Pinch</em> to click.</span><span><em>Swipe</em> to switch.</span></h1>
+      <p class="lede">Zephyr turns the webcam you already have into a controller. Gestures change with the app in front, and you can teach it your own.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/Rohanb1836/Zephyr_SunHacks/releases/latest/download/Zephyr.dmg">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+          Download for Mac
+        </a>
+        <a class="btn ghost" href="#demo">Try it in your browser</a>
+      </div>
+      <p class="fine">Free · Apple silicon Macs · camera video stays on your Mac</p>
+    </div>
+    <div class="hero-mark" aria-hidden="true">
+      <svg viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="markInk" gradientUnits="userSpaceOnUse" x1="17" y1="77" x2="77" y2="27">
+            <stop offset="0" stop-color="#7050f5" stop-opacity="0.55"/>
+            <stop offset="0.55" stop-color="#a27ef8"/>
+            <stop offset="1" stop-color="#e2d0ff"/>
+          </linearGradient>
+          <filter id="tipGlow" x="-200%" y="-200%" width="500%" height="500%">
+            <feGaussianBlur stdDeviation="3.2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path class="mark-stroke" pathLength="1" d="M17 77 L64 77 Q75 77 66.8 69.7 L27.2 34.3 Q19 27 30 27 L77 27"/>
+        <circle class="mark-tip" cx="77" cy="27" r="6.6"/>
+      </svg>
+    </div>
+  </div>
+
+  <section id="demo" class="wrap" aria-labelledby="demo-title">
+    <div class="section-head">
+      <h2 id="demo-title">Try it in your browser</h2>
+      <p>The same hand tracking and gesture rules as the Mac app, running in this tab. Your video never leaves your device.</p>
+    </div>
+
+    <div class="bench">
+      <div class="stage-col">
+      <div class="stage-wrap" id="stage-wrap">
+        <canvas id="stage" role="img" aria-label="Camera view with the tracked points of your hands"></canvas>
+        <div class="stage-hud">
+          <span id="arm-chip" class="chip" hidden>Armed</span>
+          <span id="stats" class="chip">Sample hand</span>
+        </div>
+        <div class="cover" id="cover">
+          <p class="cover-title">See your hands the way Zephyr does</p>
+          <button id="start" class="btn primary" type="button">Start camera</button>
+          <p id="cam-msg" class="cover-msg" role="status">Runs in this tab. Nothing is uploaded.</p>
+        </div>
+        <div id="countdown" class="countdown" hidden></div>
+        <p id="toast" class="toast" role="status" aria-live="polite"></p>
+      </div>
+      <ul class="legend" aria-label="What the drawing shows">
+        <li><i class="lg-tip"></i>21 points per hand, found in this tab</li>
+        <li><i class="lg-ring"></i>The knuckle that steers the pointer</li>
+        <li><i class="lg-pinch"></i>Your pinch closing; green means click</li>
+        <li><i class="lg-hold"></i>A hold filling up: palm, both palms, your gesture</li>
+      </ul>
+      </div>
+
+      <div class="panel">
+        <div class="tabs" role="tablist" aria-label="Demo modes">
+          <button role="tab" id="tab-point" aria-selected="true" aria-controls="pane-point" type="button">Point &amp; pinch</button>
+          <button role="tab" id="tab-apps" aria-selected="false" aria-controls="pane-apps" type="button" tabindex="-1">App gestures</button>
+          <button role="tab" id="tab-custom" aria-selected="false" aria-controls="pane-custom" type="button" tabindex="-1">Your gesture</button>
+        </div>
+
+        <div id="pane-point" role="tabpanel" aria-labelledby="tab-point">
+          <p class="how"><b>Point</b> your index finger up to show the pointer, then <b>pinch</b> thumb and index quickly to click. Pinch and hold to write.</p>
+          <div class="pad" id="pad">
+            <span class="pad-label">Your screen</span>
+            <button class="target" type="button" data-act="play" aria-pressed="false">
+              <svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>
+              <span>Play</span>
+            </button>
+            <button class="target" type="button" data-act="next">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="12" rx="2"/><path d="m10.5 9 3 2.5-3 2.5"/></svg>
+              <span>Slide <b id="slide-n">1</b></span>
+            </button>
+            <button class="target" type="button" data-act="like" aria-pressed="false">
+              <svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M12 19.5s-7-4.3-7-9.4A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.1c0 5.1-7 9.4-7 9.4z"/></svg>
+              <span>Like</span>
+            </button>
+            <canvas id="ink" aria-hidden="true"></canvas>
+            <div id="cursor" class="cursor" hidden></div>
+          </div>
+          <div class="meter">
+            <span>Pinch</span>
+            <div class="bar" title="Click below 0.25, release above 0.40"><i id="pinch-fill"></i><span class="tick" style="left: 25%"></span><span class="tick" style="left: 40%"></span></div>
+            <span class="val" id="pinch-val">–</span>
+          </div>
+          <p class="status-line" id="pt-state">Pointer hidden · clicks 0</p>
+        </div>
+
+        <div id="pane-apps" role="tabpanel" aria-labelledby="tab-apps" hidden>
+          <p class="how">Pick the app in front, then <b>swipe two fingers</b>, <b>swipe an open hand</b>, make a <b>quick fist</b> or <b>hold a palm still</b>.</p>
+          <div class="apps" role="group" aria-label="App in front">
+            <button class="app-chip" type="button" data-app="default" aria-pressed="false">Desktop</button>
+            <button class="app-chip" type="button" data-app="powerpoint" aria-pressed="true">PowerPoint</button>
+            <button class="app-chip" type="button" data-app="spotify" aria-pressed="false">Spotify</button>
+            <button class="app-chip" type="button" data-app="chrome" aria-pressed="false">Chrome</button>
+          </div>
+          <div class="app-view" id="app-view" aria-live="polite"></div>
+          <table class="gmap">
+            <thead><tr><th scope="col">Gesture</th><th scope="col" id="gmap-app">In PowerPoint</th></tr></thead>
+            <tbody id="gmap-body"></tbody>
+          </table>
+        </div>
+
+        <div id="pane-custom" role="tabpanel" aria-labelledby="tab-custom" hidden>
+          <p class="how">Make any hand shape except an open palm, fist, point or two fingers (those are built in). Zephyr learns it from <b>30 frames</b>.</p>
+          <div class="rec-row">
+            <button id="rec" class="btn primary small" type="button">Record a gesture</button>
+            <button id="rec-clear" class="btn small" type="button" hidden>Delete it</button>
+          </div>
+          <div class="meter">
+            <span>Frames</span>
+            <div class="bar"><i id="rec-fill"></i></div>
+            <span class="val" id="rec-val">0/30</span>
+          </div>
+          <p class="result" id="rec-msg" role="status">Start the camera, then record.</p>
+          <div class="meter">
+            <span>Distance</span>
+            <div class="bar"><i id="dist-fill"></i><span class="tick" id="dist-tick" style="left: 32%"></span></div>
+            <span class="val" id="dist-val">–</span>
+          </div>
+          <div class="matched" id="matched"><span>Times it matched</span><b id="matched-n">0</b></div>
+        </div>
+
+        <div class="panel-foot">
+          <label class="switch"><input type="checkbox" id="show-video" checked> Show video</label>
+          <button id="stop" class="btn small" type="button" hidden>Stop camera</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="wrap" aria-labelledby="features-title">
+    <div class="section-head">
+      <h2 id="features-title">What the Mac app adds</h2>
+      <p>The browser can show the hand tracking. On your Mac, Zephyr also runs the actions, knows who is in front of the camera and reads what you write.</p>
+    </div>
+    <div class="fgrid">
+      <article>
+        <p class="trigger">Both palms · 1 second</p>
+        <h3>Owner lock</h3>
+        <p>Raise both palms to arm Zephyr. It follows the person who armed it and ignores other people's hands in view.</p>
+      </article>
+      <article>
+        <p class="trigger">Handshake</p>
+        <h3>Share control</h3>
+        <p>Shake hands with someone to let them drive for a while. Both palms takes control back.</p>
+      </article>
+      <article>
+        <p class="trigger">Two-finger swipe</p>
+        <h3>Gestures that fit the app</h3>
+        <p>The same swipe is the next slide in PowerPoint, the next track in Spotify and the next tab in Chrome.</p>
+      </article>
+      <article>
+        <p class="trigger">Any hand shape · 3 seconds</p>
+        <h3>Your own gestures</h3>
+        <p>Record a shape and bind it to a website, an app, a shortcut or text. Optional cloud sync brings them to your other Macs.</p>
+      </article>
+      <article>
+        <p class="trigger">Palm held · pinch and hold</p>
+        <h3>Air writing</h3>
+        <p>Hold up a palm to search, then write the words in the air. AI reads your handwriting.</p>
+      </article>
+      <article>
+        <p class="trigger">Point and pinch</p>
+        <h3>A pointer that holds still</h3>
+        <p>The pointer follows your index knuckle and freezes as your fingers close, so the click lands where you aimed.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap" aria-labelledby="how-title">
+    <div class="section-head">
+      <h2 id="how-title">How it works</h2>
+    </div>
+    <ol class="steps">
+      <li><h3>Your webcam</h3><p>MediaPipe finds 21 points on each hand, on your Mac, every frame.</p></li>
+      <li><h3>Points become a gesture</h3><p>Finger angles decide the pose: open palm, fist, point or two fingers. Movement over time makes swipes, holds and pinches.</p></li>
+      <li><h3>The app in front decides</h3><p>Zephyr checks which app is in front and runs that app's action, or the one you recorded.</p></li>
+    </ol>
+    <p class="privacy"><b>Camera video never leaves your Mac.</b> Air writing sends only the strokes you draw, so they can be read as text.</p>
+  </section>
+
+  <section id="install" class="wrap" aria-labelledby="install-title">
+    <div class="section-head">
+      <h2 id="install-title">Install</h2>
+    </div>
+    <div class="install">
+      <ol>
+        <li><b>Download Zephyr.dmg and open it.</b><span>Drag Zephyr into Applications, then open it from there.</span></li>
+        <li><b>Allow it the first time.</b><span>Zephyr isn't notarized yet, so macOS blocks the first launch. Open System Settings › Privacy &amp; Security, click Open Anyway next to Zephyr and enter your password.</span></li>
+        <li><b>Grant the camera and Accessibility.</b><span>Allow the camera, then turn on Zephyr under Accessibility so it can move the pointer and press keys.</span></li>
+        <li><b>Raise both palms.</b><span>Zephyr lives in the menu bar. Arm it with both palms and start pointing.</span></li>
+      </ol>
+      <div class="get">
+        <a class="btn primary" href="https://github.com/Rohanb1836/Zephyr_SunHacks/releases/latest/download/Zephyr.dmg">Download for Mac</a>
+        <p>For Apple silicon Macs (M1 or later) with a webcam.</p>
+        <p>Prefer to build it yourself? The source and build steps are <a href="https://github.com/Rohanb1836/Zephyr_SunHacks">on GitHub</a>.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Built at SunHacks 2026, Arizona State University, by Aadharsh, Rohan, Ryan and Swayam.</span>
+    <span><a href="https://github.com/Rohanb1836/Zephyr_SunHacks">Source on GitHub</a></span>
+  </div>
+</footer>
+
+<script type="module">
+// ---- core: begin. A port of zephyr/core (poses, pointer, pinch, swipes, holds) and zephyr/custom/templates.py,
+// with the numbers from config.yaml, so the demo behaves like the Mac app. ----
+const CFG = {
+  poses: { extendDeg: 155, curlDeg: 125, debounceFrames: 3, window: 5, thumbDeg: 150, thumbTipScales: 0.6, unknownMinScore: 0.6 },
+  tracker: { dropoutMs: 150 },
+  pointer: { box: [0.25, 0.20, 0.75, 0.65], minCutoff: 1.0, beta: 0.02, hideAfterMs: 300, showFrames: 3 },
+  pinch: { down: 0.25, up: 0.40, prefreeze: 0.50, tapMaxMs: 300, postFreezeMs: 80 },
+  pen: { minCutoff: 1.5, beta: 0.02 },
+  swipe: { minTravelScales: 2.0, maxMs: 450, minPeakSpeed: 6.0, maxSlope: 0.5, refractoryMs: 600, oppositeBlockMs: 700 },
+  holds: { palmMs: 500, palmMaxSpeed: 0.5, bothPalmsMs: 1000, fistTapMinMs: 80, fistTapMaxMs: 350, fistTapMaxTravel: 0.3, customMs: 500, customAgree: 0.8 },
+  custom: { samples: 30, defaultThreshold: 0.16, maxThreshold: 0.30, countdownMs: 3000, timeoutMs: 5000 },
+};
+const POSE = { NONE: "none", OPEN: "open", FIST: "fist", POINT: "point", TWO: "two", UNKNOWN: "unknown" };
+const BUILT_IN = new Set([POSE.OPEN, POSE.FIST, POSE.POINT, POSE.TWO]);
+const FINGERS = [[5, 6, 8], [9, 10, 12], [13, 14, 16], [17, 18, 20]];
+const PALM_IDS = [0, 5, 9, 13, 17];
+
+function jointAngle(p, a, b, c) {
+  const v1 = [p[a].x - p[b].x, p[a].y - p[b].y, (p[a].z || 0) - (p[b].z || 0)];
+  const v2 = [p[c].x - p[b].x, p[c].y - p[b].y, (p[c].z || 0) - (p[b].z || 0)];
+  const n = Math.hypot(...v1) * Math.hypot(...v2);
+  if (n < 1e-9) return 180;
+  const cos = Math.min(1, Math.max(-1, (v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]) / n));
+  return (Math.acos(cos) * 180) / Math.PI;
+}
+const fingerAngles = (world) => FINGERS.map(([a, b, c]) => jointAngle(world, a, b, c));
+const dist2d = (a, b, aspect) => Math.hypot((a.x - b.x) * aspect, a.y - b.y);
+const rawScale = (lm, aspect) => Math.max(dist2d(lm[0], lm[9], aspect), 1e-4);
+const pinchRatio = (lm, scale, aspect) => dist2d(lm[4], lm[8], aspect) / Math.max(scale, 1e-4);
+const clamp01 = (v) => Math.min(1, Math.max(0, v));
+
+function palmCentre(lm) {
+  let x = 0, y = 0;
+  for (const i of PALM_IDS) { x += lm[i].x; y += lm[i].y; }
+  return { x: x / PALM_IDS.length, y: y / PALM_IDS.length };
+}
+
+function thumbExtended(lm, world, scale, aspect) {
+  const p = CFG.poses;
+  return jointAngle(world, 2, 3, 4) > p.thumbDeg && dist2d(lm[4], lm[5], aspect) / Math.max(scale, 1e-4) > p.thumbTipScales;
+}
+
+// palm faces the camera: in the mirrored frame (y down) a right palm gives a positive z for
+// cross(lm5 - lm0, lm17 - lm0); the left hand is the mirror image
+function palmFacing(lm, isLeft) {
+  let z = (lm[5].x - lm[0].x) * (lm[17].y - lm[0].y) - (lm[5].y - lm[0].y) * (lm[17].x - lm[0].x);
+  if (isLeft) z = -z;
+  return z > 0;
+}
+
+function classify(fingers, thumb, score) {
+  const [i, m, r, k] = fingers.map(Boolean);
+  if (i && m && r && k && thumb) return POSE.OPEN;
+  if (!(i || m || r || k)) return POSE.FIST;
+  if (i && !(m || r || k)) return POSE.POINT;
+  if (i && m && !(r || k)) return POSE.TWO;
+  return score > CFG.poses.unknownMinScore ? POSE.UNKNOWN : POSE.NONE;
+}
+
+// finger hysteresis, then the published pose changes only when one wins debounceFrames of the last window
+class PoseState {
+  constructor() { this.fingers = [null, null, null, null]; this.thumb = false; this.raw = POSE.NONE; this.history = []; this.frames = 0; this.pose = POSE.NONE; }
+  update(lm, world, scale, score, aspect) {
+    const p = CFG.poses;
+    fingerAngles(world).forEach((ang, i) => {
+      if (ang > p.extendDeg) this.fingers[i] = true;
+      else if (ang < p.curlDeg) this.fingers[i] = false;
+      else if (this.fingers[i] === null) this.fingers[i] = ang > (p.extendDeg + p.curlDeg) / 2;
+    });
+    this.thumb = thumbExtended(lm, world, scale, aspect);
+    this.raw = classify(this.fingers, this.thumb, score);
+    this.history.push(this.raw);
+    if (this.history.length > p.window) this.history.shift();
+    this.frames += 1;
+    if (this.frames < p.debounceFrames) { this.pose = POSE.NONE; return this.pose; }
+    const counts = new Map();
+    for (const h of this.history) counts.set(h, (counts.get(h) || 0) + 1);
+    let best = null, count = 0;
+    for (const [k, v] of counts) if (v > count) { best = k; count = v; }   // ties go to the first seen
+    if (best !== this.pose && count >= p.debounceFrames) this.pose = best;
+    return this.pose;
+  }
+}
+
+// custom gesture templates: wrist at origin, palm size 1, left hands mirrored, no rotation
+function normalize(world, isLeft) {
+  const out = new Float32Array(63);
+  const w = world[0];
+  const size = Math.hypot(world[9].x - w.x, world[9].y - w.y, (world[9].z || 0) - (w.z || 0)) || 1e-6;
+  for (let i = 0; i < 21; i++) {
+    const x = world[i].x - w.x;
+    out[i * 3] = (isLeft ? -x : x) / size;
+    out[i * 3 + 1] = (world[i].y - w.y) / size;
+    out[i * 3 + 2] = ((world[i].z || 0) - (w.z || 0)) / size;
+  }
+  return out;
+}
+
+// worst finger: mean distance of each finger's 4 points, then the largest of the 5
+function worstFinger(perPoint) {
+  let worst = 0;
+  for (let f = 0; f < 5; f++) {
+    const s = perPoint[1 + f * 4] + perPoint[2 + f * 4] + perPoint[3 + f * 4] + perPoint[4 + f * 4];
+    worst = Math.max(worst, s / 4);
+  }
+  return worst;
+}
+function distance(a, b) {
+  const per = new Float64Array(21);
+  for (let i = 0; i < 21; i++) per[i] = Math.hypot(a[i * 3] - b[i * 3], a[i * 3 + 1] - b[i * 3 + 1], a[i * 3 + 2] - b[i * 3 + 2]);
+  return worstFinger(per);
+}
+function median(values) {
+  const v = Float64Array.from(values).sort();
+  const n = v.length;
+  return n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2;
+}
+function buildTemplate(samples) {
+  const template = new Float32Array(63);
+  for (let j = 0; j < 63; j++) template[j] = median(samples.map((s) => s[j]));
+  const spread = samples.reduce((sum, s) => sum + distance(template, s), 0) / samples.length;
+  const c = CFG.custom;
+  const threshold = Math.min(Math.max(c.defaultThreshold, 2.5 * spread), c.maxThreshold);
+  return { template, spread, threshold };
+}
+
+class OneEuro {
+  constructor(minCutoff, beta, dCutoff = 1.0) { this.minCutoff = minCutoff; this.beta = beta; this.dCutoff = dCutoff; this.reset(); }
+  static alpha(cutoff, dt) { const tau = 1 / (2 * Math.PI * cutoff); return 1 / (1 + tau / dt); }
+  reset() { this.xPrev = null; this.dxPrev = 0; this.tPrev = null; }
+  step(x, t) {
+    if (this.xPrev === null) { this.xPrev = x; this.tPrev = t; this.dxPrev = 0; return x; }
+    const dt = Math.max(t - this.tPrev, 1e-3);
+    const dx = (x - this.xPrev) / dt;
+    const aD = OneEuro.alpha(this.dCutoff, dt);
+    const dxHat = aD * dx + (1 - aD) * this.dxPrev;
+    const a = OneEuro.alpha(this.minCutoff + this.beta * Math.abs(dxHat), dt);
+    const xHat = a * x + (1 - a) * this.xPrev;
+    this.xPrev = xHat; this.dxPrev = dxHat; this.tPrev = t;
+    return xHat;
+  }
+}
+class OneEuro2D {
+  constructor(minCutoff, beta) { this.fx = new OneEuro(minCutoff, beta); this.fy = new OneEuro(minCutoff, beta); }
+  step(x, y, t) { return [this.fx.step(x, t), this.fy.step(y, t)]; }
+  reset() { this.fx.reset(); this.fy.reset(); }
+}
+
+function boxMap(x, y, box) {
+  const [x0, y0, x1, y1] = box;
+  return [clamp01((x - x0) / Math.max(x1 - x0, 1e-6)), clamp01((y - y0) / Math.max(y1 - y0, 1e-6))];
+}
+
+// palm speed in palm sizes per second over about windowMs
+function speedOf(hist, aspect, windowMs = 100) {
+  if (hist.length < 2) return 0;
+  const last = hist[hist.length - 1];
+  let first = last;
+  for (let i = hist.length - 1; i >= 0; i--) { first = hist[i]; if (last.ts - hist[i].ts >= windowMs) break; }
+  const dt = (last.ts - first.ts) / 1000;
+  if (dt <= 0) return 0;
+  return Math.hypot((last.cx - first.cx) * aspect, last.cy - first.cy) / Math.max(last.scale, 1e-4) / dt;
+}
+
+class HandCtx {
+  constructor(side) {
+    this.side = side;
+    this.poseState = new PoseState();
+    this.pose = POSE.NONE;
+    this.hist = [];
+    this.state = "idle";
+    this.ptFilter = new OneEuro2D(CFG.pointer.minCutoff, CFG.pointer.beta);
+    this.penFilter = new OneEuro2D(CFG.pen.minCutoff, CFG.pen.beta);
+    this.ptFrames = 0; this.ptX = 0; this.ptY = 0; this.frozen = false; this.unfreezeAt = null; this.lastPoint = null;
+    this.pinchStart = null; this.pinchPos = null; this.pinchFromPointer = false;
+    this.palmStart = null; this.palmFired = false;
+    this.cuStart = null; this.cuVotes = []; this.customFired = false;
+  }
+  observe(o, ts, aspect) {
+    this.lm = o.lm; this.world = o.world; this.score = o.score; this.lastSeen = ts;
+    this.scale = rawScale(o.lm, aspect);
+    this.pose = this.poseState.update(o.lm, o.world, this.scale, o.score, aspect);
+    this.pinch = pinchRatio(o.lm, this.scale, aspect);
+    const c = palmCentre(o.lm);
+    this.cx = c.x; this.cy = c.y;
+    this.facing = palmFacing(o.lm, this.side === "Left");
+    this.hist.push({ ts, cx: this.cx, cy: this.cy, pose: this.pose, scale: this.scale });
+    while (this.hist.length && ts - this.hist[0].ts > 1000) this.hist.shift();
+    this.speed = speedOf(this.hist, aspect);
+    if (this.pose !== POSE.UNKNOWN) this.customFired = false;   // the pose must change before it fires again
+    if (this.pose !== POSE.OPEN) this.palmFired = false;
+  }
+}
+
+// The gesture engine: one acting hand at a time, and the same priority order as zephyr/core/engine.py
+class Engine {
+  constructor() {
+    this.ctxs = new Map(); this.acting = null; this.armed = true; this.both = null;
+    this.inkEnabled = true; this.matcher = null;
+    this.swipeLast = -1e9; this.swipeDir = null;
+  }
+
+  step(obs, ts, aspect) {
+    const ev = [];
+    const visible = new Set();
+    for (const o of obs) {
+      let c = this.ctxs.get(o.side);
+      if (!c) { c = new HandCtx(o.side); this.ctxs.set(o.side, c); }
+      visible.add(o.side);
+      c.observe(o, ts, aspect);
+    }
+    for (const [side, c] of this.ctxs) {
+      if (visible.has(side) || ts - c.lastSeen <= CFG.tracker.dropoutMs) continue;
+      this.cancel(c, ev);
+      this.ctxs.delete(side);
+      if (this.acting === side) this.acting = null;
+    }
+    const present = [...visible].map((s) => this.ctxs.get(s));
+
+    // both palms held: arm or pause, the one gesture that works while paused
+    const palms = present.filter((c) => c.pose === POSE.OPEN && c.facing);
+    if (palms.length >= 2) {
+      if (!this.both) this.both = { start: ts, fired: false };
+      const p = Math.min(1, (ts - this.both.start) / CFG.holds.bothPalmsMs);
+      if (!this.both.fired) ev.push({ type: "hold", kind: "both", progress: p, x: (palms[0].cx + palms[1].cx) / 2, y: (palms[0].cy + palms[1].cy) / 2 });
+      if (p >= 1 && !this.both.fired) {
+        this.both.fired = true;
+        this.armed = !this.armed;
+        for (const c of this.ctxs.values()) this.cancel(c, ev);
+        this.acting = null;
+        ev.push({ type: "hold", kind: "both", progress: 0 });
+        ev.push({ type: "arm", armed: this.armed });
+      }
+    } else if (this.both) {
+      if (!this.both.fired) ev.push({ type: "hold", kind: "both", progress: 0 });
+      this.both = null;
+    }
+    if (!this.armed) return ev;
+
+    const bothActive = this.both !== null;
+    const nOpen = present.filter((c) => c.pose === POSE.OPEN).length;
+    if (this.acting !== null) {
+      const c = this.ctxs.get(this.acting);
+      if (!c) this.acting = null;
+      else if (visible.has(this.acting)) {
+        this.runHand(c, ts, aspect, ev, nOpen, bothActive);
+        if (c.state === "idle") this.acting = null;
+        return ev;
+      } else return ev;   // inside the dropout grace: keep its state and wait
+    }
+    // nobody holds the lock: fists, pinches and points get the first look
+    const prio = (c) => (c.pose === POSE.FIST ? 0 : c.pinch < CFG.pinch.down ? 1 : c.pose === POSE.POINT ? 2 : 3);
+    for (const c of [...present].sort((a, b) => prio(a) - prio(b))) {
+      this.runHand(c, ts, aspect, ev, nOpen, bothActive);
+      if (c.state !== "idle") { this.acting = c.side; break; }
+    }
+    return ev;
+  }
+
+  runHand(c, ts, aspect, ev, nOpen, bothActive) {
+    switch (c.state) {
+      case "pen": this.penStep(c, ts, ev); return;
+      case "fist": if (this.fistStep(c, ts, aspect, ev)) return; break;
+      case "pinching": this.pinchStep(c, ts, ev); return;
+      case "pointer": if (this.pointerStep(c, ts, ev)) return; break;
+      case "palm": {
+        const sw = this.checkSwipe(c, ts, aspect);
+        if (sw) { this.palmCancel(c, ev); this.fireSwipe(c, sw, ev); return; }
+        if (this.palmStep(c, ts, ev, nOpen, bothActive)) return;
+        break;
+      }
+      case "custom": if (this.customStep(c, ts, ev)) return; break;
+    }
+    // idle: try to start something, in priority order
+    if (c.pose === POSE.FIST) { c.ptFrames = 0; this.fistBegin(c, ts); return; }
+    if (c.pinch < CFG.pinch.down) { this.startPinch(c, ts, false, ev); return; }
+    if (this.idlePoint(c, ts, ev)) return;
+    const sw = this.checkSwipe(c, ts, aspect);
+    if (sw) { this.fireSwipe(c, sw, ev); return; }
+    if (!c.palmFired && this.palmOk(c, nOpen, bothActive)) {
+      c.state = "palm"; c.palmStart = ts;
+      this.palmStep(c, ts, ev, nOpen, bothActive);
+      return;
+    }
+    this.customTryStart(c, ts, ev);
+  }
+
+  cancel(c, ev) {
+    if (c.state === "pointer" || (c.state === "pinching" && c.pinchFromPointer)) this.hide(c, ev);
+    if (c.state === "pen") ev.push({ type: "ink", phase: "end", side: c.side });
+    if (c.state === "palm" || c.state === "custom") ev.push({ type: "hold", kind: c.state, side: c.side, progress: 0 });
+    c.state = "idle"; c.pinchStart = null; c.palmStart = null; c.cuStart = null; c.cuVotes = [];
+  }
+
+  // pointer: the index knuckle (landmark 5) through the pointer box, smoothed; freezes while pinching
+  ptr(c) { return { type: "pointer", side: c.side, visible: true, x: c.ptX, y: c.ptY, frozen: c.frozen }; }
+  hide(c, ev) {
+    ev.push({ type: "pointer", side: c.side, visible: false, x: c.ptX, y: c.ptY, frozen: false });
+    c.ptFrames = 0; c.frozen = false; c.unfreezeAt = null; c.lastPoint = null;
+  }
+  filtered(c, ts) {
+    const [x, y] = boxMap(c.lm[5].x, c.lm[5].y, CFG.pointer.box);
+    return c.ptFilter.step(x, y, ts / 1000);
+  }
+  idlePoint(c, ts, ev) {
+    if (c.pose !== POSE.POINT) { c.ptFrames = 0; return false; }
+    c.ptFrames += 1;
+    if (c.ptFrames < CFG.pointer.showFrames) return false;
+    c.state = "pointer";
+    c.ptFilter.reset();
+    [c.ptX, c.ptY] = this.filtered(c, ts);
+    c.frozen = false; c.lastPoint = ts;
+    ev.push(this.ptr(c));
+    return true;
+  }
+  updatePos(c, ts) {
+    const [x, y] = this.filtered(c, ts);       // always run the filter so it stays warm
+    if (c.pinch < CFG.pinch.prefreeze) { c.frozen = true; c.unfreezeAt = null; return; }
+    if (c.frozen) {
+      if (c.unfreezeAt === null) c.unfreezeAt = ts + CFG.pinch.postFreezeMs;
+      if (ts < c.unfreezeAt) return;
+      c.frozen = false; c.unfreezeAt = null;
+    }
+    c.ptX = x; c.ptY = y;
+  }
+  pointerStep(c, ts, ev) {
+    if (c.pinch < CFG.pinch.down && c.pose !== POSE.FIST) { this.startPinch(c, ts, true, ev); return true; }
+    if (c.pose === POSE.OPEN || c.pose === POSE.TWO || c.pose === POSE.FIST) { this.hide(c, ev); c.state = "idle"; return false; }
+    if (c.pose === POSE.POINT) { c.lastPoint = ts; this.updatePos(c, ts); ev.push(this.ptr(c)); return true; }
+    if (ts - (c.lastPoint ?? ts) >= CFG.pointer.hideAfterMs) { this.hide(c, ev); c.state = "idle"; return false; }
+    ev.push(this.ptr(c));    // a glitch frame: keep the pointer where it is
+    return true;
+  }
+
+  // pinch: a quick one clicks where the pointer froze; held longer it writes
+  penPoint(c, ts) {
+    const [u, v] = boxMap((c.lm[4].x + c.lm[8].x) / 2, (c.lm[4].y + c.lm[8].y) / 2, CFG.pointer.box);
+    return c.penFilter.step(u, v, ts / 1000);
+  }
+  startPinch(c, ts, fromPointer, ev) {
+    c.state = "pinching"; c.pinchStart = ts; c.pinchFromPointer = fromPointer;
+    c.pinchPos = fromPointer ? [c.ptX, c.ptY] : null;
+    if (fromPointer) { c.frozen = true; c.unfreezeAt = null; ev.push(this.ptr(c)); }
+    c.penFilter.reset();
+    c.penBuf = [this.penPoint(c, ts)];
+  }
+  pinchStep(c, ts, ev) {
+    const held = ts - c.pinchStart;
+    if (c.pinch > CFG.pinch.up) {
+      if (held <= CFG.pinch.tapMaxMs && c.pinchPos) ev.push({ type: "tap", side: c.side, x: c.pinchPos[0], y: c.pinchPos[1] });
+      this.afterRelease(c, ts, ev);
+      return;
+    }
+    c.penBuf.push(this.penPoint(c, ts));
+    if (c.pinchFromPointer) ev.push(this.ptr(c));      // the frozen dot stays on screen
+    if (held > CFG.pinch.tapMaxMs && this.inkEnabled) {
+      if (c.pinchFromPointer) this.hide(c, ev);
+      c.state = "pen";
+      ev.push({ type: "ink", phase: "start", side: c.side, points: c.penBuf.slice() });
+    }
+  }
+  penStep(c, ts, ev) {
+    if (c.pinch > CFG.pinch.up) {
+      ev.push({ type: "ink", phase: "end", side: c.side });
+      c.state = "idle"; c.pinchStart = null; c.penBuf = [];
+      return;
+    }
+    const [x, y] = this.penPoint(c, ts);
+    ev.push({ type: "ink", phase: "move", side: c.side, x, y });
+  }
+  afterRelease(c, ts, ev) {
+    c.pinchStart = null; c.penBuf = [];
+    if (c.pinchFromPointer && c.pose === POSE.POINT) {
+      c.state = "pointer"; c.lastPoint = ts; c.unfreezeAt = ts + CFG.pinch.postFreezeMs;
+      ev.push(this.ptr(c));
+    } else {
+      if (c.pinchFromPointer) this.hide(c, ev);
+      c.state = "idle";
+    }
+  }
+
+  // quick fist: a fist lasting fistTapMinMs..fistTapMaxMs that opens to a palm without travelling
+  fistBegin(c, ts) { c.state = "fist"; c.fistT0 = ts; c.fistX = c.cx; c.fistY = c.cy; c.fistTravel = 0; c.fistEnd = null; }
+  fistStep(c, ts, aspect, ev) {
+    const h = CFG.holds;
+    if (c.pose === POSE.FIST) {
+      c.fistEnd = null;
+      c.fistTravel = Math.max(c.fistTravel, Math.hypot((c.cx - c.fistX) * aspect, c.cy - c.fistY) / Math.max(c.scale, 1e-4));
+      return true;
+    }
+    if (c.fistEnd === null) c.fistEnd = ts;
+    if (c.pose === POSE.OPEN) {
+      const dur = c.fistEnd - c.fistT0;
+      if (dur >= h.fistTapMinMs && dur <= h.fistTapMaxMs && c.fistTravel < h.fistTapMaxTravel) ev.push({ type: "gesture", key: "fist_tap", side: c.side });
+      c.state = "idle";
+      return true;
+    }
+    if (ts - c.fistEnd > h.fistTapMaxMs) { c.state = "idle"; return false; }
+    return true;
+  }
+
+  // swipes: an open hand (5) or two fingers (2) travelling sideways fast, for the whole movement
+  checkSwipe(c, ts, aspect) {
+    const s = CFG.swipe;
+    if (c.pose !== POSE.OPEN && c.pose !== POSE.TWO) return null;
+    const hist = c.hist;
+    let j = hist.length - 1;
+    while (j > 0 && hist[j - 1].pose === c.pose && ts - hist[j - 1].ts <= s.maxMs) j--;
+    const a = hist[j], b = hist[hist.length - 1];
+    const dx = ((b.cx - a.cx) * aspect) / b.scale, dy = (b.cy - a.cy) / b.scale;
+    if (Math.abs(dx) < s.minTravelScales || Math.abs(dy) >= s.maxSlope * Math.abs(dx)) return null;
+    let peak = 0;
+    for (let i = j + 1; i < hist.length; i++) {
+      const p = hist[i - 1], q = hist[i], dt = (q.ts - p.ts) / 1000;
+      if (dt > 0) peak = Math.max(peak, Math.hypot((q.cx - p.cx) * aspect, q.cy - p.cy) / q.scale / dt);
+    }
+    if (peak < s.minPeakSpeed) return null;
+    const dir = dx < 0 ? "left" : "right";
+    if (ts - this.swipeLast < s.refractoryMs) return null;
+    if (this.swipeDir && dir !== this.swipeDir && ts - this.swipeLast < s.oppositeBlockMs) return null;
+    this.swipeLast = ts; this.swipeDir = dir;
+    c.hist = [b];          // a fresh start, so one movement fires once
+    return { dir, fingers: c.pose === POSE.OPEN ? 5 : 2 };
+  }
+  fireSwipe(c, sw, ev) { ev.push({ type: "gesture", key: `swipe${sw.fingers}.${sw.dir}`, side: c.side }); }
+
+  // palm held still and facing the camera, with only one palm up: search
+  palmOk(c, nOpen, bothActive) {
+    return c.pose === POSE.OPEN && c.facing && nOpen === 1 && !bothActive && c.speed < CFG.holds.palmMaxSpeed;
+  }
+  palmStep(c, ts, ev, nOpen, bothActive) {
+    if (!this.palmOk(c, nOpen, bothActive)) { this.palmCancel(c, ev); return false; }
+    const p = (ts - c.palmStart) / CFG.holds.palmMs;
+    ev.push({ type: "hold", kind: "palm", side: c.side, progress: Math.min(1, p), x: c.cx, y: c.cy });
+    if (p >= 1) {
+      ev.push({ type: "gesture", key: "palm_hold", side: c.side });
+      ev.push({ type: "hold", kind: "palm", side: c.side, progress: 0 });
+      c.palmFired = true; c.state = "idle"; c.palmStart = null;
+    }
+    return true;
+  }
+  palmCancel(c, ev) {
+    ev.push({ type: "hold", kind: "palm", side: c.side, progress: 0 });
+    c.state = "idle"; c.palmStart = null;
+  }
+
+  // custom: an unknown pose the matcher recognises for customMs, with customAgree of the frames agreeing
+  customTryStart(c, ts, ev) {
+    if (c.customFired || c.pose !== POSE.UNKNOWN || !this.matcher) return false;
+    const id = this.matcher(c);
+    if (id === null) return false;
+    c.state = "custom"; c.cuStart = ts; c.cuVotes = [id];
+    ev.push({ type: "hold", kind: "custom", side: c.side, progress: 0, x: c.cx, y: c.cy });
+    return true;
+  }
+  customStep(c, ts, ev) {
+    if (c.pose !== POSE.UNKNOWN) { this.customCancel(c, ev); return false; }
+    c.cuVotes.push(this.matcher ? this.matcher(c) : null);
+    const p = (ts - c.cuStart) / CFG.holds.customMs;
+    ev.push({ type: "hold", kind: "custom", side: c.side, progress: Math.min(1, p), x: c.cx, y: c.cy });
+    if (p >= 1) {
+      const counts = new Map();
+      for (const v of c.cuVotes) if (v !== null) counts.set(v, (counts.get(v) || 0) + 1);
+      let best = null, n = 0;
+      for (const [k, v] of counts) if (v > n) { best = k; n = v; }
+      if (best !== null && n / c.cuVotes.length >= CFG.holds.customAgree) {
+        ev.push({ type: "gesture", key: "custom", name: best, side: c.side });
+        c.customFired = true;
+      }
+      this.customCancel(c, ev);
+    }
+    return true;
+  }
+  customCancel(c, ev) {
+    ev.push({ type: "hold", kind: "custom", side: c.side, progress: 0 });
+    c.state = "idle"; c.cuStart = null; c.cuVotes = [];
+  }
+}
+// ---- core: end ----
+
+// ---- page ----
+const $ = (id) => document.getElementById(id);
+const MP_VERSIONS = ["0.10.14", "0.10.3"];     // pinned; the second is a fallback
+const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+const BONES = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [0, 17], [17, 18], [18, 19], [19, 20]];
+const TIPS = new Set([4, 8, 12, 16, 20]);
+const POSE_LABEL = { open: "Open palm", fist: "Fist", point: "Point", two: "Two fingers", unknown: "Other shape", none: "Reading…" };
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// an open right hand, palm to the camera, for the stage before the camera starts (16:9 frame)
+const SAMPLE = [[1030, 720], [955, 680], [898, 615], [862, 552], [835, 500], [955, 470], [935, 375], [923, 315], [914, 262], [1015, 455], [1012, 352], [1010, 286], [1008, 230], [1072, 468], [1086, 375], [1094, 318], [1101, 268], [1123, 505], [1152, 440], [1170, 398], [1186, 357]]
+  .map(([x, y]) => ({ x: x / 1600, y: y / 900, z: 0 }));
+
+// the Mac app's profiles (zephyr/actions/profiles); an app falls back to the default map
+const PROFILES = {
+  default: { label: "Desktop", map: { "swipe5.left": { type: "system", value: "desktop_next", label: "Next desktop" }, "swipe5.right": { type: "system", value: "desktop_prev", label: "Previous desktop" }, palm_hold: { type: "system", value: "search", label: "Search" }, fist_tap: { type: "media", value: "playpause", label: "Play / Pause" } } },
+  spotify: { label: "Spotify", map: { "swipe2.left": { type: "media", value: "next", label: "Next track" }, "swipe2.right": { type: "media", value: "previous", label: "Previous track" }, fist_tap: { type: "media", value: "playpause", label: "Play / Pause" }, palm_hold: { type: "system", value: "search", label: "Search Spotify" } } },
+  powerpoint: { label: "PowerPoint", map: { "swipe2.left": { type: "hotkey", value: "right", label: "Next slide" }, "swipe2.right": { type: "hotkey", value: "left", label: "Previous slide" } } },
+  chrome: { label: "Chrome", map: { "swipe2.left": { type: "hotkey", value: "ctrl+tab", label: "Next tab" }, "swipe2.right": { type: "hotkey", value: "ctrl+shift+tab", label: "Previous tab" }, palm_hold: { type: "system", value: "search", label: "Search Chrome" } } },
+};
+const GESTURES = [["swipe2.left", "Two-finger swipe left"], ["swipe2.right", "Two-finger swipe right"], ["swipe5.left", "Open-hand swipe left"], ["swipe5.right", "Open-hand swipe right"], ["fist_tap", "Quick fist"], ["palm_hold", "Palm held still"]];
+const GESTURE_NAME = Object.fromEntries(GESTURES);
+const SLIDES = ["Zephyr", "The problem", "How it works", "Owner lock", "Your own gestures", "Thank you"];
+const TRACKS = [["West Wind", "Low Pressure"], ["Tailwind", "The Gusts"], ["Calm Air", "Barometer"], ["Crosswind", "Isobar"]];
+const TABS = [["Devpost", "devpost.com/software/zephyr"], ["GitHub", "github.com/Rohanb1836/Zephyr_SunHacks"], ["MediaPipe", "developers.google.com/mediapipe"], ["ASU", "asu.edu"]];
+
+const engine = new Engine();
+const stage = $("stage"), sctx = stage.getContext("2d");
+const video = document.createElement("video");
+video.muted = true; video.playsInline = true; video.setAttribute("playsinline", "");
+const frame = document.createElement("canvas"), fctx = frame.getContext("2d");
+let landmarker = null, stream = null, running = false, lastVideoTime = -1, mode = "point";
+let shown = [];                       // hands drawn on the stage this frame
+let fps = 0, fpsT = 0, fpsN = 0;
+const holds = new Map();               // "kind:side" -> { progress, x, y, t }
+
+function fit(canvas) {
+  const r = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { w: r.width, h: r.height, ctx };
+}
+
+function pill(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+}
+
+// ---------- stage drawing ----------
+function drawStage(now) {
+  const { w, h } = fit(stage);
+  sctx.fillStyle = "#07050d";
+  sctx.fillRect(0, 0, w, h);
+  if (running && $("show-video").checked && frame.width) {
+    sctx.globalAlpha = 0.5;
+    sctx.drawImage(frame, 0, 0, w, h);
+    sctx.globalAlpha = 1;
+  } else {
+    sctx.fillStyle = "rgba(169, 158, 194, 0.16)";
+    for (let x = 18; x < w; x += 28) for (let y = 18; y < h; y += 28) sctx.fillRect(x, y, 1.5, 1.5);
+  }
+  if (mode === "point") {
+    const [x0, y0, x1, y1] = CFG.pointer.box;
+    sctx.setLineDash([6, 6]);
+    sctx.strokeStyle = "rgba(198, 163, 255, 0.45)";
+    sctx.lineWidth = 1.5;
+    sctx.strokeRect(x0 * w, y0 * h, (x1 - x0) * w, (y1 - y0) * h);
+    sctx.setLineDash([]);
+    sctx.font = "600 10px 'JetBrains Mono', ui-monospace, monospace";
+    sctx.fillStyle = "rgba(198, 163, 255, 0.75)";
+    sctx.fillText("POINTER AREA = YOUR SCREEN", x0 * w + 6, y0 * h - 7);
+  }
+  for (const hand of shown) drawHand(hand, w, h);
+  for (const [key, hold] of holds) {
+    if (now - hold.t > 250 || hold.progress <= 0) { holds.delete(key); continue; }
+    const color = key.startsWith("both") ? "#8fe3c0" : key.startsWith("custom") ? "#f8f4ff" : "#c6a3ff";
+    sctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+    sctx.lineWidth = 5;
+    sctx.beginPath(); sctx.arc(hold.x * w, hold.y * h, 30, 0, Math.PI * 2); sctx.stroke();
+    sctx.strokeStyle = color;
+    sctx.beginPath(); sctx.arc(hold.x * w, hold.y * h, 30, -Math.PI / 2, -Math.PI / 2 + hold.progress * Math.PI * 2); sctx.stroke();
+  }
+}
+
+function drawHand(hand, w, h) {
+  const lm = hand.lm, c = hand.ctx;
+  const P = (i) => [lm[i].x * w, lm[i].y * h];
+  sctx.lineCap = "round"; sctx.lineJoin = "round";
+  sctx.strokeStyle = "rgba(198, 163, 255, 0.85)";
+  sctx.lineWidth = 2.6;
+  sctx.beginPath();
+  for (const [a, b] of BONES) { const [ax, ay] = P(a), [bx, by] = P(b); sctx.moveTo(ax, ay); sctx.lineTo(bx, by); }
+  sctx.stroke();
+  sctx.fillStyle = "#efe9fa";
+  for (let i = 0; i < 21; i++) {
+    if (TIPS.has(i)) continue;
+    const [x, y] = P(i);
+    sctx.beginPath(); sctx.arc(x, y, 2.6, 0, Math.PI * 2); sctx.fill();
+  }
+  sctx.save();
+  sctx.shadowColor = "rgba(198, 163, 255, 0.95)";
+  sctx.shadowBlur = 14;
+  sctx.fillStyle = "#f8f4ff";
+  for (const i of TIPS) { const [x, y] = P(i); sctx.beginPath(); sctx.arc(x, y, 4.4, 0, Math.PI * 2); sctx.fill(); }
+  sctx.restore();
+  if (c) {
+    if (c.pinch < CFG.pinch.prefreeze) {             // thumb to index: the pinch closing
+      const down = c.pinch < CFG.pinch.down;
+      const [tx, ty] = P(4), [ix, iy] = P(8);
+      sctx.strokeStyle = down ? "#8fe3c0" : "rgba(143, 227, 192, 0.55)";
+      sctx.lineWidth = down ? 3.5 : 1.5;
+      sctx.beginPath(); sctx.moveTo(tx, ty); sctx.lineTo(ix, iy); sctx.stroke();
+    }
+    if (c.state === "pointer" || (c.state === "pinching" && c.pinchFromPointer)) {   // the knuckle that steers
+      const [x, y] = P(5);
+      sctx.strokeStyle = c.frozen ? "#8fe3c0" : "#f8f4ff";
+      sctx.lineWidth = 2;
+      sctx.beginPath(); sctx.arc(x, y, 10, 0, Math.PI * 2); sctx.stroke();
+    }
+  }
+  const label = hand.sample ? "Open palm · sample" : POSE_LABEL[c ? c.pose : "none"];
+  const [wx, wy] = P(0);
+  sctx.font = "600 11px 'JetBrains Mono', ui-monospace, monospace";
+  const text = label.toUpperCase();
+  const tw = sctx.measureText(text).width + 20;
+  const x = Math.max(8, Math.min(w - tw - 8, wx - tw / 2));
+  const y = Math.min(h - 32, wy + 16);
+  sctx.fillStyle = "rgba(11, 8, 20, 0.82)";
+  pill(sctx, x, y, tw, 24, 12); sctx.fill();
+  sctx.strokeStyle = "rgba(198, 163, 255, 0.45)"; sctx.lineWidth = 1; sctx.stroke();
+  sctx.fillStyle = "#efe9fa";
+  sctx.fillText(text, x + 10, y + 16);
+}
+
+function drawRest() {
+  shown = [{ lm: SAMPLE, sample: true, ctx: null }];
+  drawStage(performance.now());
+}
+new ResizeObserver(() => { if (!running) drawRest(); }).observe(stage);
+
+// ---------- camera and tracker ----------
+function say(text, isError = false) {
+  const m = $("cam-msg");
+  m.textContent = text;
+  m.classList.toggle("err", isError);
+}
+
+function cameraError(err) {
+  const framed = window.self !== window.top;
+  const name = err && err.name;
+  if (framed && (!navigator.mediaDevices || name === "NotAllowedError" || name === "SecurityError")) {
+    return "This embedded preview can't use the camera. Open the site itself in a browser tab to try the demo.";
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return "This browser can't open the camera here. Try Chrome, Safari or Edge on an https page.";
+  if (name === "NotAllowedError" || name === "SecurityError") return "Camera access is blocked. Allow it from the address bar, then press Start camera again.";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "No camera found. Connect one and press Start camera again.";
+  if (name === "NotReadableError") return "Another app is using the camera. Close it and press Start camera again.";
+  return "The camera didn't start. Press Start camera to try again.";
+}
+
+async function loadLandmarker() {
+  let lastError = null;
+  for (const version of MP_VERSIONS) {
+    const base = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${version}`;
+    try {
+      const { FilesetResolver, HandLandmarker } = await import(`${base}/vision_bundle.mjs`);
+      const files = await FilesetResolver.forVisionTasks(`${base}/wasm`);
+      const make = (delegate) => HandLandmarker.createFromOptions(files, {
+        baseOptions: { modelAssetPath: MODEL_URL, delegate },
+        runningMode: "VIDEO", numHands: 2,
+        minHandDetectionConfidence: 0.6, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.6,
+      });
+      try { return await make("GPU"); } catch (gpuError) { return await make("CPU"); }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
+async function start() {
+  const btn = $("start");
+  btn.disabled = true;
+  say("Asking for the camera…");
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("no getUserMedia");
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }, audio: false });
+  } catch (err) {
+    btn.disabled = false;
+    say(cameraError(err), true);
+    return;
+  }
+  video.srcObject = stream;
+  try { await video.play(); } catch (e) { /* plays once frames arrive */ }
+  say("Loading the hand tracker (about 8 MB the first time)…");
+  try {
+    landmarker = landmarker || (await loadLandmarker());
+  } catch (err) {
+    console.error(err);
+    stopStream();
+    btn.disabled = false;
+    say("The hand tracker didn't load. Check your connection and press Start camera again.", true);
+    return;
+  }
+  btn.disabled = false;
+  running = true;
+  $("cover").hidden = true;
+  $("stop").hidden = false;
+  $("arm-chip").hidden = false;
+  setArmChip(engine.armed);
+  $("rec-msg").textContent = rec.model ? $("rec-msg").textContent : "Ready. Press Record a gesture.";
+  fpsT = performance.now(); fpsN = 0;
+  requestAnimationFrame(loop);
+}
+
+function stopStream() {
+  if (stream) stream.getTracks().forEach((t) => t.stop());
+  stream = null;
+  video.srcObject = null;
+}
+
+function stop() {
+  running = false;
+  stopStream();
+  rec.phase = rec.model ? "ready" : "idle";
+  $("countdown").hidden = true;
+  holds.clear();
+  onPointer({ visible: false });
+  $("cover").hidden = false;
+  $("stop").hidden = true;
+  $("arm-chip").hidden = true;
+  $("stats").textContent = "Sample hand";
+  say("Camera off. Press Start camera to continue.");
+  drawRest();
+}
+
+function loop(now) {
+  if (!running) return;
+  if (video.readyState >= 2 && video.currentTime !== lastVideoTime && video.videoWidth) {
+    lastVideoTime = video.currentTime;
+    const fw = 640, fh = Math.round((640 * video.videoHeight) / video.videoWidth);
+    if (frame.width !== fw || frame.height !== fh) {
+      frame.width = fw; frame.height = fh;
+      $("stage-wrap").style.aspectRatio = `${fw} / ${fh}`;
+    }
+    // mirror first, like the Mac app, so left and right match what you see
+    fctx.save(); fctx.translate(fw, 0); fctx.scale(-1, 1); fctx.drawImage(video, 0, 0, fw, fh); fctx.restore();
+    const ts = performance.now();
+    let result = null;
+    try { result = landmarker.detectForVideo(frame, ts); } catch (err) { console.warn(err); }
+    if (result) onResult(result, ts, fw / fh);
+    fpsN += 1;
+    if (ts - fpsT >= 1000) { fps = (fpsN * 1000) / (ts - fpsT); fpsN = 0; fpsT = ts; }
+  }
+  drawStage(performance.now());
+  if (mode === "point") drawInk(performance.now());
+  requestAnimationFrame(loop);
+}
+
+function onResult(result, ts, aspect) {
+  const handed = result.handedness || result.handednesses || [];
+  const obs = (result.landmarks || []).map((lm, i) => ({
+    lm, world: (result.worldLandmarks || [])[i] || lm,
+    side: (handed[i] && handed[i][0] && handed[i][0].categoryName) || "Right",
+    score: (handed[i] && handed[i][0] && handed[i][0].score) || 1,
+  }));
+  if (obs.length === 2 && obs[0].side === obs[1].side) {     // both read as one side: rename the weaker one
+    const weaker = obs[0].score < obs[1].score ? obs[0] : obs[1];
+    weaker.side = weaker.side === "Left" ? "Right" : "Left";
+  }
+  const events = engine.step(obs, ts, aspect);
+  shown = obs.map((o) => ({ lm: o.lm, ctx: engine.ctxs.get(o.side) }));
+  for (const e of events) handle(e, ts);
+  recorderStep(ts, obs);
+  updateReadouts();
+  $("stats").textContent = `${obs.length} hand${obs.length === 1 ? "" : "s"} · ${Math.round(fps)} fps`;
+}
+
+// ---------- events ----------
+function handle(e, ts) {
+  if (e.type === "pointer") onPointer(e);
+  else if (e.type === "tap") onTap(e);
+  else if (e.type === "ink") onInk(e, ts);
+  else if (e.type === "hold") {
+    const key = `${e.kind}:${e.side || ""}`;
+    if (e.progress > 0) holds.set(key, { progress: e.progress, x: e.x, y: e.y, t: ts });
+    else holds.delete(key);
+  } else if (e.type === "arm") {
+    setArmChip(e.armed);
+    toast(e.armed ? "Both palms · armed" : "Both palms · paused. Hold both palms again to resume.");
+  } else if (e.type === "gesture") onGesture(e);
+}
+
+function setArmChip(armed) {
+  const chip = $("arm-chip");
+  chip.textContent = armed ? "Armed" : "Paused · both palms";
+  chip.className = `chip ${armed ? "ok" : "off"}`;
+}
+
+let toastTimer = 0;
+function toast(text) {
+  const t = $("toast");
+  t.textContent = text;
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 2400);
+}
+
+// ---------- point and pinch ----------
+const pad = $("pad"), cursor = $("cursor"), inkCanvas = $("ink");
+const targets = [...pad.querySelectorAll(".target")];
+let clicks = 0, slideN = 1, pointerShown = false, pointerFrozen = false;
+const strokes = [];
+
+function targetAt(x, y) {
+  const pr = pad.getBoundingClientRect();
+  const px = pr.left + x * pr.width, py = pr.top + y * pr.height;
+  return targets.find((t) => { const r = t.getBoundingClientRect(); return px >= r.left && px <= r.right && py >= r.top && py <= r.bottom; }) || null;
+}
+
+function onPointer(e) {
+  pointerShown = !!e.visible;
+  pointerFrozen = !!e.frozen;
+  if (!e.visible) { cursor.hidden = true; targets.forEach((t) => t.classList.remove("hot")); return; }
+  cursor.hidden = mode !== "point";
+  cursor.style.left = `${e.x * 100}%`;
+  cursor.style.top = `${e.y * 100}%`;
+  cursor.classList.toggle("frozen", !!e.frozen);
+  const hot = mode === "point" ? targetAt(e.x, e.y) : null;
+  targets.forEach((t) => t.classList.toggle("hot", t === hot));
+}
+
+function activate(t) {
+  const act = t.dataset.act;
+  if (act === "play") {
+    const on = t.getAttribute("aria-pressed") !== "true";
+    t.setAttribute("aria-pressed", String(on));
+    t.querySelector("span").textContent = on ? "Pause" : "Play";
+  } else if (act === "next") {
+    slideN = (slideN % 9) + 1;
+    $("slide-n").textContent = String(slideN);
+  } else if (act === "like") {
+    t.setAttribute("aria-pressed", String(t.getAttribute("aria-pressed") !== "true"));
+  }
+  clicks += 1;
+  if (!reduceMotion) { t.classList.remove("hit"); void t.offsetWidth; t.classList.add("hit"); }
+}
+targets.forEach((t) => t.addEventListener("click", () => activate(t)));
+
+function onTap(e) {
+  if (mode !== "point") return;
+  const t = targetAt(e.x, e.y);
+  if (t) activate(t);
+  else clicks += 1;
+}
+
+function onInk(e, ts) {
+  if (mode !== "point") return;
+  if (e.phase === "start") strokes.push({ pts: e.points.slice(), done: null });
+  else if (e.phase === "move" && strokes.length && !strokes[strokes.length - 1].done) strokes[strokes.length - 1].pts.push([e.x, e.y]);
+  else if (e.phase === "end" && strokes.length) strokes[strokes.length - 1].done = ts;
+}
+
+function drawInk(now) {
+  const { w, h, ctx } = fit(inkCanvas);
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = 4;
+  for (let i = strokes.length - 1; i >= 0; i--) {
+    const s = strokes[i];
+    const a = s.done ? 1 - (now - s.done) / 2500 : 1;
+    if (a <= 0) { strokes.splice(i, 1); continue; }
+    ctx.strokeStyle = `rgba(214, 190, 255, ${a})`;
+    ctx.beginPath();
+    s.pts.forEach(([x, y], k) => (k ? ctx.lineTo(x * w, y * h) : ctx.moveTo(x * w, y * h)));
+    ctx.stroke();
+  }
+}
+
+function updateReadouts() {
+  const hand = [...engine.ctxs.values()].find((c) => c.state !== "idle") || [...engine.ctxs.values()][0];
+  const pinch = hand ? hand.pinch : null;
+  $("pinch-fill").style.width = pinch === null ? "0%" : `${Math.min(100, pinch * 100)}%`;
+  $("pinch-fill").className = pinch !== null && pinch < CFG.pinch.down ? "ok" : "";
+  $("pinch-val").textContent = pinch === null ? "–" : pinch.toFixed(2);
+  const state = !pointerShown ? "Pointer hidden" : pointerFrozen ? "Pointer frozen for the click" : "Pointer moving";
+  $("pt-state").textContent = `${state} · clicks ${clicks}`;
+}
+
+// ---------- app gestures ----------
+let app = "powerpoint";
+const appState = { desktop: 1, slide: 0, track: 0, playing: false, tab: 0, searchUntil: 0, searchLabel: "" };
+const resolve = (key) => PROFILES[app].map[key] || PROFILES.default.map[key] || null;
+
+function renderApp() {
+  const v = $("app-view");
+  const searching = performance.now() < appState.searchUntil;
+  let html = "";
+  if (app === "powerpoint") {
+    html = `<p class="app-kicker">PowerPoint · presenting</p><p class="slide-title">${SLIDES[appState.slide]}</p>
+      <p class="slide-n">Slide ${appState.slide + 1} of ${SLIDES.length}</p>
+      <div class="dots">${SLIDES.map((_, i) => `<i class="${i === appState.slide ? "on" : ""}"></i>`).join("")}</div>`;
+  } else if (app === "spotify") {
+    const [title, artist] = TRACKS[appState.track];
+    html = `<p class="app-kicker">Spotify · now playing</p><div class="track"><span class="cover-art" aria-hidden="true"></span>
+      <div><b>${title}</b><span>${artist}</span></div>
+      <span class="play-state ${appState.playing ? "" : "paused"}">${appState.playing ? "Playing" : "Paused"}</span></div>`;
+  } else if (app === "chrome") {
+    html = `<p class="app-kicker">Chrome</p><div class="tabstrip">${TABS.map(([name], i) => `<span class="${i === appState.tab ? "on" : ""}">${name}</span>`).join("")}</div>
+      <div class="urlbar">${TABS[appState.tab][1]}</div>`;
+  } else {
+    html = `<p class="app-kicker">Desktop · media ${appState.playing ? "playing" : "paused"}</p>
+      <div class="desks">${[1, 2, 3].map((n) => `<span class="${n === appState.desktop ? "on" : ""}">Desktop ${n}</span>`).join("")}</div>`;
+  }
+  if (searching) html += `<div class="searchbar">${appState.searchLabel}…<small>On the Mac you'd write your search in the air now.</small></div>`;
+  v.innerHTML = html;
+}
+
+function renderMap(firedKey) {
+  $("gmap-app").textContent = `In ${PROFILES[app].label}`;
+  $("gmap-body").innerHTML = GESTURES.map(([key, name]) => {
+    const a = resolve(key);
+    return `<tr class="${key === firedKey ? "fired" : ""}"><td>${name}</td><td class="${a ? "" : "none"}">${a ? a.label : "Nothing"}</td></tr>`;
+  }).join("");
+}
+
+function runAction(a) {
+  const n = (k, d, len) => (k + d + len) % len;
+  if (a.value === "desktop_next") appState.desktop = Math.min(3, appState.desktop + 1);
+  else if (a.value === "desktop_prev") appState.desktop = Math.max(1, appState.desktop - 1);
+  else if (a.value === "search") { appState.searchUntil = performance.now() + 3200; appState.searchLabel = a.label; setTimeout(renderApp, 3300); }
+  else if (a.value === "playpause") appState.playing = !appState.playing;
+  else if (a.value === "next") appState.track = n(appState.track, 1, TRACKS.length);
+  else if (a.value === "previous") appState.track = n(appState.track, -1, TRACKS.length);
+  else if (a.value === "right") appState.slide = Math.min(SLIDES.length - 1, appState.slide + 1);
+  else if (a.value === "left") appState.slide = Math.max(0, appState.slide - 1);
+  else if (a.value === "ctrl+tab") appState.tab = n(appState.tab, 1, TABS.length);
+  else if (a.value === "ctrl+shift+tab") appState.tab = n(appState.tab, -1, TABS.length);
+  renderApp();
+}
+
+let firedTimer = 0;
+function onGesture(e) {
+  if (e.key === "custom") { onCustomMatch(); return; }
+  const name = GESTURE_NAME[e.key] || e.key;
+  const a = resolve(e.key);
+  if (a) runAction(a);
+  toast(a ? `${name} → ${a.label}` : `${name} → nothing in ${PROFILES[app].label}`);
+  renderMap(e.key);
+  clearTimeout(firedTimer);
+  firedTimer = setTimeout(() => renderMap(null), 1400);
+}
+
+document.querySelectorAll(".app-chip").forEach((chip) => chip.addEventListener("click", () => {
+  app = chip.dataset.app;
+  document.querySelectorAll(".app-chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+  renderApp();
+  renderMap(null);
+}));
+
+// ---------- your gesture ----------
+const rec = { phase: "idle", t0: 0, samples: [], misses: 0, builtIn: new Map(), model: null, matches: 0 };
+
+function biggest(obs) {
+  let best = null, size = 0;
+  for (const o of obs) { const c = engine.ctxs.get(o.side); if (c && c.scale > size) { best = c; size = c.scale; } }
+  return best;
+}
+
+function recMsg(text, isError = false) {
+  const m = $("rec-msg");
+  m.textContent = text;
+  m.classList.toggle("err", isError);
+}
+
+function setRecProgress(n) {
+  $("rec-fill").style.width = `${(n / CFG.custom.samples) * 100}%`;
+  $("rec-val").textContent = `${n}/${CFG.custom.samples}`;
+}
+
+$("rec").addEventListener("click", () => {
+  if (!running) { recMsg("Start the camera first, with the button on the left.", true); return; }
+  rec.phase = "countdown"; rec.t0 = performance.now();
+  rec.samples = []; rec.misses = 0; rec.builtIn = new Map();
+  setRecProgress(0);
+  recMsg("Get your hand shape ready…");
+});
+$("rec-clear").addEventListener("click", () => {
+  rec.model = null; rec.phase = "idle"; rec.matches = 0;
+  engine.matcher = null;
+  $("matched-n").textContent = "0";
+  $("rec-clear").hidden = true;
+  $("rec").textContent = "Record a gesture";
+  setRecProgress(0);
+  $("dist-fill").style.width = "0%";
+  $("dist-val").textContent = "–";
+  recMsg("Deleted. Record another one any time.");
+});
+
+function failRecording(text) {
+  rec.phase = rec.model ? "ready" : "idle";
+  $("countdown").hidden = true;
+  setRecProgress(0);
+  recMsg(text, true);
+}
+
+function finishRecording() {
+  $("countdown").hidden = true;
+  const total = rec.samples.length + rec.misses;
+  if (rec.misses / total > 0.2) return failRecording("Your hand left the frame. Keep it in view and record again.");
+  let top = null, n = 0;
+  for (const [pose, count] of rec.builtIn) if (count > n) { top = pose; n = count; }
+  if (n / rec.samples.length > 0.3) return failRecording(`That reads as ${POSE_LABEL[top].toLowerCase()}, which is built in. Try a different shape.`);
+  rec.model = buildTemplate(rec.samples);
+  rec.phase = "ready";
+  engine.matcher = (c) => (distance(normalize(c.world, c.side === "Left"), rec.model.template) < rec.model.threshold ? "yours" : null);
+  $("dist-tick").style.left = `${(rec.model.threshold / 0.6) * 100}%`;
+  $("rec-clear").hidden = false;
+  $("rec").textContent = "Record again";
+  recMsg(`Saved from 30 frames, threshold ${rec.model.threshold.toFixed(2)}. Relax your hand, then make the shape again and hold it for half a second.`);
+}
+
+function recorderStep(ts, obs) {
+  const cd = $("countdown");
+  if (rec.phase === "countdown") {
+    const left = Math.ceil((CFG.custom.countdownMs - (ts - rec.t0)) / 1000);
+    if (left > 0) { cd.hidden = false; cd.className = "countdown"; cd.textContent = String(left); return; }
+    rec.phase = "capturing"; rec.t0 = ts;
+    cd.className = "countdown small"; cd.textContent = "Hold it…";
+  }
+  if (rec.phase === "capturing") {
+    const c = biggest(obs);
+    if (!c) rec.misses += 1;
+    else {
+      rec.samples.push(normalize(c.world, c.side === "Left"));
+      if (BUILT_IN.has(c.pose)) rec.builtIn.set(c.pose, (rec.builtIn.get(c.pose) || 0) + 1);
+    }
+    setRecProgress(rec.samples.length);
+    if (rec.samples.length >= CFG.custom.samples) finishRecording();
+    else if (ts - rec.t0 > CFG.custom.timeoutMs) failRecording("That took too long. Keep one hand steady in view and record again.");
+    return;
+  }
+  if (rec.phase === "ready") {
+    const c = biggest(obs);
+    if (!c) { $("dist-fill").style.width = "0%"; $("dist-val").textContent = "–"; return; }
+    const d = distance(normalize(c.world, c.side === "Left"), rec.model.template);
+    $("dist-fill").style.width = `${Math.min(100, (d / 0.6) * 100)}%`;
+    $("dist-fill").className = d < rec.model.threshold ? "ok" : "";
+    $("dist-val").textContent = d.toFixed(2);
+  }
+}
+
+function onCustomMatch() {
+  rec.matches += 1;
+  $("matched-n").textContent = String(rec.matches);
+  const box = $("matched");
+  if (!reduceMotion) { box.classList.remove("flash"); void box.offsetWidth; box.classList.add("flash"); }
+  toast("Your gesture → matched");
+}
+
+// ---------- tabs ----------
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function setMode(next, focus = false) {
+  mode = next;
+  engine.inkEnabled = mode === "point";
+  for (const tab of tabs) {
+    const on = tab.id === `tab-${mode}`;
+    tab.setAttribute("aria-selected", String(on));
+    tab.tabIndex = on ? 0 : -1;
+    $(tab.getAttribute("aria-controls")).hidden = !on;
+    if (on && focus) tab.focus();
+  }
+  if (mode !== "point") cursor.hidden = true;
+  if (!running) drawRest();
+}
+tabs.forEach((tab, i) => {
+  tab.addEventListener("click", () => setMode(tab.id.slice(4)));
+  tab.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    setMode(next.id.slice(4), true);
+  });
+});
+
+$("start").addEventListener("click", start);
+$("stop").addEventListener("click", stop);
+renderApp();
+renderMap(null);
+drawRest();
+</script>
+</body>
+</html>
