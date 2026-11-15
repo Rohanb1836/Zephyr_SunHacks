@@ -1,0 +1,25 @@
+{
+  "id": "powerpoint",
+  "label": "PowerPoint",
+  "match": {
+    "mac": [
+      "com.microsoft.Powerpoint"
+    ],
+    "win": [
+      "POWERPNT.EXE"
+    ]
+  },
+  "ink": false,
+  "map": {
+    "swipe2.left": {
+      "type": "hotkey",
+      "value": "right",
+      "label": "Next slide"
+    },
+    "swipe2.right": {
+      "type": "hotkey",
+      "value": "left",
+      "label": "Previous slide"
+    }
+  }
+}

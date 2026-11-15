@@ -1,0 +1,30 @@
+{
+  "id": "chrome",
+  "label": "Chrome",
+  "match": {
+    "mac": [
+      "com.google.Chrome"
+    ],
+    "win": [
+      "chrome.exe"
+    ]
+  },
+  "ink": false,
+  "map": {
+    "swipe2.left": {
+      "type": "hotkey",
+      "value": "ctrl+tab",
+      "label": "Next tab"
+    },
+    "swipe2.right": {
+      "type": "hotkey",
+      "value": "ctrl+shift+tab",
+      "label": "Previous tab"
+    },
+    "palm_hold": {
+      "type": "system",
+      "value": "search",
+      "label": "Search Chrome"
+    }
+  }
+}

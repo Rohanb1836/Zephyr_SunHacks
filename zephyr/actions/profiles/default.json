@@ -1,0 +1,31 @@
+{
+  "id": "default",
+  "label": "Default",
+  "match": {
+    "mac": [],
+    "win": []
+  },
+  "ink": false,
+  "map": {
+    "swipe5.left": {
+      "type": "system",
+      "value": "desktop_next",
+      "label": "Next desktop"
+    },
+    "swipe5.right": {
+      "type": "system",
+      "value": "desktop_prev",
+      "label": "Previous desktop"
+    },
+    "palm_hold": {
+      "type": "system",
+      "value": "search",
+      "label": "Search"
+    },
+    "fist_tap": {
+      "type": "media",
+      "value": "playpause",
+      "label": "Play / Pause"
+    }
+  }
+}

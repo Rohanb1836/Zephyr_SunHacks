@@ -1,0 +1,14 @@
+{
+  "id": "word",
+  "label": "Word",
+  "match": {
+    "mac": [
+      "com.microsoft.Word"
+    ],
+    "win": [
+      "WINWORD.EXE"
+    ]
+  },
+  "ink": true,
+  "map": {}
+}

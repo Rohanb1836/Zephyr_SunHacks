@@ -1,0 +1,35 @@
+{
+  "id": "spotify",
+  "label": "Spotify",
+  "match": {
+    "mac": [
+      "com.spotify.client"
+    ],
+    "win": [
+      "Spotify.exe"
+    ]
+  },
+  "ink": false,
+  "map": {
+    "swipe2.left": {
+      "type": "media",
+      "value": "next",
+      "label": "Next track"
+    },
+    "swipe2.right": {
+      "type": "media",
+      "value": "previous",
+      "label": "Previous track"
+    },
+    "fist_tap": {
+      "type": "media",
+      "value": "playpause",
+      "label": "Play / Pause"
+    },
+    "palm_hold": {
+      "type": "system",
+      "value": "search",
+      "label": "Search Spotify"
+    }
+  }
+}
