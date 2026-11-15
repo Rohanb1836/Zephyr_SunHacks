@@ -5,7 +5,7 @@
 # ---------- [Aadharsh] core ----------
 camera:   {index: 0, width: 640, height: 480, fps: 30, mirror: true, reopen_after_fails: 30,
            backend: auto}   # auto | msmf | dshow | avfoundation. Windows auto = MSMF (30 fps), then DirectShow
-hands:    {max_hands: 3, det_conf: 0.6, track_conf: 0.6, presence_conf: 0.5, swap_sides: false,
+hands:    {max_hands: 3, det_conf: 0.6, track_conf: 0.6, presence_conf: 0.5, swap_sides: true,
            model: models/hand_landmarker.task, scale_ema: 0.3, infer_width: 640}
 poses:    {extend_deg: 155, curl_deg: 125, debounce_frames: 3, window: 5,
            thumb_deg: 150, thumb_tip_scales: 0.6, unknown_min_score: 0.6, palm_sign: 1,
