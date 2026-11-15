@@ -19,14 +19,27 @@ class Attention:
         self.baseline = None
         self.state = False
         self.changed_at = None
+        self.face_seen = None      # last time a face was found for this person
 
     def update(self, person, now, owner):
         raw = False
+        face = person is not None and (person.face_matrix is not None or
+                                       (person.face_landmarks and len(person.face_landmarks) > 454))
+        if person is not None and not face:
+            # Body in view but no face: almost always a hand in front of the face (a palm hold or
+            # a swipe passes right over it), not someone looking away. Keep the last answer for a
+            # while. Measured before this: 25 false pauses in 2.5 minutes of normal gesturing.
+            hold = int(cfg.presence.get("face_lost_hold_ms", 1200))
+            if self.face_seen is not None and now - self.face_seen < hold:
+                self.changed_at = None
+                return self.state
+        if face:
+            self.face_seen = now
         if person is not None and person.face_matrix is not None:
             yaw, pitch = yaw_pitch_degrees(person.face_matrix)
             if owner and self.baseline is None:
                 self.samples.append((yaw, pitch))
-                if len(self.samples) >= 5:
+                if len(self.samples) >= int(cfg.presence.get("baseline_samples", 10)):
                     self.baseline = (statistics.median(x for x, _ in self.samples),
                                      statistics.median(y for _, y in self.samples))
             baseline = self.baseline if owner and self.baseline else (0.0, 0.0)

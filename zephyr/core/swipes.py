@@ -85,8 +85,17 @@ class SwipeDetector:
         dy = (h[-1][2] - h[best_i][2]) / scale
         if abs(dy) >= float(s.max_slope) * abs(best_dx):
             return None
+        # Bridged swipe: a fast swipe blurs, and the hand tracker loses the hand for the whole stroke.
+        # Measured on a laptop webcam in room light: the hand vanishes for 160 to 450 ms and comes back
+        # 1.5 to 2.7 hand widths to the side, then does the same in reverse for the return stroke.
+        # A gap like that, with the hand reappearing level and far enough sideways, IS the swipe. The
+        # return jump that follows is swallowed by opposite_block_ms like any return movement.
+        gap = h[-1][0] - h[-2][0]
+        jump = (h[-1][1] - h[-2][1]) * k
+        bridged = (int(s.get("bridge_min_ms", 120)) <= gap <= int(s.get("bridge_max_ms", 450))
+                   and jump * best_dx > 0 and abs(jump) >= 0.6 * need)
         prev_dx = (h[-2][1] - h[best_i][1]) * aspect / scale
-        if prev_dx * best_dx <= 0 or abs(prev_dx) < 0.4 * need:
+        if not bridged and (prev_dx * best_dx <= 0 or abs(prev_dx) < 0.4 * need):
             return None                    # the whole distance appeared in one frame: a glitch
         sign = 1.0 if best_dx > 0 else -1.0
         peak = 0.0

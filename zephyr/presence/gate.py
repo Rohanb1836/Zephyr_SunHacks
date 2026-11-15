@@ -98,7 +98,12 @@ class Gate:
                 self.on_disarm()
                 return False, "owner_left"
             controller = self.guest_id if self.guest_id is not None else self.owner_id
-            if not any(p.person_id == controller for p in self.people) or not self.attentive:
+            # A body missing for a frame or two is a detector dropout, not someone leaving:
+            # only count it once it has been gone for away_ms.
+            seen = self.guest_seen if self.guest_id is not None else self.owner_seen
+            present = any(p.person_id == controller for p in self.people) or \
+                self.clock() - seen < int(cfg.presence.away_ms)
+            if not present or not self.attentive:
                 return False, "looking_away"
             return True, "ok"
 

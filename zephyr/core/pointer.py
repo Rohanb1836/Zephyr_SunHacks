@@ -14,6 +14,7 @@ Pinch: down below pinch.down, up above pinch.up (hysteresis).
 """
 from __future__ import annotations
 
+from zephyr.bus import bus
 from zephyr.config import cfg
 from zephyr.contracts import GestureKind, PointerEvent, Pose, T
 from zephyr.core import strokes
@@ -52,8 +53,22 @@ def hide(eng, ctx: HandCtx) -> None:
     ctx.pt_last_point = None
 
 
-def pinch_is_down(ctx: HandCtx) -> bool:
-    return ctx.hand.pinch < float(cfg.pinch.down) and ctx.hand.pose is not Pose.FIST
+def pinch_is_down(ctx: HandCtx, eng=None) -> bool:
+    """A new pinch: thumb and index closed, not a fist, and clearly apart for pinch.open_before_ms
+    just before. Measured: a hand resting or holding a cup flickers across the pinch thresholds and
+    gave 64 taps in a minute of normal movement; a real click (point, then pinch) always starts open.
+    While writing, the gap between two strokes of a letter is short, so the pen uses
+    pinch.pen_open_before_ms instead."""
+    if ctx.hand.pinch >= float(cfg.pinch.down) or ctx.hand.pose is Pose.FIST:
+        return False
+    writing = eng is not None and eng.ink_enabled()
+    need = int(cfg.pinch.get("pen_open_before_ms", 60) if writing else cfg.pinch.get("open_before_ms", 150))
+    return ctx.open_span >= need
+
+
+def _preview_showing() -> bool:
+    w = bus.latest(T.WRITE)
+    return w is not None and getattr(w, "phase", "") == "preview"
 
 
 def idle_point(eng, ctx: HandCtx) -> bool:
@@ -76,7 +91,7 @@ def idle_point(eng, ctx: HandCtx) -> bool:
 
 def pointer_step(eng, ctx: HandCtx) -> bool:
     """POINTER state. Returns True when the frame was consumed."""
-    if pinch_is_down(ctx):
+    if pinch_is_down(ctx, eng):
         start_pinch(eng, ctx, from_pointer=True)
         return True
     pose = ctx.hand.pose
@@ -133,7 +148,9 @@ def pinch_step(eng, ctx: HandCtx) -> bool:
     pc = cfg.pinch
     held = ctx.ts - ctx.pinch_start
     if ctx.hand.pinch > float(pc.up):
-        if held <= int(pc.tap_max_ms):
+        # A tap with no pointer showing only has a job while the writing preview is up (accept).
+        # Anywhere else it was noise, and in TV mode it would press Select on the TV.
+        if held <= int(pc.tap_max_ms) and (ctx.pinch_from_pointer or _preview_showing()):
             eng.gesture(GestureKind.PINCH_TAP, ctx, pos=ctx.pinch_pos)
         _after_release(eng, ctx)
         return True

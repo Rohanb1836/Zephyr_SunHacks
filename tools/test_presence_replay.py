@@ -68,6 +68,39 @@ class PresenceReplayTests(unittest.TestCase):
         tracker.update(gone, faces, 1500)
         self.assertEqual(tracker.update(seen, faces, 2000)[0].person_id, first)  # 1 s gap
 
+    def test_a_hand_over_the_face_is_not_looking_away(self):
+        import numpy as np
+        from zephyr.presence.attention import Attention
+        att = Attention()
+        facing = Person(1, (0.5, 0.35), (), 0.25, np.eye(4), None)
+        hidden = Person(1, (0.5, 0.35), (), 0.25, None, None)   # body seen, face covered
+        now = 0
+        for _ in range(15):
+            now += 100
+            att.update(facing, now, True)
+        self.assertTrue(att.state)
+        for _ in range(8):                  # 0.8 s of a palm in front of the face
+            now += 100
+            self.assertTrue(att.update(hidden, now, True))
+        for _ in range(20):                 # still covered after the hold: then it counts
+            now += 100
+            att.update(hidden, now, True)
+        self.assertFalse(att.state)
+
+    def test_one_missed_body_frame_does_not_pause(self):
+        clock = [1000]
+        gate = Gate(clock=lambda: clock[0])
+        owner = Person(1, (0.5, 0.35), (), 0.25)
+        gate.update((owner,), True, clock[0])
+        self.assertTrue(gate.on_arm(()))
+        gate.update((owner,), True, clock[0])
+        clock[0] += 100
+        gate.update((), True, clock[0])     # the body detector missed one frame
+        self.assertEqual(gate.can_act(), (True, "ok"))
+        clock[0] += int(cfg.presence.away_ms)
+        gate.update((), True, clock[0])
+        self.assertEqual(gate.can_act(), (False, "looking_away"))
+
     def test_processor_publishes_owner_and_attention(self):
         import numpy as np
         point = lambda x, y: SimpleNamespace(x=x, y=y, visibility=1.0)

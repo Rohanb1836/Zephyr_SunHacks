@@ -37,6 +37,8 @@ class HandCtx:
         self.swipe_cls = 0      # this frame: 5 = open-hand swipe shape, 2 = two-finger, 0 = neither
         self.swipe_settle = False   # after a swipe: wait for the hand to slow down
         self.swipe_cut = -1         # swipe detector ignores history up to this timestamp
+        self.open_since: Optional[int] = None   # thumb and index clearly apart since (pinch > pinch.up)
+        self.open_span = 0          # length of the latest clearly-apart run, ms
         self.reset()
 
     def reset(self) -> None:

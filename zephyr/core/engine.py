@@ -179,6 +179,14 @@ class Engine:
             ctx.cx, ctx.cy = F.palm_centre(h.landmarks)
             ctx.scale = h.scale
             ctx.facing = F.palm_facing(h.landmarks, h.side, sign)
+            # how long thumb and index have been clearly apart: a pinch must start from a clear
+            # opening, so a resting or gripping hand whose pinch flickers never taps
+            if h.pinch > float(cfg.pinch.up):
+                if ctx.open_since is None:
+                    ctx.open_since = ts
+                ctx.open_span = ts - ctx.open_since
+            else:
+                ctx.open_since = None
             ctx.push_hist(HIST_KEEP_MS)
             if ctx.state not in (IDLE, HOLD_PALM, HOLD_CUSTOM):
                 ctx.swipe_cut = ts      # movement made while pointing, writing or turning a knob is never a swipe
@@ -341,7 +349,7 @@ class Engine:
             levels.start(self, ctx)
             levels.step(self, ctx)
             return
-        if not fast and pointer.pinch_is_down(ctx):
+        if not fast and pointer.pinch_is_down(ctx, self):
             pointer.start_pinch(self, ctx, from_pointer=False)
             return
         if pointer.idle_point(self, ctx):
