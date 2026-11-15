@@ -1,0 +1,22 @@
+# Python 3.11 or 3.12 only (not 3.13). Owner: Aadharsh. Ask him to add packages.
+# Exact versions get pinned after the first clean install on both a Mac and Windows.
+mediapipe
+opencv-python
+numpy
+PySide6
+PyYAML
+Pillow
+pyautogui
+pyperclip
+anthropic[bedrock]
+boto3
+supermemory
+requests
+python-dotenv
+pyobjc-framework-Cocoa ; sys_platform == "darwin"
+pyobjc-framework-Quartz ; sys_platform == "darwin"
+pycaw ; sys_platform == "win32"
+comtypes ; sys_platform == "win32"
+pywin32 ; sys_platform == "win32"
+psutil ; sys_platform == "win32"
+screen-brightness-control ; sys_platform == "win32"

@@ -1,0 +1,27 @@
+# secrets: the repo is public
+.env
+.env.*
+*.pem
+.aws/
+
+# models are downloaded by tools/get_models.py
+models/
+*.task
+
+# large test clips
+clips/*.mp4
+clips/*.avi
+clips/*.mov
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# os / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
