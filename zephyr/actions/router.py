@@ -10,6 +10,7 @@ from zephyr.contracts import ActionFired, ContextState, LevelValue, Role, System
 from zephyr.actions.frontapp import find_profile, front_app, load_profiles
 from zephyr.actions.mac import MacBackend
 from zephyr.actions.runner import ActionRunner
+from zephyr.actions.writing.flow import WritingFlow
 
 LOG = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class ActionRouter:
     def __init__(self, event_bus, backend):
         self.bus, self.backend = event_bus, backend
         self.runner = ActionRunner(backend)
+        self.writing = WritingFlow(event_bus, cfg, self._enqueue_paste)
         self.profiles = load_profiles()
         self.queue = queue.Queue(maxsize=128)
         self.lock = threading.Lock()
@@ -33,9 +35,10 @@ class ActionRouter:
         if self._started:
             return self
         self._started = True
+        self.writing.start()
         for topic, handler in ((T.SYSTEM, self._system), (T.GESTURE, self._gesture),
                                (T.ACTION_REQUEST, self._request), (T.POINTER, self._pointer),
-                               (T.LEVEL, self._level)):
+                               (T.LEVEL, self._level), (T.STROKE, self._stroke)):
             self.bus.subscribe(topic, handler)
         current = self.bus.latest(T.SYSTEM)
         if current is not None:
@@ -51,6 +54,14 @@ class ActionRouter:
                 self.mode = state.mode
                 self.pending_pointer = None
                 self.levels = {'volume': 0.0, 'brightness': 0.0}
+        if state.mode != SystemMode.ARMED:
+            self.writing.cancel()
+
+    def _stroke(self, event):
+        self._enqueue('stroke', event)
+
+    def _enqueue_paste(self, text, mode):
+        self._enqueue('paste', (text, mode))
 
     def _enqueue(self, kind, item):
         with self.lock:
@@ -107,7 +118,14 @@ class ActionRouter:
             if app_id and label.lower() not in ('python', 'python3', 'zephyr'):
                 self.app_id, self.app_label = app_id, label
                 self.profile = find_profile(app_id, self.profiles)
-            context = ContextState(self.app_id, self.app_label, self.profile['id'], bool(self.profile.get('ink')), 'normal')
+            ink = bool(self.profile.get('ink'))
+            with self.lock:
+                armed = self.mode == SystemMode.ARMED
+            if armed and ink and (self.writing.phase in ('idle', 'cancelled', 'accepted') or self.writing.app_label != self.app_label):
+                self.writing.ready(self.app_label, 'document')
+            elif (not armed or not ink) and self.writing.phase not in ('idle', 'cancelled'):
+                self.writing.cancel()
+            context = ContextState(self.app_id, self.app_label, self.profile['id'], ink, 'normal')
             if context != self._last_context:
                 self._last_context = context
                 self.bus.publish(T.CONTEXT, context)
@@ -162,6 +180,15 @@ class ActionRouter:
                 with self.lock:
                     allowed = self.mode == SystemMode.ARMED and generation == self.generation
                 if not allowed:
+                    continue
+                if kind == 'stroke':
+                    self.writing.stroke(item)
+                    continue
+                if kind == 'paste':
+                    text, mode = item
+                    self.backend.paste_text(text + (' ' if mode == 'document' else ''))
+                    continue
+                if kind == 'gesture' and self.writing.gesture(item.key):
                     continue
                 if kind == 'gesture' and item.key == 'pinch_tap':
                     if item.pos is None:
