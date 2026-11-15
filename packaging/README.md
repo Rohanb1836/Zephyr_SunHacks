@@ -14,7 +14,7 @@ The build Mac decides where the app runs: built on Apple Silicon, it runs on App
 ## Install
 
 1. Open `Zephyr.dmg` and drag Zephyr onto Applications.
-2. Open Zephyr from Applications or Spotlight. Its icon (a ring with a dot) appears in the menu bar.
+2. Open Zephyr from Applications or Spotlight. Its icon, a zigzag stroke ending in a dot, appears in the menu bar.
 3. A copy downloaded from the internet is blocked the first time, because it is not notarized (that needs a paid Apple Developer account). Click Done, then go to System Settings > Privacy & Security, scroll down to Security, click Open Anyway next to Zephyr and enter your password. Only needed once. A copy built on the same Mac opens straight away.
 
 To start it with the Mac: System Settings > General > Login Items > + > Zephyr.

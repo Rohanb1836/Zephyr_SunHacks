@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import QPointF, Qt, QUrl
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QIcon, QPainter, QPen, QPixmap
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from zephyr.custom.conf import value
@@ -65,17 +65,40 @@ def zephyr_folder() -> Path:
     return store.DATA_DIR
 
 
+# the Zephyr mark in the 44 px menu bar pixmap: a Z written in the air, flipped upside down,
+# ending in a fingertip. packaging/make_icon.py draws the same stroke for the app icon
+TRAY_CORNERS = ((3.6, 37.6), (36.6, 37.6), (4.7, 9.1), (37.8, 9.1))
+
+
+def _toward(p: QPointF, q: QPointF, k: float) -> QPointF:
+    """The point k pixels from p on the way to q."""
+    v = q - p
+    return p + v * (k / max((v.x() ** 2 + v.y() ** 2) ** 0.5, 1e-6))
+
+
 def _tray_pixmap() -> QPixmap:
+    a, b, c, d = (QPointF(x, y) for x, y in TRAY_CORNERS)
+    path = QPainterPath(a)
+    for corner, came_from, going_to in ((b, a, c), (c, b, d)):
+        path.lineTo(_toward(corner, came_from, 6.3))     # round each corner
+        path.quadTo(corner, _toward(corner, going_to, 6.3))
+    path.lineTo(d)
+
     pm = QPixmap(44, 44)
     pm.fill(Qt.transparent)
     p = QPainter(pm)
     p.setRenderHint(QPainter.Antialiasing)
-    p.setPen(QPen(QColor(0, 0, 0), 4))
-    p.setBrush(Qt.NoBrush)
-    p.drawEllipse(QPointF(22, 22), 15, 15)
+    steps = 48
+    last = path.pointAtPercent(0.0)
+    for i in range(1, steps + 1):                        # thin at the start, thicker at the tip
+        t = i / steps
+        here = path.pointAtPercent(t)
+        p.setPen(QPen(QColor(0, 0, 0), 3.4 + 1.2 * t, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        p.drawLine(last, here)
+        last = here
     p.setPen(Qt.NoPen)
     p.setBrush(QColor(0, 0, 0))
-    p.drawEllipse(QPointF(22, 22), 6, 6)
+    p.drawEllipse(d, 4.4, 4.4)
     p.end()
     return pm
 
