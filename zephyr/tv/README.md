@@ -32,7 +32,15 @@ gesture in Settings with the action type Roku TV and the value `mode toggle`.
 4. Roku TV > **Control the TV**. The overlay's app chip shows the TV's name.
 
 Quick check from Terminal: `curl -d '' http://<tv address>:8060/keypress/Home`.
-The TV can be turned off (`PowerOff`) but not on: Roku has no documented power-on key.
+
+Turning the TV on (`PowerOn`) is not in Roku's documented keys, but Roku TVs take it while
+Settings > System > Power > **Fast TV Start** is on, which keeps the TV on the Wi-Fi when off.
+`PowerOff` always works.
+
+**Campus or guest Wi-Fi** keeps devices from reaching each other, so the TV won't answer
+there. Use a phone hotspot (on an iPhone, turn on Maximize Compatibility) and join both the
+TV and the Mac to it. The phone sharing the hotspot can't control the TV itself, but the
+Mac on that hotspot can.
 
 ## The demo without a TV
 

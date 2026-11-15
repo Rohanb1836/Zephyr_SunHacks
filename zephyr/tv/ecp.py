@@ -31,10 +31,12 @@ KEYS = ("Home", "Rev", "Fwd", "Play", "Select", "Left", "Right", "Down", "Up", "
         "InstantReplay", "Info", "Backspace", "Search", "Enter", "FindRemote",
         "VolumeDown", "VolumeMute", "VolumeUp", "PowerOff", "ChannelUp", "ChannelDown",
         "InputTuner", "InputHDMI1", "InputHDMI2", "InputHDMI3", "InputHDMI4", "InputAV1")
+# Not in Roku's list, but Roku TVs turn on with it when Fast TV Start keeps them on the network
+EXTRA_KEYS = ("PowerOn",)
 ALIASES = {"ok": "Select", "playpause": "Play", "pause": "Play", "mute": "VolumeMute",
-           "volup": "VolumeUp", "voldown": "VolumeDown", "power": "PowerOff", "off": "PowerOff",
+           "volup": "VolumeUp", "voldown": "VolumeDown", "turnon": "PowerOn", "turnoff": "PowerOff",
            "replay": "InstantReplay", "forward": "Fwd", "rewind": "Rev", "delete": "Backspace"}
-_BY_LOWER = {k.lower(): k for k in KEYS}
+_BY_LOWER = {k.lower(): k for k in KEYS + EXTRA_KEYS}
 
 BLOCKED = ("The TV refused the command. On the TV, open Settings > System > Advanced system "
            "settings > Control by mobile apps > Network access and choose Enabled.")
@@ -74,6 +76,9 @@ def request(host: str, path: str, method: str = "POST", timeout: float = 2.5) ->
             raise EcpError("That app isn't installed on the TV.") from None
         raise EcpError(f"The TV answered {exc.code} to {path}.") from None
     except (urllib.error.URLError, OSError) as exc:
+        if path.endswith("/PowerOn"):
+            raise EcpError("Can't reach the TV to turn it on. On the TV, turn on Settings > System > Power > "
+                           "Fast TV Start, which keeps it on the Wi-Fi while it is off.") from exc
         raise EcpError(f"Can't reach the TV at {host}. Check that the TV is on and on the same Wi-Fi as this Mac.") from exc
 
 

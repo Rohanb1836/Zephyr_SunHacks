@@ -125,7 +125,19 @@ def client_tests() -> None:
         msg = str(exc)
     check("no TV gives a clear message", "Can't reach the TV" in msg, msg)
     check("key names and aliases", ecp.key_name("ok") == "Select" and ecp.key_name("volume up") == "VolumeUp"
-          and ecp.key_name("HOME") == "Home" and ecp.key_name("dance") is None)
+          and ecp.key_name("HOME") == "Home" and ecp.key_name("dance") is None and ecp.key_name("power") is None)
+    check("power on and off", ecp.key_name("PowerOn") == "PowerOn" and ecp.key_name("turn on") == "PowerOn"
+          and ecp.key_name("turn off") == "PowerOff")
+    c.press("PowerOff")
+    off = tv.screen == "off"
+    c.press("PowerOn")
+    check("the TV turns off and back on", off and tv.screen == "home")
+    try:
+        ecp.request("127.0.0.1:9", "/keypress/PowerOn", timeout=0.5)
+        msg = ""
+    except ecp.EcpError as exc:
+        msg = str(exc)
+    check("turning on an unreachable TV points at Fast TV Start", "Fast TV Start" in msg, msg)
 
 
 def find_tests() -> None:
