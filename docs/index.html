@@ -231,6 +231,18 @@ section { padding-block: clamp(56px, 8vw, 120px); }
 .switch { display: inline-flex; align-items: center; gap: 8px; color: var(--haze); font-size: 14px; cursor: pointer; }
 .switch input { accent-color: var(--aqua); width: 16px; height: 16px; }
 
+/* tips under the demo */
+.tips { margin-top: calc(-1 * clamp(24px, 4vw, 64px)); padding-bottom: clamp(24px, 3vw, 40px); }
+.tips h2 { margin: 0 0 16px; color: var(--ink-2); }
+.tips ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--ink); counter-reset: tip; }
+.tips li { padding: 18px 20px 4px 0; display: grid; gap: 6px; align-content: start; }
+.tips li + li { padding-left: 20px; border-left: 1px solid var(--line); }
+.tips li::before { counter-increment: tip; content: "0" counter(tip); font: 600 12px/1 var(--font-mono); color: var(--violet); }
+.tips b { font-size: 17px; }
+.tips span { color: var(--ink-2); font-size: 15px; }
+@media (max-width: 860px) { .tips ol { grid-template-columns: 1fr 1fr; } .tips li:nth-child(3) { padding-left: 0; border-left: 0; } }
+@media (max-width: 600px) { .tips ol { grid-template-columns: 1fr; } .tips li + li { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); } }
+
 /* gesture index: an editorial list */
 .glist { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); counter-reset: g; }
 .glist li { display: grid; grid-template-columns: 64px minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 28px; align-items: baseline; padding: 20px 0 22px; border-bottom: 1px solid var(--line); transition: background 0.2s, padding 0.2s; }
@@ -285,6 +297,7 @@ section { padding-block: clamp(56px, 8vw, 120px); }
 .get .pill:hover { background: var(--paper); border-color: var(--paper); }
 .install .os { margin: 0 0 14px; color: var(--ink-2); }
 .install.win { margin-top: clamp(40px, 6vw, 72px); }
+.win-notes { margin: 0; padding-left: 18px; color: #b9c4c5; display: grid; gap: 6px; }
 .code { margin: 0; width: 100%; padding: 16px 18px; border-radius: 16px; background: #050708; color: var(--aqua); font: 400 13.5px/1.7 var(--font-mono); overflow-x: auto; }
 .get code { font-family: var(--font-mono); font-size: 0.92em; color: var(--aqua); }
 
@@ -537,6 +550,16 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
     </div>
   </section>
 
+  <aside class="wrap tips" aria-labelledby="tips-title">
+    <h2 id="tips-title" class="label">For reliable gestures</h2>
+    <ol>
+      <li><b>Light on your face</b><span>Not a bright window behind you: the camera slows its shutter and fast swipes blur.</span></li>
+      <li><b>Sit 60–80 cm back</b><span>Gesture at chest to face height, where the camera sees your hands.</span></li>
+      <li><b>Swipe firmly</b><span>Move the arm sideways, hand facing the camera, fingers up. Come back slower.</span></li>
+      <li><b>Both palms together</b><span>One palm held up alone for a second opens Search first.</span></li>
+    </ol>
+  </aside>
+
   <section id="gestures" class="wrap" aria-labelledby="gestures-title">
     <div class="sec-head">
       <span class="sec-n label">(02)</span>
@@ -546,14 +569,14 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
     <ol class="glist">
       <li><h3>Point</h3><p class="do">Index finger up, the others curled.</p><p class="does">The pointer appears and follows your index knuckle.</p></li>
       <li><h3>Pinch</h3><p class="do">Tap thumb and index together.</p><p class="does">A click, right where the pointer froze.</p></li>
-      <li><h3>Pinch &amp; hold</h3><p class="do">Keep them together and move.</p><p class="does">Writes in the air. AI reads it as text.</p></li>
+      <li><h3>Pinch &amp; write</h3><p class="do">In Word, or once search is open: pinch and move to draw, let go to end a stroke.</p><p class="does">AI reads it as text. Pinch the preview to accept, swipe to cancel.</p></li>
       <li><h3>Two-finger swipe</h3><p class="do">Index and middle up, a quick move sideways.</p><p class="does">Next or previous: slide, track, tab.</p></li>
       <li><h3>Open-hand swipe</h3><p class="do">The whole hand, a quick move sideways.</p><p class="does">Switches desktops, on a Mac or in Windows.</p></li>
       <li><h3>Quick fist</h3><p class="do">Close your hand and open it, under a third of a second.</p><p class="does">Play or pause.</p></li>
       <li><h3>Fist knob</h3><p class="do">Hold a fist for 0.4 seconds, then twist it.</p><p class="does">Right hand turns the volume, left hand the brightness.</p></li>
       <li><h3>Palm held</h3><p class="do">An open palm to the camera, still, for 0.8 seconds.</p><p class="does">Opens Spotlight or Windows Search. Write what you're looking for.</p></li>
-      <li><h3>Both palms</h3><p class="do">Both hands up for a second.</p><p class="does">Arms or pauses Zephyr, and locks it to you.</p></li>
-      <li><h3>Handshake</h3><p class="do">Shake hands with someone in view.</p><p class="does">Lets them drive until you raise both palms.</p></li>
+      <li><h3>Both palms</h3><p class="do">Raise both hands together, for a second.</p><p class="does">Turns Zephyr on or pauses it, and locks it to you.</p></li>
+      <li><h3>Handshake</h3><p class="do">Shake hands with someone in view.</p><p class="does">Your guest gets swipes, play/pause and clicks until you raise both palms.</p></li>
     </ol>
   </section>
 
@@ -600,12 +623,12 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
       <article>
         <p class="label">Both palms · 1 second</p>
         <h3>Owner lock</h3>
-        <p>Raise both palms to arm Zephyr. It follows the person who armed it and ignores hands reaching in from anyone else.</p>
+        <p>Raise both palms to arm Zephyr. It follows the person who armed it, ignores anyone else's hands, and pauses when you look away from the screen.</p>
       </article>
       <article>
         <p class="label">Handshake</p>
         <h3>Share control</h3>
-        <p>Shake hands with someone to let them drive for a while. Both palms takes control back.</p>
+        <p>Shake hands with someone to hand over swipes, play/pause and clicks. Both palms takes control back.</p>
       </article>
       <article>
         <p class="label">Two-finger swipe</p>
@@ -620,7 +643,7 @@ footer { background: var(--aqua); padding-top: clamp(40px, 6vw, 72px); overflow:
       <article>
         <p class="label">Palm held · pinch and hold</p>
         <h3>Air writing</h3>
-        <p>Hold up a palm to search, then write the words in the air. AI reads your handwriting.</p>
+        <p>Hold up a palm to search, or write in Word: pinch and draw the words in the air, and AI reads your handwriting.</p>
       </article>
       <article>
         <p class="label">Point and pinch</p>
@@ -685,7 +708,15 @@ python -m pip install -r requirements.txt
 python tools/get_models.py
 python run.py</code></pre>
         <p>Next time, just activate and <code>python run.py</code>.</p>
-        <p>On Windows, open-hand swipes move between virtual desktops (make them in Task View, Win+Tab), a held palm opens Windows Search, and the knob turns the system volume and the screen brightness.</p>
+        <p>Windows runs a copy of the engine tuned on laptop webcams:</p>
+        <ul class="win-notes">
+          <li>Pinch twice quickly for a right click, in any app.</li>
+          <li>A click counts if you let go within about a second.</li>
+          <li>Play/pause takes a fist held up to two seconds, then opened.</li>
+          <li>Search needs the palm flat to the camera.</li>
+          <li>The knob starts after a 15° twist, and the hand's side is judged by your body.</li>
+          <li>Open-hand swipes move between virtual desktops (make them in Task View, Win+Tab).</li>
+        </ul>
       </div>
     </div>
   </section>
@@ -704,7 +735,7 @@ python run.py</code></pre>
 // zephyr/custom/templates.py, with the numbers from config.yaml, so the demo behaves like the Mac app. ----
 const CFG = {
   poses: { extendDeg: 155, curlDeg: 125, pinkyExtendDeg: 135, pinkyCurlDeg: 125, openNeedsThumb: false, debounceFrames: 3, window: 5, thumbDeg: 150, thumbTipScales: 0.6, unknownMinScore: 0.6 },
-  hands: { scaleEma: 0.3 },
+  hands: { scaleEma: 0.3, swapSides: true },   // swapSides: MediaPipe names the hands backwards on a mirrored picture
   tracker: { maxJumpScales: 4.0, dropoutMs: 250 },
   pointer: { box: [0.25, 0.20, 0.75, 0.65], minCutoff: 1.0, beta: 0.02, hideAfterMs: 300, showFrames: 3 },
   pinch: { down: 0.25, up: 0.40, prefreeze: 0.50, tapMaxMs: 300, postFreezeMs: 80 },
@@ -1195,7 +1226,7 @@ class Engine {
       ev.push({ type: "hold", kind: "fist", side: c.side, progress: Math.min(1, held / lv.engageMs), x: c.cx, y: c.cy });
       if (held >= lv.engageMs) {
         c.state = "level";
-        c.lvlKind = c.side === "Left" ? "volume" : "brightness";
+        c.lvlKind = c.side === "Left" ? "brightness" : "volume";
         c.lvlTick = ts; c.lvlOpenSince = null;
         c.knobFilter = new OneEuro(lv.knobMinCutoff, lv.knobBeta);
         c.knobLast = knobAngle(c.lm, aspect);
@@ -1671,11 +1702,18 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
+// MediaPipe's left/right label, put right the way the Mac app does (hands.swap_sides in config.yaml),
+// so the right fist turns the volume and the palm check knows which way a palm faces
+function labelSide(label) {
+  const side = label.toLowerCase().startsWith("l") ? "Left" : "Right";
+  return CFG.hands.swapSides ? (side === "Left" ? "Right" : "Left") : side;
+}
+
 function onResult(result, ts, aspect) {
   const handed = result.handedness || result.handednesses || [];
   const obs = (result.landmarks || []).map((lm, i) => ({
     lm, world: (result.worldLandmarks || [])[i] || lm,
-    side: (handed[i] && handed[i][0] && handed[i][0].categoryName) || "Right",
+    side: labelSide((handed[i] && handed[i][0] && handed[i][0].categoryName) || "Right"),
     score: (handed[i] && handed[i][0] && handed[i][0].score) || 1,
   }));
   if (obs.length === 2 && obs[0].side === obs[1].side) {     // both read as one side: rename the weaker one
