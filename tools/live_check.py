@@ -43,6 +43,36 @@ ROUNDS = [
 GESTURE_SECONDS = {r[0]: r[4] for r in ROUNDS}
 
 
+class ClipRecorder:
+    """Writes every new camera frame on its own thread. The preview loop (imshow) runs slower than
+    the camera, so writing from it saved 19 fps clips of a 30 fps camera."""
+    def __init__(self, hub, path: Path) -> None:
+        self.hub, self.path = hub, path
+        self.running = True
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def _run(self) -> None:
+        fps = round(self.hub.fps) or 30
+        writer, last = None, -1
+        while self.running:
+            got = self.hub.latest()
+            if got is None or got[2] == last:
+                time.sleep(0.002)
+                continue
+            frame, _ts, last = got
+            if writer is None:
+                h, w = frame.shape[:2]
+                writer = cv2.VideoWriter(str(self.path), cv2.VideoWriter_fourcc(*"mp4v"), float(fps), (w, h))
+            writer.write(frame)
+        if writer is not None:
+            writer.release()
+
+    def stop(self) -> None:
+        self.running = False
+        self.thread.join(timeout=2)
+
+
 class ArmedGate:
     """NullGate that keeps the engine armed: this check measures the core, not presence."""
     def role_of(self, hand):
@@ -93,7 +123,6 @@ def run(name: str, only: list[str], screen_w: int, screen_h: int) -> int:
             # 4 s get-ready, then the round
             ready_until = time.monotonic() + 4
             writer = None
-            fps_frames, fps_t0 = 0, time.monotonic()
             last_fid = -1
             t_start = t_end = None
             while True:
@@ -111,14 +140,8 @@ def run(name: str, only: list[str], screen_w: int, screen_h: int) -> int:
                     with lock:
                         events_before = len(events)
                         pointer_before = len(pointer)
-                    fps = round(fps_frames / max(1e-3, now - fps_t0)) or 30
                     clip = f"{key}_x{expect_n}_{name}.mp4" if expect_n else f"{key}_{name}.mp4"
-                    writer = cv2.VideoWriter(str(clips / clip),
-                                             cv2.VideoWriter_fourcc(*"mp4v"), float(fps), (w, h))
-                if t_start is None:
-                    fps_frames += 1
-                elif writer is not None:
-                    writer.write(frame)
+                    writer = ClipRecorder(hub, clips / clip)
                 view = frame.copy()
                 with lock:
                     got_now = Counter(k for _, k in events[events_before:]) if t_start else Counter()
@@ -143,7 +166,7 @@ def run(name: str, only: list[str], screen_w: int, screen_h: int) -> int:
                 if t_end is not None and now >= t_end:
                     break
             if writer is not None:
-                writer.release()
+                writer.stop()
             with lock:
                 got = Counter(k for _, k in events[events_before:])
                 pts = pointer[pointer_before:]

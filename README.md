@@ -42,20 +42,42 @@ No permission prompts are needed on Windows. Allow camera access for desktop app
 - The camera uses Media Foundation (30 fps). Set `camera.backend: dshow` in `config.yaml` if a webcam only works with DirectShow.
 - If `pip` reports `CERTIFICATE_VERIFY_FAILED` (a network or antivirus proxy), upgrade pip first; recent pip versions use the Windows certificate store.
 
-## Intended gestures
+## Gestures
+
+### Works in every app
 
 | Gesture | Action |
 | --- | --- |
-| Both palms held | Arm, pause, or take back control |
-| Five-finger swipe | Move between desktops |
-| Two-finger swipe | Move within the current app |
-| One palm held | Open search and writing |
-| Left or right fist held | Adjust brightness or volume |
-| Quick fist | Play or pause media |
-| Point and pinch | Move the pointer and click |
-| Pinch and hold in writing context | Write in the air |
-| Recorded custom pose | Run its configured action |
-| Handshake | Give a guest control |
+| Both palms up, held 1 second | Turn Zephyr on, or pause it |
+| Open-hand swipe left / right | Next / previous desktop |
+| Quick fist, then open (up to about 0.8 s) | Play / pause |
+| Right fist held, then twisted | Volume (twist right raises, left lowers) |
+| Left fist held, then twisted | Brightness (same directions) |
+| One finger up | Pointer appears and follows your hand |
+| Pinch while pointing, release within 1 second | Click |
+| One open palm, flat to the camera, held still about 1 second | Search |
+
+### Two-finger swipe left / right, by app
+
+Chrome: next / previous tab. Spotify: next / previous track. PowerPoint: next / previous slide. Anywhere else: nothing.
+
+### Air writing
+
+Where: in Word, or after a palm hold opens search. Write: pinch and move to draw; release to end a stroke. Accept: pinch on the preview. Cancel: any swipe. Turning strokes into text needs `ANTHROPIC_API_KEY` in a `.env` file.
+
+### Access
+
+Stranger hands are ignored. Looking away pauses everything (a hand passing in front of your face does not). A handshake gives a guest control; a guest can only use two-finger swipes, play/pause and click. The owner takes control back with both palms.
+
+### Getting reliable gestures
+
+These come from recorded test sessions on a laptop webcam:
+
+- **Light on your face, not behind you.** A bright window behind you makes the camera use a slow shutter; fast swipes then blur and the hand tracker loses them.
+- **Sit 60 to 80 cm back** and gesture at chest to face height, where the camera can see your hands. Closer than that, a swipe crosses the whole picture in a blur.
+- **Swipes:** a firm sideways movement with the hand facing the camera, then a slower return. A slow wind-up followed by a fast return reads as a swipe the other way.
+- **Palm hold:** show the palm flat to the camera. An edge-on hand never opens Search (this is what stopped accidental searches).
+- **Click:** point, keep the hand still, pinch and let go. Pinches made while the hand is moving fast are ignored.
 
 ## Test clips
 

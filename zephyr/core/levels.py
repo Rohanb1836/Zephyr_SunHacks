@@ -56,7 +56,8 @@ def _pending(eng, ctx: HandCtx) -> bool:
         eng.pub(T.HOLD, HoldProgress("level", min(1.0, held / max(int(lv.engage_ms), 1)), ctx.hand_id))
         if held >= int(lv.engage_ms):
             ctx.state = LEVEL
-            ctx.lvl_kind = "brightness" if ctx.hand.side is Side.LEFT else "volume"
+            side = ctx.body_side or ctx.hand.side     # a fist shows its back: the label is unreliable
+            ctx.lvl_kind = "brightness" if side is Side.LEFT else "volume"
             ctx.lvl_y0 = ctx.cy
             ctx.lvl_tick = ctx.ts
             ctx.lvl_open_since = None
@@ -65,11 +66,12 @@ def _pending(eng, ctx: HandCtx) -> bool:
             ctx.knob_unwrapped = ctx.knob_last
             ctx.knob_a0 = ctx.knob_filter(ctx.knob_unwrapped, ctx.ts / 1000.0)
             ctx.knob_sent = 0.0
+            ctx.lvl_moved = False
         return True
     # the fist has opened (or is opening)
     if ctx.fist_end is None:
         ctx.fist_end = ctx.ts
-    if pose is Pose.OPEN:
+    if _opened(ctx):
         dur = ctx.fist_end - ctx.fist_start
         if holds.fist_tap_ok(dur, ctx.fist_travel):
             eng.gesture(GestureKind.FIST_TAP, ctx)
@@ -80,6 +82,12 @@ def _pending(eng, ctx: HandCtx) -> bool:
         _end(eng, ctx)
         return False        # let the new pose be handled this frame
     return True
+
+
+def _opened(ctx: HandCtx) -> bool:
+    """The fist has opened: an open hand, or index, middle and ring straight (a relaxed open hand
+    often has a bent pinky or thumb and reads UNKNOWN, which used to swallow the tap)."""
+    return ctx.hand.pose is Pose.OPEN or (ctx.fingers is not None and all(ctx.fingers[:3]))
 
 
 def core_fist(ctx: HandCtx) -> bool:
@@ -95,7 +103,14 @@ def _level(eng, ctx: HandCtx) -> bool:
         if ctx.lvl_open_since is None:
             ctx.lvl_open_since = ctx.ts
         # a clear open hand lets go at once; an unclear frame gets release_ms before the knob drops
-        if pose is Pose.OPEN or ctx.ts - ctx.lvl_open_since >= int(lv.get("release_ms", 250)):
+        if _opened(ctx) or ctx.ts - ctx.lvl_open_since >= int(lv.get("release_ms", 250)):
+            # A quick fist that grabbed the knob but never turned it is a tap. People close and open
+            # a "quick" fist in about half a second, longer than the 400 ms it takes to grab the knob,
+            # so without this most taps became an empty knob grab and play/pause never fired.
+            held = (ctx.lvl_open_since or ctx.ts) - ctx.fist_start
+            if (_opened(ctx) and not ctx.lvl_moved and ctx.fist_travel < float(cfg.holds.fist_tap_max_travel)
+                    and held <= int(cfg.holds.get("fist_tap_slow_max_ms", 800))):
+                eng.gesture(GestureKind.FIST_TAP, ctx)
             cancel(eng, ctx)
             return False
         return True
@@ -113,6 +128,7 @@ def _level(eng, ctx: HandCtx) -> bool:
         rate = min(max((abs(offset) - dz) * float(lv.gain), float(lv.min_rate)), float(lv.max_rate))
         sign = 1.0 if offset > 0 else -1.0
         eng.pub(T.LEVEL, LevelEvent(ctx.lvl_kind, rate * tick / 1000.0 * sign, True))
+        ctx.lvl_moved = True
         ctx.lvl_tick += tick
         if ctx.ts - ctx.lvl_tick >= tick:      # fell behind (slow frame): do not burst
             ctx.lvl_tick = ctx.ts
@@ -159,6 +175,7 @@ def _knob(eng, ctx: HandCtx) -> None:
     if abs(delta) >= float(lv.get("knob_min_step", 0.5)):
         eng.pub(T.LEVEL, LevelEvent(ctx.lvl_kind, delta, True))
         ctx.knob_sent = target
+        ctx.lvl_moved = True
 
 
 def _end(eng, ctx: HandCtx) -> None:

@@ -115,6 +115,9 @@ class SwipeDetector:
         if max(n5, n2) / span < float(s.get("open_ratio", 0.5)):
             return None
         fingers = 5 if n5 >= n2 else 2
+        if bridged and h[-1][3] != fingers:
+            return None                    # after a blur gap the hand must come back in the same shape
+                                           # (one that came back as a fist was a hand closing, not a swipe)
         direction = "right" if best_dx > 0 else "left"
 
         # 4. one movement, one swipe

@@ -91,7 +91,9 @@ def idle_point(eng, ctx: HandCtx) -> bool:
 
 def pointer_step(eng, ctx: HandCtx) -> bool:
     """POINTER state. Returns True when the frame was consumed."""
-    if pinch_is_down(ctx, eng):
+    # A click starts from a nearly still hand (measured: under 0.7 hand widths a second). A hand
+    # flying sideways blurs, and one blurred frame looked like a pinch: accidental clicks mid-swipe.
+    if pinch_is_down(ctx, eng) and ctx.speed < float(cfg.pinch.get("max_start_speed", 2.0)):
         start_pinch(eng, ctx, from_pointer=True)
         return True
     pose = ctx.hand.pose
@@ -127,7 +129,23 @@ def _update_pos(ctx: HandCtx) -> None:
             return
         ctx.pt_frozen = False
         ctx.pt_unfreeze_at = None
-    ctx.pt_x, ctx.pt_y = x, y
+    ctx.pt_x, ctx.pt_y = _deadband(ctx.pt_x, ctx.pt_y, x, y)
+
+
+def _deadband(ox: float, oy: float, x: float, y: float) -> tuple[float, float]:
+    """Hold the pointer still inside pointer.deadband (screen fraction) of where it is, and past it
+    follow by only the distance beyond the band, so there is never a jump. Smoothing alone could not
+    get a resting hand under ~10 px of jitter without the pointer trailing 60 px behind a moving one."""
+    band = float(cfg.pointer.get("deadband", 0.0))
+    if band <= 0:
+        return x, y
+    from zephyr import contracts
+    dx, dy = (x - ox) * contracts.ASPECT, y - oy     # screen is wide: compare in the same units
+    d = (dx * dx + dy * dy) ** 0.5
+    if d <= band:
+        return ox, oy
+    k = (d - band) / d
+    return ox + (x - ox) * k, oy + (y - oy) * k
 
 
 def start_pinch(eng, ctx: HandCtx, from_pointer: bool) -> None:
@@ -139,33 +157,52 @@ def start_pinch(eng, ctx: HandCtx, from_pointer: bool) -> None:
         ctx.pt_frozen = True
         ctx.pt_unfreeze_at = None
         _publish(eng, ctx)
+    ctx.pinch_cx0, ctx.pinch_cy0 = ctx.cx, ctx.cy
     ctx.pen_buf = []
     strokes.buffer_point(ctx)
+
+
+def _pinch_travel(ctx: HandCtx) -> float:
+    """How far the pinching hand has moved since the pinch closed, in hand scales."""
+    from zephyr import contracts
+    dx = (ctx.cx - ctx.pinch_cx0) * contracts.ASPECT
+    dy = ctx.cy - ctx.pinch_cy0
+    return (dx * dx + dy * dy) ** 0.5 / max(ctx.scale, 1e-4)
 
 
 def pinch_step(eng, ctx: HandCtx) -> bool:
     """PINCHING state. Always consumes the frame."""
     pc = cfg.pinch
     held = ctx.ts - ctx.pinch_start
+    click_max = int(pc.get("click_max_ms", 1000))
+    preview = _preview_showing()
     if ctx.hand.pinch > float(pc.up):
+        # Released: a click. People pinch slower than it looks: measured clicks held 470 to 870 ms,
+        # so click_max_ms is about a second, not the old 300 ms (which missed 10 of 10).
         # A tap with no pointer showing only has a job while the writing preview is up (accept).
         # Anywhere else it was noise, and in TV mode it would press Select on the TV.
-        if held <= int(pc.tap_max_ms) and (ctx.pinch_from_pointer or _preview_showing()):
+        if held <= click_max and (ctx.pinch_from_pointer or preview):
             eng.gesture(GestureKind.PINCH_TAP, ctx, pos=ctx.pinch_pos)
         _after_release(eng, ctx)
         return True
     strokes.buffer_point(ctx)
     if ctx.pinch_from_pointer:
         _publish(eng, ctx)                 # frozen dot stays on screen
-    if held > int(pc.tap_max_ms) and eng.ink_enabled():
-        if ctx.pinch_from_pointer:
-            hide(eng, ctx)
-        strokes.begin(eng, ctx)
+    # Pen: only where ink is on, never over the writing preview (a pinch there accepts).
+    # A pinch made while pointing stays a click until the hand moves (pinch and move writes,
+    # pinch and let go clicks); the points since the pinch closed are buffered, so no ink is lost.
+    if held > int(pc.tap_max_ms) and not preview and eng.ink_enabled():
+        if (not ctx.pinch_from_pointer or held > click_max
+                or _pinch_travel(ctx) > float(pc.get("pen_start_travel_scales", 0.25))):
+            if ctx.pinch_from_pointer:
+                hide(eng, ctx)
+            strokes.begin(eng, ctx)
     return True
 
 
 def _after_release(eng, ctx: HandCtx) -> None:
     ctx.pinch_start = None
+    ctx.pinch_end_at = ctx.ts     # a pinching hand reads as a fist: no fist tap straight after
     ctx.pen_buf = []
     if ctx.pinch_from_pointer and ctx.hand.pose is Pose.POINT:
         ctx.state = POINTER

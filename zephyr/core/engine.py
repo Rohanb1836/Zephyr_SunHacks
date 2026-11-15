@@ -23,7 +23,8 @@ from typing import Optional
 
 from zephyr.bus import bus
 from zephyr.config import cfg, maybe_reload
-from zephyr.contracts import (GestureEvent, GestureKind, HandObs, HandsFrame, Pose, Role,
+from zephyr import contracts
+from zephyr.contracts import (GestureEvent, GestureKind, HandObs, HandsFrame, Pose, Role, Side,
                               SystemMode, SystemState, T)
 from zephyr.core import features as F
 from zephyr.core import holds, levels, pointer, strokes
@@ -147,7 +148,9 @@ class Engine:
         hands: list[HandObs] = []
         for t in tracks:
             pose = t.poses.update(t.lm, t.world, t.scale, t.score)
-            obs = HandObs(t.hand_id, t.side, t.lm, t.world, float(t.scale), pose,
+            # the user's real hand, not MediaPipe's label (see body_side): every consumer agrees
+            side = self.body_side(F.palm_centre(t.lm)[0], t.side)
+            obs = HandObs(t.hand_id, side, t.lm, t.world, float(t.scale), pose,
                           F.pinch_ratio(t.lm, t.scale), float(t.score))
             try:
                 role = self.gate.role_of(obs)
@@ -178,7 +181,8 @@ class Engine:
             ctx.fingers = tuple(tr.poses.fingers) if tr is not None else None
             ctx.cx, ctx.cy = F.palm_centre(h.landmarks)
             ctx.scale = h.scale
-            ctx.facing = F.palm_facing(h.landmarks, h.side, sign)
+            ctx.body_side = h.side          # already resolved in process_raws
+            ctx.facing = F.palm_facing(h.landmarks, ctx.body_side, sign)
             # how long thumb and index have been clearly apart: a pinch must start from a clear
             # opening, so a resting or gripping hand whose pinch flickers never taps
             if h.pinch > float(cfg.pinch.up):
@@ -204,6 +208,28 @@ class Engine:
                 self._cancel_ctx(ctx)
                 if self.acting == hid:
                     self.acting = None
+
+    def body_side(self, cx: float, label: Side) -> Side:
+        """Which of the user's hands this is. MediaPipe's left/right label is reliable only while the
+        palm faces the camera: with the back of the hand to the camera (a fist, a point, most swipes)
+        it is a coin flip (measured: a right hand read 113 left / 109 right). In the mirrored frame
+        the user's right hand is on the right of their nose, so a hand clearly to one side of the
+        controller's nose (or of the frame centre without presence) decides; near the middle the
+        label decides."""
+        ref, width = 0.5, 0.0
+        p = bus.latest(T.PRESENCE)
+        if p is not None and p.controller_id is not None:
+            for person in p.people:
+                if person.person_id == p.controller_id:
+                    ref, width = float(person.nose[0]), float(person.shoulder_width)
+                    break
+        margin = float(cfg.hands.get("side_margin_shoulders", 0.35)) * width if width > 0 else             float(cfg.hands.get("side_margin_frame", 0.12))
+        off = (cx - ref) * contracts.ASPECT
+        if off > margin:
+            return Side.RIGHT
+        if off < -margin:
+            return Side.LEFT
+        return label
 
     def _state_machine(self, hands: list[HandObs], ts: int) -> None:
         g = self.gate
@@ -344,7 +370,9 @@ class Engine:
         pose = ctx.hand.pose
         # a hand flying sideways is swiping: blurred frames must not start a fist or a pinch
         fast = ctx.speed > float(cfg.swipe.get("busy_speed", 3.0))
-        if pose is Pose.FIST and not fast:
+        # a pinching hand reads as a fist; right after letting go of a pinch it is not a new fist
+        just_pinched = ctx.ts - ctx.pinch_end_at < int(cfg.holds.get("after_pinch_ms", 400))
+        if pose is Pose.FIST and not fast and not just_pinched:
             ctx.pt_frames = 0
             levels.start(self, ctx)
             levels.step(self, ctx)

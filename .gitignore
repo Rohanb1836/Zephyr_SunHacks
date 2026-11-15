@@ -25,3 +25,6 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+# tools/tune.py detection cache
+clips/.cache/

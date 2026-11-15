@@ -81,7 +81,14 @@ def palm_can_start(ctx: HandCtx, n_open_allowed: int, both_active: bool) -> bool
         return False
     return (ctx.hand.pose is Pose.OPEN and ctx.facing and n_open_allowed == 1 and not both_active
             and ctx.hand.pinch > float(cfg.pinch.up)      # a pinching hand is clicking or writing, not a palm
-            and ctx.still_speed < float(cfg.holds.palm_max_speed))
+            and ctx.still_speed < float(cfg.holds.palm_max_speed)
+            and _square(ctx))
+
+
+def _square(ctx: HandCtx) -> bool:
+    """The palm is shown flat to the camera. Measured: deliberate palm holds 0.66 to 0.72 wide,
+    the open hands that fired Search by accident during normal movement 0.16 and 0.30."""
+    return F.palm_width(ctx.hand.landmarks, ctx.scale) >= float(cfg.holds.get("palm_min_width", 0.5))
 
 
 def palm_start(eng, ctx: HandCtx) -> None:
@@ -98,7 +105,7 @@ def palm_step(eng, ctx: HandCtx, n_open_allowed: int, both_active: bool) -> bool
         palm_cancel(eng, ctx)           # the thumb and index closed: this is a pinch, hand it over now
         return False
     ok = (pose is Pose.OPEN and ctx.facing and n_open_allowed == 1 and not both_active
-          and ctx.still_speed < float(cfg.holds.palm_max_speed))
+          and ctx.still_speed < float(cfg.holds.palm_max_speed) and _square(ctx))
     if not ok:
         # a clear new pose or a second palm ends the hold at once; a shaky frame gets a short grace
         if pose in (Pose.FIST, Pose.POINT, Pose.TWO) or both_active:
